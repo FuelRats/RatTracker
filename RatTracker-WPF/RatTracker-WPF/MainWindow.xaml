@@ -1,0 +1,32 @@
+﻿<Window x:Class="RatTracker_WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RatTracker_WPF"
+        mc:Ignorable="d"
+        Title="Fuel Rats RatTracker" Height="350" Width="525" FontFamily="Rockwell">
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo/>
+    </Window.TaskbarItemInfo>
+    <Grid>
+        <StatusBar x:Name="mainStatusBar" HorizontalAlignment="Left" Height="2" Margin="133,307,0,0" VerticalAlignment="Top" Width="9" RenderTransformOrigin="0.5,0.5">
+            <StatusBar.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleY="-1" ScaleX="-1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </StatusBar.RenderTransform>
+        </StatusBar>
+        <Menu x:Name="menu" Height="19" VerticalAlignment="Top">
+            <MenuItem x:Name="Main_Menu" Header="Main Menu" Click="Main_Menu_Click">
+                <MenuItem/>
+            </MenuItem>
+        </Menu>
+        <TextBlock x:Name="statusDisplay" Margin="8,35,24,73" TextWrapping="Wrap" Text="Status display"/>
+        <TextBox x:Name="textBox" Margin="10,280,0,0" TextWrapping="Wrap" Text="LogfileLocation" HorizontalAlignment="Left" Width="212" Height="16" VerticalAlignment="Top"/>
+        <Button x:Name="button" Content="Go On-Duty" Margin="0,0,24,18" Background="#FFEE1313" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111"/>
+    </Grid>
+</Window>
