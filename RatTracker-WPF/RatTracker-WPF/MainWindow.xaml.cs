@@ -92,7 +92,7 @@ namespace RatTracker_WPF
             }
             catch (Exception e)
             {
-                appendStatus(e.Message);
+                appendStatus(e.Message); /* Just a change to make the push to github work as well */
 
             }
 
