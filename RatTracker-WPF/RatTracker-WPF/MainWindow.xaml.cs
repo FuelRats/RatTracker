@@ -29,6 +29,8 @@ namespace RatTracker_WPF
         string logDirectory="G:\\Frontier\\EDLaunch\\Products\\FORC-FDEV-D-1002\\Logs";
         FileSystemWatcher watcher;
         FileInfo logFile;
+        long fileOffset =0L;
+
 
         public MainWindow()
         {
@@ -65,7 +67,7 @@ namespace RatTracker_WPF
             {
                 watcher = new FileSystemWatcher();
                 watcher.Path = logDirectory;
-                watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size;
                 watcher.Filter = "*.log";
                 watcher.Changed += new FileSystemEventHandler(onChanged);
                 watcher.Created += new FileSystemEventHandler(onChanged);
@@ -86,17 +88,35 @@ namespace RatTracker_WPF
             {
                 using (StreamReader sr = new StreamReader(new FileStream(logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)))
                 {
-                    String line = sr.ReadToEnd();
-                    appendStatus(line);
+                    if (fileOffset == 0L)
+                    {
+                        if (sr.BaseStream.Length > 30000)
+                        {
+                            sr.BaseStream.Seek(-30000, SeekOrigin.End); /* First peek into the file, rewind a bit and scan from there. */
+                        }
+                    }
+                    else
+                    {
+                        sr.BaseStream.Seek(this.fileOffset, SeekOrigin.Begin);
+                    }
+
+                    string line;
+                    while (sr.Peek() != -1)
+                    {
+                        line = sr.ReadLine();
+                        parseLine(line);
+                    }
                 }
+
+
+                appendStatus("I should be reading from the log now, but I'm not asynch!");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                appendStatus(e.Message); /* Just a change to make the push to github work as well */
-
+                return;
             }
-
         }
+
         private void onChanged(object source, FileSystemEventArgs e)
         {
             appendStatus("Filechange: " + e.FullPath + " " + e.ChangeType);
@@ -111,6 +131,8 @@ namespace RatTracker_WPF
                 onDuty = true;
                 watcher.EnableRaisingEvents = true;
                 statusDisplay.Text += "\nStarted watching for events in netlog.";
+                button.Background = Brushes.Green;
+                /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
             }
             else
             {
@@ -118,6 +140,7 @@ namespace RatTracker_WPF
                 onDuty = false;
                 watcher.EnableRaisingEvents = false;
                 statusDisplay.Text += "\nStopped watching for events in netlog.";
+                button.Background = Brushes.Red;
             }
         }
 
