@@ -7,10 +7,10 @@ using System.Windows;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("RatTracker-WPF")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("RatTracker")]
+[assembly: AssemblyDescription("An application to assist Fuel Rats on rescues")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("The Fuel Rats Mischief")]
 [assembly: AssemblyProduct("RatTracker-WPF")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]

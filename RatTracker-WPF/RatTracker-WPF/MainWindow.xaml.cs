@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Diagnostics;
 using System.Security.Permissions;
@@ -22,6 +23,10 @@ using System.Threading;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Newtonsoft.Json;
+using System.Collections.Specialized;
+using System.Web;
+using WebSocket4Net;
 
 namespace RatTracker_WPF
 {
@@ -30,7 +35,7 @@ namespace RatTracker_WPF
     /// </summary>
     /// 
 
-        public class netLogFile
+    public class netLogFile
     {
         public string netLogFileName;
         public DateTime lastChanged;
@@ -43,6 +48,19 @@ namespace RatTracker_WPF
         public string clientState { get; set; }
         public string clientIP { get; set; }
         public string sessionID { get; set; }
+        public string clientSystem { get; set; }
+
+    }
+    public class Rescues
+    {
+        public bool archive { get; set; }
+        public string CMDRname { get; set; }
+        public int createdAt { get; set; }
+        public bool dispatchDrilled { get; set; }
+        public bool rescueDrilled { get; set; }
+        public int lastModified { get; set; }
+        public int joined { get; set; }
+        public int score { get; set; }
 
     }
     public class Friend
@@ -77,33 +95,82 @@ namespace RatTracker_WPF
         long fileSize;
         Thread threadLogWatcher;
         string parserState;
+        clientInfo myClient = new clientInfo();
+        APIWorker apworker;
+        private static string apiURL = "http://dev.api.fuelrats.com/";
+        private static string wsURL = "ws://api.fuelrats.com/";
+        private static string edsmURL = "http://www.edsm.net/api-v1/";
+        internal static MainWindow Main;
+        WebSocket ws;
+        RTWebSocketClient testws;
+
         public MainWindow()
         {
             InitializeComponent();
             checkLogDirectory();
+            Main = this;
         }
-        public bool sendAPI(string field, string data)
+        public void initWS()
         {
-            /* Once Trezy actually provides us with some useful API stuff, this is where we'll send data. */
-            return true;
+            appendStatus("Initializing WS connection...");
+            try
+            {
+                ws = new WebSocket(wsURL, "", WebSocketVersion.Rfc6455);
+                ws.Error +=new EventHandler<SuperSocket.ClientEngine.ErrorEventArgs>(websocketClient_Error);
+                ws.Opened += new EventHandler(websocketClient_Opened);
+                ws.MessageReceived += new EventHandler<MessageReceivedEventArgs>(websocketClient_MessageReceieved);
+                ws.Closed += new EventHandler(websocket_Client_Closed);
+               
+            }
+            catch(Exception ex)
+            {
+                appendStatus("Well, that went tits up real fast: " + ex.Message);
+            }
         }
 
-        public string queryAPI(string field, string data)
+        public void openWS()
         {
-            /* Again, waiting for Trezy. For now, return a placeholder field. */
-            return "I am a string from the API";
+            ws.Open();
+
+            appendStatus("I should be connected. State is " + ws.State.ToString());
+            appendStatus("Sent text message.");
+            Thread.Sleep(1000);
+            appendStatus("Took a nap. Stat is now " + ws.State.ToString());
+            Thread.Sleep(1000);
+            appendStatus("Slept some more. Sending some more stuff now.");
+        }
+        private void websocket_Client_Closed(object sender, EventArgs e)
+        {
+            appendStatus("Well, websocket just closed. But why?!"+e.ToString());
         }
 
-        public bool connectAPI()
+
+        private void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
         {
-            /* Connect to the API here. */
-            appendStatus("Connecting to API.");
-            return true;
+            appendStatus("Fukken message received! " + e.Message);
         }
-        private void submitPaperwork(string url)
+
+        public void websocketClient_Error(object sender, SuperSocket.ClientEngine.ErrorEventArgs e)
         {
-            Process.Start(url);
+            appendStatus("Websocket: Exception thrown: " + e.Exception.Message);
         }
+        public void websocketClient_Opened(object sender, EventArgs e)
+        {
+            appendStatus("Websocket: Connection to API established.");
+            string message = JsonConvert.SerializeObject(new { cmd = "message", msg = "Fukken message" }, new JsonSerializerSettings() {  Formatting = Newtonsoft.Json.Formatting.None});
+            ws.Send(message);
+        }
+        private void parseWSMessage(object sender,EventArgs data)
+        {
+            return;
+        }
+
+        public NameValueCollection apiResponse(string data)
+        {
+            appendStatus("Task apiResponse processing:" + data);
+            return new NameValueCollection { };
+        }
+
         private void checkVerboseLogging()
         {
             /* if (CheckStationLogging())
@@ -116,7 +183,6 @@ namespace RatTracker_WPF
 
         public void appendStatus(string text)
         {
-            Console.WriteLine("I just got called for appendStatus!");
             if (statusDisplay.Dispatcher.CheckAccess())
             {
                 statusDisplay.Text += "\n" + text;
@@ -214,6 +280,21 @@ namespace RatTracker_WPF
                     /* string preencode = Regex.Replace(friend.Element("name").Value, ".{2}", "\\x$0"); */
                     byteenc = StringToByteArray(wingdata.Element("name").Value);
                     appendStatus("Wingmember:" + System.Text.Encoding.UTF8.GetString(byteenc));
+                    if (System.Text.Encoding.UTF8.GetString(byteenc) == myClient.clientName)
+                    {
+                        appendStatus("This data matches our current client! Storing information...");
+                        myClient.clientID = wingdata.Element("id").Value;
+                        appendStatus("Wingmember IP data:" + xdoc.Element("connectionDetails"));
+                        string wingIPPattern = "IP4NAT:([0-9.]+):\\d+\\,";
+                        Match wingMatch = Regex.Match(wingInvite, wingIPPattern, RegexOptions.IgnoreCase);
+                        if (wingMatch.Success)
+                        {
+                            appendStatus("Successful IP data match: " + wingMatch.Groups[1]);
+                            myClient.clientIP = wingMatch.Groups[1].Value;
+
+                        }
+                    }
+                    
                 }
 
 
@@ -226,8 +307,9 @@ namespace RatTracker_WPF
             return;
         }
 
-        private void checkLogDirectory()
+        private async void  checkLogDirectory()
         {
+            NameValueCollection col;
             if(logDirectory==null | logDirectory == "")
             {
                 MessageBox.Show("Error: No log directory is specified, please do so before attempting to go on duty.");
@@ -251,7 +333,22 @@ namespace RatTracker_WPF
             logFile = (from f in tempDir.GetFiles("*.log") orderby f.LastWriteTime descending select f).First();
             appendStatus("Started watching file " + logFile.FullName);
             checkClientConn(logFile.FullName);
+            var logindata = new List<KeyValuePair<string, string>>();
+            logindata.Add(new KeyValuePair<string,string>("email", "mecha@squeak.net"));
+            logindata.Add(new KeyValuePair<string,string>("password", "password"));
+            apworker = new APIWorker();
+            appendStatus("Call to APIworker returning :"+apworker.connectAPI().ToString());
+            //NameValueCollection col = await apworker.queryAPI("login", new List<KeyValuePair<string, string>>());
+            col = await apworker.sendAPI("login", logindata);
+            appendStatus("From col I have :" + col[0]);
+            //appendStatus("I'm after queryAPI:"+col.ToString());
+            initWS();
+            openWS();
             readLogfile(logFile.FullName);
+        }
+        private void ProcessAPIResponse(IAsyncResult result)
+        {
+            this.appendStatus("Whaddaya know, ProcessAPIResponse got called!");
         }
         private void checkClientConn(string lf)
         {
@@ -259,6 +356,7 @@ namespace RatTracker_WPF
             appendStatus("Detecting client connectivity...");
             try
             {
+                Dispatcher disp = Dispatcher;
                 using (StreamReader sr = new StreamReader(new FileStream(lf, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)))
                 {
                     string line;
@@ -279,23 +377,41 @@ namespace RatTracker_WPF
                         if(line.Contains("Turn State: Ready"))
                         {
                             appendStatus("Client has a valid TURN connection established.");
+                            disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => connTypeLabel.Content = "TURN routed"));
+                            disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => turnButton.Background = Brushes.Green));
+
                         }
-                        if(line.Contains("this machine after STUN reply"))
+                        if (line.Contains("this machine after STUN reply"))
                         {
                             appendStatus("STUN has mapped us to address.");
+                            disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => connTypeLabel.Content = "STUN enabled NAT"));
+                            disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => stunButton.Background = Brushes.Green));
+
                         }
                         if (line.Contains("Sync Established"))
                         {
                             appendStatus("Sync Established.");
+                            disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => syncButton.Background = Brushes.Green));
+
                         }
                         if (line.Contains("ConnectToServerActivity:StartRescueServer"))
                         {
                             appendStatus("E:D has established a connection and client is in main menu. Ending early netlog parse.");
                             stopSnooping = true;
                         }
+                        if (line.Contains("Symmetrical"))
+                        {
+                            appendStatus("CRITICAL: E:D has detected symmetrical NAT on this connection. This may make it difficult for you to instance with clients!");
+                            disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => connTypeLabel.Content = "Symmetrical NAT"));
+                            disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => directButton.Background = Brushes.Red));
+                        }
 
                     }
                     appendStatus("Parsed " + count + " lines to derive client info.");
+                    if (stopSnooping == false)
+                    {
+                        appendStatus("CRITICAL: RatTracker couldn't find session initialization data to determine your NAT type. This may reduce functionality. Consider restarting your client.");
+                    }
                 }
             }
             catch (Exception ex)
@@ -317,13 +433,12 @@ namespace RatTracker_WPF
                         if (sr.BaseStream.Length > 30000)
                         {
                             sr.BaseStream.Seek(-30000, SeekOrigin.End); /* First peek into the file, rewind a bit and scan from there. */
-                            appendStatus("Rewind skipped, reading full log.");
                         }
                     }
                     else
                     {
                         sr.BaseStream.Seek(this.fileOffset, SeekOrigin.Begin);
-                        appendStatus("Seek to " + fileOffset);
+                        //appendStatus("Seek to " + fileOffset);
                     }
 
                     string line;
@@ -334,7 +449,7 @@ namespace RatTracker_WPF
                         line = sr.ReadLine();
                         parseLine(line);
                     }
-                    appendStatus("Parsed " + count + " new lines. Old fileOffset was "+fileOffset+" and length was "+logFile.Length);
+                    //appendStatus("Parsed " + count + " new lines. Old fileOffset was "+fileOffset+" and length was "+logFile.Length);
                 }
             }
             catch (Exception ex)
@@ -343,6 +458,7 @@ namespace RatTracker_WPF
                 return;
             }
         }
+
         private void  parseLine(string line)
         {
             string reMatchSystem = ".*?(System).*?\\(((?:[^)]+)).*?\\)";
@@ -350,10 +466,13 @@ namespace RatTracker_WPF
             if (match.Success)
             {
                 appendStatus("System change: " + match.Groups[2].Value + ".");
+                triggerSystemChange(match.Groups[2].Value);
             }
-            if (line.Contains(" System:"))
+            string reMatchPlayer = "\\{.+\\} (\\d+) x (\\d+).*\\(\\(([0-9.]+):\\d+\\)\\)Name (.+)$";
+            Match frmatch = Regex.Match(line, reMatchPlayer, RegexOptions.IgnoreCase);
+            if (frmatch.Success)
             {
-                appendStatus("Second method works too...");
+                appendStatus("Successful identity match! ID: " + frmatch.Groups[1] + " IP:" + frmatch.Groups[3]);
             }
             if (line.Contains("FriendsRequest"))
             {
@@ -403,9 +522,47 @@ namespace RatTracker_WPF
             {
                 appendStatus("Island claim message detected, parsing members...");
             }
+            if (line.Contains("claimed ------------^^^"))
+            {
+                appendStatus("End of island claim member list. Resuming normal parse.");
+            }
             if (line.Contains("SESJOINED"))
             {
                 appendStatus("Session join message seen.");
+            }
+        }
+
+        private async void triggerSystemChange(string value)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    var content = new UriBuilder(edsmURL + "systems?sysname="+value+"&coords=1");
+                    content.Port = -1;
+                    var query = HttpUtility.ParseQueryString(content.Query);
+                    content.Query = query.ToString();
+                    appendStatus("Built query string:" + content.ToString());
+                    var response = await client.GetAsync(content.ToString());
+                    response.EnsureSuccessStatusCode();
+                    var responseString = await response.Content.ReadAsStringAsync();
+                    appendStatus("Response string:" + responseString);
+                    NameValueCollection temp = new NameValueCollection();
+                    object m = JsonConvert.DeserializeObject(responseString);
+                    
+                    foreach (PropertyDescriptor pd in TypeDescriptor.GetProperties(m))
+                    {
+                        string myvalue = pd.GetValue(m).ToString();
+                        Console.WriteLine("Add value " + pd.Name + ": " + myvalue);
+                        temp.Add(pd.Name, myvalue);
+                    }
+                    
+                    return;
+                }
+            }
+            catch (Exception ex) { 
+            // if string with JSON data is not empty, deserialize it to class and return its instance 
+                return;
             }
         }
 
@@ -430,15 +587,9 @@ namespace RatTracker_WPF
                 threadLogWatcher.Start();
                 
                 /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
-                appendStatus("I should be reading from the log now.");
-                appendStatus("Connecting to RatTracker service...");
-                appendStatus("Connected to 10.0.0.35 port 38550!");
-                appendStatus("Sending Rat API key...");
-                appendStatus("Received handshake. Connected to RTS.");
-                appendStatus("NEW ASSIGNMENT: Absolver|Sagittarius A*|0|0|[]");
                 clientName.Text = "Absolver";
                 systemName.Text = "Sagittarius A*";
-            }
+             }
             else
             {
                 button.Content = "Off Duty";
@@ -489,12 +640,14 @@ namespace RatTracker_WPF
             {
                 frButton.Background = Brushes.Green;
                 appendStatus("Sending Friend Request acknowledgement.");
+                ws.Send("FR got!");
                 /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
             }
             else
             {
                 appendStatus("Cancelling FR status.");
                 frButton.Background = Brushes.Red;
+                ws.Send("FR neg!");
             }
         }
 
@@ -571,6 +724,13 @@ namespace RatTracker_WPF
 
         private void startButton_Click(object sender, RoutedEventArgs e)
         {
+            appendStatus("Started tracking new client " + clientName.Text);
+            myClient.clientName = clientName.Text;
+            frButton.Background = Brushes.Red;
+            wrButton.Background = Brushes.Red;
+            instButton.Background = Brushes.Red;
+            bcnButton.Background = Brushes.Red;
+            fueledButton.Background = Brushes.Red;
 
         }
     }
