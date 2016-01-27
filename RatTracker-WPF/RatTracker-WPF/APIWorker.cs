@@ -12,9 +12,20 @@ using Newtonsoft.Json;
 
 namespace RatTracker_WPF
 {
+
+    /*
+     * APIWorker is the HTTP based API query mechanism for RatTracker. As opposed to the WS version, it
+     * hits HTTP endpoints on the API. This is primarily used to asynchronously fetch long JSON without
+     * tieing up the WS connection, or if the WS connection is unavailable.
+     */
+
     class APIWorker
     {
-        static string apiURL = "http://dev.api.fuelrats.com/";
+        static string apiURL = "http://dev.api.fuelrats.com/"; /* To be replaced with Settings property. */
+
+        /*
+         * queryAPI sends a GET request to the API. Kindasorta deprecated behavior.
+         */
         public async Task<NameValueCollection> queryAPI(string action, List<KeyValuePair<String, String>> data)
         {
             try
@@ -24,6 +35,8 @@ namespace RatTracker_WPF
                     var content = new UriBuilder(apiURL + action);
                     content.Port = -1;
                     var query = HttpUtility.ParseQueryString(content.Query);
+                    if (query==null)
+                        return apiGetResponse("{\"Error\", \"No response\"");
                     foreach (KeyValuePair<string, string> entry in data)
                     {
                         query[entry.Key] = entry.Value;
@@ -32,10 +45,18 @@ namespace RatTracker_WPF
                     //appendStatus("Built query string:" + content.ToString());
                     var response = await client.GetAsync(content.ToString());
                     //appendStatus("AsyncPost sent.");
-                    response.EnsureSuccessStatusCode();
-                    var responseString = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("Starting response string parse task.");
-                    return apiGetResponse(responseString);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine("Starting response string parse task.");
+                        return apiGetResponse(responseString);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HTTP request returned an error:" + response.StatusCode);
+                        return new NameValueCollection();
+                    }
+                    
                 }
             }
             catch (Exception ex)
@@ -45,6 +66,10 @@ namespace RatTracker_WPF
             }
             /* Again, waiting for Trezy. For now, return a placeholder field. */
         }
+        /* apiGetResponse is called by queryAPI asynchronously when the response arrives from the
+         * server. This is then passed as a NVC to the main class.
+         * TODO: Recode to use IDictionary.
+         */
         public NameValueCollection apiGetResponse(string data)
         {
             Console.WriteLine("apiGetResponse has string:" + data);
@@ -89,6 +114,9 @@ namespace RatTracker_WPF
 
             return temp;
         }
+        /* sendAPI is called from the main class to send POST requests to the API.
+         * Primarily used for login, as most of what we need to do is handled through WS.
+         */
         public async Task<NameValueCollection> sendAPI(string action, List<KeyValuePair<string, string>> data)
         {
             Console.WriteLine("SendAPI was called with action" + action);
@@ -99,10 +127,17 @@ namespace RatTracker_WPF
                     var content = new FormUrlEncodedContent(data);
                     var response = await client.PostAsync(apiURL + action, content);
                     Console.WriteLine("AsyncPost sent.");
-                    response.EnsureSuccessStatusCode();
-                    var responseString = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("Starting response string parse task.");
-                    return apiResponse(responseString);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine("Starting response string parse task.");
+                        return apiResponse(responseString);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HTTP request returned an error:" + response.StatusCode);
+                        return new NameValueCollection();
+                    }
                     //connectWS();
                 }
             }

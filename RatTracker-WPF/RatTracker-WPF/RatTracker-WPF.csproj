@@ -102,12 +102,6 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="APIWorker.cs" />
-    <Compile Include="Sample\MyBasicClientService.cs" />
-    <Compile Include="Sample\MyBasicService.cs" />
-    <Compile Include="Sample\MyJsonMessagingService.cs" />
-    <Compile Include="Sample\MyServer.cs" />
-    <Compile Include="RTWebSocketClient.cs" />
-    <Compile Include="Sample\RunSample.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

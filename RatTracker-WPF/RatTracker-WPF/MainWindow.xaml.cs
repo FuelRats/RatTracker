@@ -27,6 +27,7 @@ using Newtonsoft.Json;
 using System.Collections.Specialized;
 using System.Web;
 using WebSocket4Net;
+using Newtonsoft.Json.Linq;
 
 namespace RatTracker_WPF
 {
@@ -97,12 +98,10 @@ namespace RatTracker_WPF
         string parserState;
         clientInfo myClient = new clientInfo();
         APIWorker apworker;
-        private static string apiURL = "http://dev.api.fuelrats.com/";
-        private static string wsURL = "ws://api.fuelrats.com/";
+        private static string wsURL = "ws://dev.api.fuelrats.com/";
         private static string edsmURL = "http://www.edsm.net/api-v1/";
         internal static MainWindow Main;
         WebSocket ws;
-        RTWebSocketClient testws;
 
         public MainWindow()
         {
@@ -127,27 +126,43 @@ namespace RatTracker_WPF
                 appendStatus("Well, that went tits up real fast: " + ex.Message);
             }
         }
-
         public void openWS()
         {
             ws.Open();
 
             appendStatus("I should be connected. State is " + ws.State.ToString());
-            appendStatus("Sent text message.");
-            Thread.Sleep(1000);
-            appendStatus("Took a nap. Stat is now " + ws.State.ToString());
-            Thread.Sleep(1000);
-            appendStatus("Slept some more. Sending some more stuff now.");
-        }
-        private void websocket_Client_Closed(object sender, EventArgs e)
-        {
-            appendStatus("Well, websocket just closed. But why?!"+e.ToString());
         }
 
+        public void sendWS(string action, IDictionary<string, string> data)
+        {
+            data.Add("action", action);
+            string json = JsonConvert.SerializeObject(data);
+            appendStatus("sendWS Serialized to: " + json);
+            ws.Send(json);
+        }
+
+        private void websocket_Client_Closed(object sender, EventArgs e)
+        {
+            appendStatus("API WS Connection closed. Reconnecting...");
+            openWS();
+        }
 
         private void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
         {
-            appendStatus("Fukken message received! " + e.Message);
+            dynamic data = JsonConvert.DeserializeObject(e.Message);
+            switch ((string)data.type)
+            {
+                case "welcome":
+                    appendStatus("API MOTD: " + data.data);
+                    break;
+                case "assignment":
+                    appendStatus("Got a new assignment datafield: " + data.data);
+                    break;
+                default:
+                    appendStatus("Unknown API type field: " + data.type + ": " + data.data);
+                    break;
+            }
+            //appendStatus("Direct parse. Type:" + data.type + " Data:" + data.data);
         }
 
         public void websocketClient_Error(object sender, SuperSocket.ClientEngine.ErrorEventArgs e)
@@ -159,18 +174,10 @@ namespace RatTracker_WPF
             appendStatus("Websocket: Connection to API established.");
             string message = JsonConvert.SerializeObject(new { cmd = "message", msg = "Fukken message" }, new JsonSerializerSettings() {  Formatting = Newtonsoft.Json.Formatting.None});
             ws.Send(message);
+            IDictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("Foo", "bar");
+            sendWS("assignment", data);
         }
-        private void parseWSMessage(object sender,EventArgs data)
-        {
-            return;
-        }
-
-        public NameValueCollection apiResponse(string data)
-        {
-            appendStatus("Task apiResponse processing:" + data);
-            return new NameValueCollection { };
-        }
-
         private void checkVerboseLogging()
         {
             /* if (CheckStationLogging())
@@ -196,11 +203,6 @@ namespace RatTracker_WPF
             
 
         }
-        private void onRenamed(object source, RenamedEventArgs e)
-        {
-            /* Stop watching the renamed file, look for new onChanged. */
-        }
-
         public static byte[] StringToByteArray(string hex)
         {
             return Enumerable.Range(0, hex.Length)
@@ -208,10 +210,17 @@ namespace RatTracker_WPF
                              .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
                              .ToArray();
         }
+
+        private void onRenamed(object source, RenamedEventArgs e)
+        {
+            /* Stop watching the renamed file, look for new onChanged. */
+        }
+
         private void parseFriendsList(string friendsList)
         {
             /* Sanitize the XML, it can break if over 40 friends long or so. */
             string xmlData;
+            int count=0;
             xmlData = friendsList.Substring(friendsList.IndexOf("<") + friendsList.Length);
             appendStatus("Raw xmlData: " + xmlData);
             try {
@@ -219,7 +228,7 @@ namespace RatTracker_WPF
                 appendStatus("Successful XML parse.");
                 var rettest = xdoc.Element("OK");
                 if(rettest != null)
-                    appendStatus("Return code: " + xdoc.Element("OK").Value);
+                    appendStatus("Last friendslist action: " + xdoc.Element("OK").Value);
                 IEnumerable<XElement> friends = xdoc.Descendants("item");
                 foreach (var friend in friends)
                 {
@@ -227,7 +236,8 @@ namespace RatTracker_WPF
                     UnicodeEncoding unicoded = new UnicodeEncoding();
                     /* string preencode = Regex.Replace(friend.Element("name").Value, ".{2}", "\\x$0"); */
                     byteenc = StringToByteArray(friend.Element("name").Value);
-                    appendStatus("Friend:" + System.Text.Encoding.UTF8.GetString(byteenc));
+                    //appendStatus("Friend:" + System.Text.Encoding.UTF8.GetString(byteenc));
+                    count++;
                     if (friend.Element("pending").Value == "1")
                     {
                         appendStatus("Pending invite from CMDR " + System.Text.Encoding.UTF8.GetString(byteenc) + "detected!");
@@ -254,6 +264,7 @@ namespace RatTracker_WPF
                         }
                     }
                 }
+                appendStatus("Parsed " + count + " friends in FRXML.");
 
             }
             catch (Exception ex)
@@ -306,7 +317,6 @@ namespace RatTracker_WPF
             }
             return;
         }
-
         private async void  checkLogDirectory()
         {
             NameValueCollection col;
@@ -340,7 +350,10 @@ namespace RatTracker_WPF
             appendStatus("Call to APIworker returning :"+apworker.connectAPI().ToString());
             //NameValueCollection col = await apworker.queryAPI("login", new List<KeyValuePair<string, string>>());
             col = await apworker.sendAPI("login", logindata);
-            appendStatus("From col I have :" + col[0]);
+            if (col.Count == 0)
+                appendStatus("Login returned NULL");
+            else
+                appendStatus("From col I have :" + col[0]);
             //appendStatus("I'm after queryAPI:"+col.ToString());
             initWS();
             openWS();
@@ -361,7 +374,7 @@ namespace RatTracker_WPF
                 {
                     string line;
                     int count = 0;
-                    while (stopSnooping != true && sr.Peek() != -1)
+                    while (stopSnooping != true && sr.Peek() != -1 && count<10000)
                     {
                         count++;
                         line = sr.ReadLine();
@@ -410,7 +423,7 @@ namespace RatTracker_WPF
                     appendStatus("Parsed " + count + " lines to derive client info.");
                     if (stopSnooping == false)
                     {
-                        appendStatus("CRITICAL: RatTracker couldn't find session initialization data to determine your NAT type. This may reduce functionality. Consider restarting your client.");
+                        appendStatus("Client connectivity detection complete. You have a direct port mapped address that E:D can use, and should be connectable.");
                     }
                 }
             }
@@ -461,7 +474,7 @@ namespace RatTracker_WPF
 
         private void  parseLine(string line)
         {
-            string reMatchSystem = ".*?(System).*?\\(((?:[^)]+)).*?\\)";
+            string reMatchSystem = ".*?(System:).*?\\(((?:[^)]+)).*?\\)";
             Match match = Regex.Match(line, reMatchSystem, RegexOptions.IgnoreCase);
             if (match.Success)
             {
@@ -548,20 +561,17 @@ namespace RatTracker_WPF
                     var responseString = await response.Content.ReadAsStringAsync();
                     appendStatus("Response string:" + responseString);
                     NameValueCollection temp = new NameValueCollection();
-                    object m = JsonConvert.DeserializeObject(responseString);
-                    
-                    foreach (PropertyDescriptor pd in TypeDescriptor.GetProperties(m))
-                    {
-                        string myvalue = pd.GetValue(m).ToString();
-                        Console.WriteLine("Add value " + pd.Name + ": " + myvalue);
-                        temp.Add(pd.Name, myvalue);
-                    }
-                    
+                    dynamic m = JsonConvert.DeserializeObject(responseString);
+                    Dispatcher disp = Dispatcher;
+                    await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => systemNameLabel.Content = value));
+                    if (responseString.Contains("-1"))
+                        await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => systemNameLabel.Foreground = Brushes.Red));
+                    else
+                        await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => systemNameLabel.Foreground = Brushes.Yellow));
                     return;
                 }
             }
             catch (Exception ex) { 
-            // if string with JSON data is not empty, deserialize it to class and return its instance 
                 return;
             }
         }
@@ -640,14 +650,18 @@ namespace RatTracker_WPF
             {
                 frButton.Background = Brushes.Green;
                 appendStatus("Sending Friend Request acknowledgement.");
-                ws.Send("FR got!");
+                IDictionary<string, string> data = new Dictionary<string, string>();
+                data.Add("ReceivedFR", "true");
+                sendWS("FriendRequest",data);
                 /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
             }
             else
             {
                 appendStatus("Cancelling FR status.");
                 frButton.Background = Brushes.Red;
-                ws.Send("FR neg!");
+                IDictionary<string, string> data = new Dictionary<string, string>();
+                data.Add("ReceivedFR", "false");
+                sendWS("FriendsRequest",data);
             }
         }
 
@@ -656,12 +670,19 @@ namespace RatTracker_WPF
             if (wrButton.Background == Brushes.Red)
             {
                 appendStatus("Sending Wing Request acknowledgement.");
+                IDictionary<string, string> data = new Dictionary<string, string>();
+                data.Add("ReceivedWR", "true");
+                sendWS("WingRequest", data);
                 wrButton.Background = Brushes.Green;
                 /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
             }
             else
             {
                 appendStatus("Cancelled WR status.");
+                IDictionary<string, string> data = new Dictionary<string, string>();
+                data.Add("ReceivedWR", "false");
+                sendWS("WingRequest", data);
+
                 wrButton.Background = Brushes.Red;
             }
         }
@@ -709,6 +730,10 @@ namespace RatTracker_WPF
                 appendStatus("Fueled status now negative.");
                 fueledButton.Background = Brushes.Red;
             }
+            appendStatus("Sending fake rescue request!");
+            IDictionary<string,string> req = new Dictionary<string, string>();
+            req.Add("open", "true");
+            sendWS("rescues", req);
         }
 
         private void currentButton_Click(object sender, RoutedEventArgs e)
