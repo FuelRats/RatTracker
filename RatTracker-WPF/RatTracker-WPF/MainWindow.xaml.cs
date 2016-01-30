@@ -923,7 +923,7 @@ namespace RatTracker_WPF
         }
 
         // TODO: Move to API?
-        private static async Task GetMissingRats(RootObject rescues)
+        private async Task GetMissingRats(RootObject rescues)
         {
             IEnumerable<string> ratIdsToGet = new List<string>();
 
@@ -934,14 +934,9 @@ namespace RatTracker_WPF
 
             foreach (var ratId in ratIdsToGet)
             {
-                HttpClient wc = new HttpClient();
-                var res = await wc.GetAsync("http://dev.api.fuelrats.com/rats/?_id=" + ratId);
-                var content = res.Content;
-                string responsestring = content.ReadAsStringAsync().Result;
-
-                JObject response = JObject.Parse(responsestring);
-                List<JToken> tokens = response["data"].Children().ToList();
-
+                var response = await apworker.queryAPI("rats", new Dictionary<string, string> {{"_id", ratId}});
+                JObject jsonRepsonse = JObject.Parse(response);
+                List<JToken> tokens = jsonRepsonse["data"].Children().ToList();
                 var rat = JsonConvert.DeserializeObject<Rat>(tokens[0].ToString());
                 Rats.TryAdd(ratId, rat);
 
