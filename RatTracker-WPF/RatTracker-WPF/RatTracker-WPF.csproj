@@ -162,16 +162,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="RatTracker-WPF_TemporaryKey.pfx" />
-    <None Include="Resources\RedLight.png" />
+    <Resource Include="Resources\RedLight.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\red_light.png" />
+    <Resource Include="Resources\red_light.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\yellow_light.png" />
+    <Resource Include="Resources\yellow_light.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\green_light.png" />
+    <Resource Include="Resources\green_light.png" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">

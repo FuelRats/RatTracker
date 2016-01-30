@@ -35,6 +35,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="142*"/>
                 <RowDefinition Height="147*"/>
+                <RowDefinition Height="25*"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="163*"/>
@@ -64,8 +65,8 @@
             <Button x:Name="fueledButton" Content="Fueled" Height="19" Margin="0,171,21,0" VerticalAlignment="Top" Background="Red" Click="fueledButton_Click" HorizontalAlignment="Right" Width="44" Grid.Column="1"/>
             <Button x:Name="updateButton" Content="Upd" HorizontalAlignment="Right" Height="17" Margin="0,110,15,0" VerticalAlignment="Top" Width="37" Click="updateButton_Click" Grid.Column="1"/>
             <Button x:Name="currentButton" Content="CUR" HorizontalAlignment="Right" Height="18" Margin="0,127,15,0" VerticalAlignment="Top" Width="37" Click="currentButton_Click" Grid.Column="1"/>
-            <Image x:Name="statusImage" HorizontalAlignment="Left" Margin="10,0,0,15" Width="29" Source="pack://siteoforigin:,,,/Resources/green_light.png" Panel.ZIndex="10" Height="27" VerticalAlignment="Bottom" Grid.Row="1"/>
-            <Label x:Name="label" Content="Online" HorizontalAlignment="Left" Margin="44,0,0,15" Width="71" Height="27" VerticalAlignment="Bottom" Grid.Row="1"/>
+            <Image x:Name="statusImage" HorizontalAlignment="Left" Margin="10,0,0,15" Width="29" Source="Resources/green_light.png" Panel.ZIndex="10" Height="27" VerticalAlignment="Bottom" Grid.Row="2"/>
+            <Label x:Name="label" Content="Online" HorizontalAlignment="Left" Margin="44,0,0,15" Width="71" Height="27" VerticalAlignment="Bottom" Grid.Row="2"/>
             <Button x:Name="turnButton" Content="TURN" Margin="0,211,188,0" Background="Red" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="38" Grid.Column="1"/>
             <Button x:Name="directButton" Content="DIRECT" Margin="0,211,138,0" Background="#FF2EFF00" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="50" Grid.Column="1"/>
             <Button x:Name="stunButton" Content="STUN" Margin="0,211,226,0" Background="Red" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="39" Grid.Column="1"/>
