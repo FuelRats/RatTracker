@@ -42,7 +42,6 @@
                 <ColumnDefinition Width="299*"/>
             </Grid.ColumnDefinitions>
             <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Right" Margin="0,19,9,0" Width="265" Height="240" VerticalAlignment="Top" Grid.Column="1">
-                <Label x:Name="label1" Content="Active Case Information" HorizontalAlignment="Left" Height="27" Width="235" VerticalAlignment="Top" Margin="9,-1,0,0"/>
             </Border>
             <Button x:Name="button" Content="Go On-Duty" Margin="0,0,26,15" Background="#FFEE1313" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111" Grid.Column="1" Grid.Row="1"/>
             <TextBox x:Name="statusDisplay" Margin="10,36,279,5" TextWrapping="Wrap" Text="Status display" IsReadOnlyCaretVisible="True" VerticalScrollBarVisibility="Visible" Grid.ColumnSpan="2"/>
@@ -58,11 +57,12 @@
             <TextBox x:Name="systemName" Height="17" Margin="0,118,51,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" HorizontalAlignment="Right" Width="214" Grid.Column="1"/>
             <Label x:Name="label4" Content="Status" Height="26" Margin="0,140,212,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54" Grid.Column="1"/>
             <Button x:Name="ratButton" Content="Rats" Height="19" Margin="0,171,231,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="35" Grid.Column="1"/>
-            <Button x:Name="frButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,171,192,0" VerticalAlignment="Top" Width="35" Background="Red" Click="frButton_Click" Grid.Column="1"/>
-            <Button x:Name="wrButton" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,171,157,0" VerticalAlignment="Top" Width="35" Background="Red" Click="wrButton_Click" Grid.Column="1"/>
-            <Button x:Name="bcnButton" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,171,122,0" VerticalAlignment="Top" Width="35" Background="Red" Click="bcnButton_Click" Grid.Column="1"/>
-            <Button x:Name="instButton" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,171,88,0" VerticalAlignment="Top" Width="35" Background="Red" Click="instButton_Click" Grid.Column="1"/>
-            <Button x:Name="fueledButton" Content="Fueled" Height="19" Margin="0,171,21,0" VerticalAlignment="Top" Background="Red" Click="fueledButton_Click" HorizontalAlignment="Right" Width="44" Grid.Column="1"/>
+            <Button x:Name="frButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,171,197,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click" Grid.Column="1"/>
+            <Button x:Name="wrButton" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,171,165,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" Grid.Column="1" RenderTransformOrigin="0.086,0.579"/>
+            <Button x:Name="bcnButton" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,171,104,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click" Grid.Column="1"/>
+            <Button x:Name="sysButton" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,171,136,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click" Grid.Column="1"/>
+            <Button x:Name="instButton" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,171,72,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click" Grid.Column="1"/>
+            <Button x:Name="fueledButton" Content="Fueled" Height="19" Margin="0,171,15,0" VerticalAlignment="Top" Background="Red" Click="fueledButton_Click" HorizontalAlignment="Right" Width="44" Grid.Column="1"/>
             <Button x:Name="updateButton" Content="Upd" HorizontalAlignment="Right" Height="17" Margin="0,110,15,0" VerticalAlignment="Top" Width="37" Click="updateButton_Click" Grid.Column="1"/>
             <Button x:Name="currentButton" Content="CUR" HorizontalAlignment="Right" Height="18" Margin="0,127,15,0" VerticalAlignment="Top" Width="37" Click="currentButton_Click" Grid.Column="1"/>
             <Image x:Name="statusImage" HorizontalAlignment="Left" Margin="10,0,0,15" Width="29" Source="Resources/green_light.png" Panel.ZIndex="10" Height="27" VerticalAlignment="Bottom" Grid.Row="2"/>

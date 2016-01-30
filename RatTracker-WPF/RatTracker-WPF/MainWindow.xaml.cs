@@ -132,15 +132,21 @@ namespace RatTracker_WPF
         public string clientSystem { get; set; }
 
     }
-    public class Rescues
+    public class Rescue
     {
         public bool archive { get; set; }
+        public bool active { get; set; }
+        public bool codeRed { get; set; }
         public string CMDRname { get; set; }
         public int createdAt { get; set; }
-        public bool dispatchDrilled { get; set; }
-        public bool rescueDrilled { get; set; }
+        public bool epic { get; set; }
+        public bool open { get; set; }
         public int lastModified { get; set; }
-        public int joined { get; set; }
+        public string notes { get; set; }
+        public string[] rats { get; set; }
+        public bool successful { get; set; }
+        public string system { get; set; }
+        public string _id { get; set; }
         public int score { get; set; }
 
     }
@@ -192,7 +198,7 @@ namespace RatTracker_WPF
         }
         public void initWS()
         {
-            appendStatus("Initializing WS connection...");
+            appendStatus("Initializing WS connection to "+wsURL+"...");
             try
             {
                 ws = new WebSocket(wsURL, "", WebSocketVersion.Rfc6455);
@@ -211,7 +217,7 @@ namespace RatTracker_WPF
         {
             ws.Open();
 
-            appendStatus("I should be connected. State is " + ws.State.ToString());
+            appendStatus("WS client is " + ws.State.ToString());
         }
 
         public void sendWS(string action, IDictionary<string, string> data)
