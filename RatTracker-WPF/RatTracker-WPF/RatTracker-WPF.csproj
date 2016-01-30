@@ -64,7 +64,7 @@
     <ManifestKeyFile>RatTracker-WPF_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>RatTracker-WPF_1_TemporaryKey.pfx</AssemblyOriginatorKeyFile>

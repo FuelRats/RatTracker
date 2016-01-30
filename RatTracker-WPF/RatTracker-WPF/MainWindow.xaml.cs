@@ -198,6 +198,7 @@ namespace RatTracker_WPF
         WebSocket ws;
         SpVoice voice = new SpVoice();
         string currentSystem;
+        string scState;
         RootObject activeRescues = new RootObject();
 
         public MainWindow()
@@ -405,6 +406,9 @@ namespace RatTracker_WPF
                             myClient.clientIP = wingMatch.Groups[1].Value;
 
                         }
+                        /* If the friend request matches the client name, store his session ID. */
+                        myClient.clientID = wingdata.Element("commander_id").Value;
+                        myClient.sessionID = wingdata.Element("session_runid").Value;
                     }
                     
                 }
@@ -586,6 +590,17 @@ namespace RatTracker_WPF
 
         private void  parseLine(string line)
         {
+            if (parserState == "ISLAND")
+            {
+                /* Look for our client's session ID. */
+                if (line.Contains(myClient.sessionID.ToString()) && scState=="Normalspace")
+                {
+                    appendStatus("Normalspace Instance match! " + line);
+                    Dispatcher disp = Dispatcher;
+                    disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => wrButton.Background = Brushes.Green));
+                    voice.Speak("Successful normal space instance with client.");
+                }
+            }
             string reMatchSystem = ".*?(System:).*?\\(((?:[^)]+)).*?\\)";
             Match match = Regex.Match(line, reMatchSystem, RegexOptions.IgnoreCase);
             if (match.Success)
@@ -628,7 +643,7 @@ namespace RatTracker_WPF
             {
                 appendStatus("Prewing communication underway...");
             }
-            if (line.Contains("TalkChannelManager::OpenOutgoingChannelTo"))
+            if (line.Contains("TalkChannelManager::OpenOutgoingChannelTo") && line.Contains(myClient.clientIP.ToString()))
             {
                 appendStatus("Wing established, opening voice comms.");
                 voice.Speak("Wing established.");
@@ -648,6 +663,7 @@ namespace RatTracker_WPF
             if(line.Contains("CLAIMED ------------vvv"))
             {
                 appendStatus("Island claim message detected, parsing members...");
+                parserState = "ISLAND";
             }
             if (line.Contains("claimed ------------^^^"))
             {
@@ -882,37 +898,9 @@ namespace RatTracker_WPF
                 RootObject rescues = JsonConvert.DeserializeObject<RootObject>(col);
                 await GetMissingRats(rescues);
 
-                /* appendStatus("rescues object has data: " + rescues.ToString());
-                foreach (var myrescue in rescues.data)
-                {
-                    appendStatus("Client: " + myrescue.client.ToString()+" Rats:"+myrescue.tempRats.ToString());
-                    
-                } */
-                /* Trying this one more time from the designer... 
-                DataGridTextColumn colClient = new DataGridTextColumn();
-                DataGridTextColumn colRats = new DataGridTextColumn();
-                DataGridTextColumn colActive = new DataGridTextColumn();
-                colClient.Header = "tempRats";
-                colClient.Binding = new Binding("client");
-                colRats.Header = "Rats";
-                colRats.Binding=new Binding("tempRats");
-                colActive.Header = "Active";
-                colActive.Binding = new Binding("active");
-                rescueGrid.Columns.Add(colClient);
-                rescueGrid.Columns.Add(colRats);
-                rescueGrid.Columns.Add(colActive);
-                */
                 rescueGrid.ItemsSource = rescues.data;
                 rescueGrid.AutoGenerateColumns = false;
-                /* rescueGrid.Columns[0].Visibility = System.Windows.Visibility.Hidden;
-                rescueGrid.Columns[1].Visibility = System.Windows.Visibility.Hidden;
-                rescueGrid.Columns[3].Visibility = System.Windows.Visibility.Hidden;
-                rescueGrid.Columns[5].Visibility = System.Windows.Visibility.Hidden;
-                rescueGrid.Columns[6].Visibility = System.Windows.Visibility.Hidden;
-                rescueGrid.Columns[7].Visibility = System.Windows.Visibility.Hidden;
-                rescueGrid.Columns[8].Visibility = System.Windows.Visibility.Hidden;
-                rescueGrid.Columns[9].Visibility = System.Windows.Visibility.Hidden;
-                rescueGrid.Columns[10].Visibility = System.Windows.Visibility.Hidden; */
+
                 foreach (DataGridColumn column in rescueGrid.Columns)
                 {
                     appendStatus("Column:" + column.Header);
