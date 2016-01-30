@@ -22,7 +22,7 @@ namespace RatTracker_WPF
 
     class APIWorker
     {
-        static string apiURL = "http://dev.api.fuelrats.com/"; /* To be replaced with Settings property. */
+        static string apiURL = Properties.Settings.Default.APIURL; /* To be replaced with Settings property. */
 
         /*
          * queryAPI sends a GET request to the API. Kindasorta deprecated behavior.
@@ -33,7 +33,7 @@ namespace RatTracker_WPF
             {
                 using (var client = new HttpClient())
                 {
-                    var content = new UriBuilder(apiURL + action+"/");
+                    var content = new UriBuilder(apiURL +"/"+ action);
                     content.Port = -1;
                     var query = HttpUtility.ParseQueryString(content.Query);
                     if (query==null)
@@ -65,7 +65,6 @@ namespace RatTracker_WPF
                 Console.WriteLine("Exception in QueryAPI: " + ex.Message);
                 return "";
             }
-            /* Again, waiting for Trezy. For now, return a placeholder field. */
         }
         /* apiGetResponse is called by queryAPI asynchronously when the response arrives from the
          * server. This is then passed as a NVC to the main class.

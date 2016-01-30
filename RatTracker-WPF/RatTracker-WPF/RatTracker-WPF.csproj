@@ -58,13 +58,13 @@
     <SignManifests>false</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>14BD80878BF5D4AED0830E96360D2DDFE08FE179</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>A14456A64E2D121DBABB735DCFD98F471569B40F</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestKeyFile>RatTracker-WPF_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>RatTracker-WPF_1_TemporaryKey.pfx</AssemblyOriginatorKeyFile>
