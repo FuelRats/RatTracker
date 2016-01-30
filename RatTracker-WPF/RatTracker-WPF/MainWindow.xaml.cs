@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -34,6 +35,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Net;
 using System.Globalization;
+using RatTracker_WPF.Models;
 
 namespace RatTracker_WPF
 {
@@ -43,30 +45,37 @@ namespace RatTracker_WPF
     /// 
     public class ratConverter : IValueConverter
     {
-            public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-            {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
             List<string> myrats = value as List<string>;
             if (myrats == null)
+            {
                 return "I am a null rat.";
-            //APIWorker aw = new APIWorker();
-            string composedrats = string.Join(",", myrats);
-            //String col = await aw.queryAPI("rats", new Dictionary<string, string>() { { "id", composedrats } });
-            HttpClient wc = new HttpClient();
-            var response= wc.GetAsync("http://dev.api.fuelrats.com/rats/?_id=" + composedrats).Result;
-            var content = response.Content;
-            string responsestring = content.ReadAsStringAsync().Result;
-            //Console.WriteLine("Raw response line:" + responsestring);
-            JObject jsondecoded = JObject.Parse(responsestring);
-            string cmdrname = (string)jsondecoded["data"][0]["CMDRname"];
-            //Console.WriteLine("Maybe cmdrname? " + cmdrname);
-            //Console.WriteLine("I have a jar of dirt! "+cdata);
-            /* if (cdata.CMDRname == null)
-                Console.WriteLine("Well, ratname is null..");
-            else
-                Console.WriteLine("Not null ratline!" + cdata.CMDRname); */
-            return cmdrname;
-            
             }
+
+            var matchedRats = MainWindow.Rats.Where(x => myrats.Contains(x.Key));
+            var missingRats = myrats.Except(matchedRats.Select(x => x.Value._Id));
+            foreach (string missingRat in missingRats)
+            {
+                Console.WriteLine("Cannot find rat '"+missingRat+"'");
+            }
+
+            IEnumerable<string> ratNames = matchedRats.Select(x => x.Value.CmdrName);
+
+            string rats = string.Join(", ", ratNames);
+            var index = rats.IndexOf(", ", StringComparison.Ordinal);
+            
+            if(index > 0)
+            {
+                string firstPart = rats.Substring(0, index);
+                string secondPart = rats.Substring(index+2);
+
+                rats = firstPart + " and " + secondPart;
+            }
+
+            return rats;
+        }
+
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
                 return "I am a negative rat";
@@ -196,6 +205,9 @@ namespace RatTracker_WPF
             InitializeComponent();
             checkLogDirectory();
         }
+
+        public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
+
         public void initWS()
         {
             appendStatus("Initializing WS connection to "+wsURL+"...");
@@ -868,6 +880,8 @@ namespace RatTracker_WPF
             {
                 appendStatus("Got a COL from Rescues query!");
                 RootObject rescues = JsonConvert.DeserializeObject<RootObject>(col);
+                await GetMissingRats(rescues);
+
                 /* appendStatus("rescues object has data: " + rescues.ToString());
                 foreach (var myrescue in rescues.data)
                 {
@@ -906,7 +920,33 @@ namespace RatTracker_WPF
                         appendStatus("It's the rats.");
                 }
             }
-            return;
+        }
+
+        // TODO: Move to API?
+        private static async Task GetMissingRats(RootObject rescues)
+        {
+            IEnumerable<string> ratIdsToGet = new List<string>();
+
+            var datas = from d in rescues.data
+                select d.rats;
+            ratIdsToGet = datas.Aggregate(ratIdsToGet, (current, list) => current.Concat(list));
+            ratIdsToGet = ratIdsToGet.Distinct().Except(Rats.Values.Select(x => x._Id));
+
+            foreach (var ratId in ratIdsToGet)
+            {
+                HttpClient wc = new HttpClient();
+                var res = await wc.GetAsync("http://dev.api.fuelrats.com/rats/?_id=" + ratId);
+                var content = res.Content;
+                string responsestring = content.ReadAsStringAsync().Result;
+
+                JObject response = JObject.Parse(responsestring);
+                List<JToken> tokens = response["data"].Children().ToList();
+
+                var rat = JsonConvert.DeserializeObject<Rat>(tokens[0].ToString());
+                Rats.TryAdd(ratId, rat);
+
+                Console.WriteLine("Got name for " + ratId + ": " + rat.CmdrName);
+            }
         }
 
         private void startButton_Click(object sender, RoutedEventArgs e)
