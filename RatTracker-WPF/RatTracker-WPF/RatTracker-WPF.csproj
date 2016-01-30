@@ -64,7 +64,7 @@
     <ManifestKeyFile>RatTracker-WPF_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>RatTracker-WPF_1_TemporaryKey.pfx</AssemblyOriginatorKeyFile>
@@ -114,6 +114,7 @@
     <Compile Include="APIWorker.cs" />
     <Compile Include="Models\DrillStatus.cs" />
     <Compile Include="Models\Rat.cs" />
+    <Compile Include="netLogParser.cs" />
     <Compile Include="Settings.xaml.cs">
       <DependentUpon>Settings.xaml</DependentUpon>
     </Compile>

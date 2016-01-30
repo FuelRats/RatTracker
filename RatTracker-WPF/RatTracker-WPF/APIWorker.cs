@@ -33,7 +33,7 @@ namespace RatTracker_WPF
             {
                 using (var client = new HttpClient())
                 {
-                    var content = new UriBuilder(apiURL +"/"+ action);
+                    var content = new UriBuilder(apiURL + action+"/");
                     content.Port = -1;
                     var query = HttpUtility.ParseQueryString(content.Query);
                     if (query==null)
