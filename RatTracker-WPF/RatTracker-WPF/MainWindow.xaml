@@ -10,6 +10,9 @@
     <Window.TaskbarItemInfo>
         <TaskbarItemInfo/>
     </Window.TaskbarItemInfo>
+    <Window.Resources>
+        <local:ratConverter x:Key="ratConverter"/>
+    </Window.Resources>
     <Grid>
         <StatusBar x:Name="mainStatusBar" HorizontalAlignment="Left" Height="2" Margin="-504.958,302.279,0,0" VerticalAlignment="Top" Width="9" RenderTransformOrigin="0.5,0.5">
             <StatusBar.RenderTransform>
@@ -29,49 +32,66 @@
         <TextBox x:Name="textBox" Margin="-627.958,275.279,0,0" TextWrapping="Wrap" Text="LogfileLocation" HorizontalAlignment="Left" Width="212" Height="16" VerticalAlignment="Top"/>
         <StackPanel HorizontalAlignment="Left" Height="260" Margin="-276.958,26.279,0,0" VerticalAlignment="Top" Width="245" d:LayoutOverrides="HorizontalAlignment"/>
         <Grid>
-            <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Right" Margin="0,19,9.333,0" Width="265.04" Height="239.779" VerticalAlignment="Top">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="142*"/>
+                <RowDefinition Height="147*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="163*"/>
+                <ColumnDefinition Width="299*"/>
+            </Grid.ColumnDefinitions>
+            <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Right" Margin="0,19,9,0" Width="265" Height="240" VerticalAlignment="Top" Grid.Column="1">
                 <Label x:Name="label1" Content="Active Case Information" HorizontalAlignment="Left" Height="27" Width="235" VerticalAlignment="Top" Margin="9,-1,0,0"/>
             </Border>
-            <Button x:Name="button" Content="Go On-Duty" Margin="0,0,25.958,15.388" Background="#FFEE1313" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111"/>
-            <TextBox x:Name="statusDisplay" Margin="10,36.279,279.373,207.907" TextWrapping="Wrap" Text="Status display" IsReadOnlyCaretVisible="True" VerticalScrollBarVisibility="Visible"/>
-            <Menu x:Name="menu_Copy" Height="19" VerticalAlignment="Top">
+            <Button x:Name="button" Content="Go On-Duty" Margin="0,0,26,15" Background="#FFEE1313" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111" Grid.Column="1" Grid.Row="1"/>
+            <TextBox x:Name="statusDisplay" Margin="10,36,279,5" TextWrapping="Wrap" Text="Status display" IsReadOnlyCaretVisible="True" VerticalScrollBarVisibility="Visible" Grid.ColumnSpan="2"/>
+            <Menu x:Name="menu_Copy" Height="19" VerticalAlignment="Top" Grid.ColumnSpan="2">
                 <MenuItem x:Name="Main_Menu1" Header="Main Menu" Click="Main_Menu_Click">
                     <MenuItem/>
                 </MenuItem>
-                <MenuItem Header="Settings"/>
+                <MenuItem Header="Settings" Click="MenuItem_Click"/>
             </Menu>
-            <Label x:Name="label2" Content="Client" Height="26" Margin="0,36.279,206.998,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="59"/>
-            <TextBox x:Name="clientName" Height="19" Margin="0,63.279,51.664,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" HorizontalAlignment="Right" Width="211.667"/>
-            <Label x:Name="label3" Content="System" Height="26" Margin="0,92.279,214.998,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="51"/>
-            <TextBox x:Name="systemName" Height="17" Margin="0,118.279,51.664,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" HorizontalAlignment="Right" Width="213.667"/>
-            <Label x:Name="label4" Content="Status" Height="26" Margin="0,140.279,211.998,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
-            <Button x:Name="ratButton" Content="Rats" Height="19.054" Margin="0,171.279,230.998,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="35"/>
-            <Button x:Name="frButton" Content="FR" HorizontalAlignment="Right" Height="19.054" Margin="0,171.279,191.999,0" VerticalAlignment="Top" Width="35" Background="Red" Click="frButton_Click"/>
-            <Button x:Name="wrButton" Content="WR" HorizontalAlignment="Right" Height="19.054" Margin="0,171.279,156.999,0" VerticalAlignment="Top" Width="35" Background="Red" Click="wrButton_Click"/>
-            <Button x:Name="bcnButton" Content="BCN" HorizontalAlignment="Right" Height="19.054" Margin="0,171.279,121.999,0" VerticalAlignment="Top" Width="35" Background="Red" Click="bcnButton_Click"/>
-            <Button x:Name="instButton" Content="INST" HorizontalAlignment="Right" Height="19.054" Margin="0,171.279,87.999,0" VerticalAlignment="Top" Width="35" Background="Red" Click="instButton_Click"/>
-            <Button x:Name="fueledButton" Content="Fueled" Height="19.054" Margin="0,171.279,20.625,0" VerticalAlignment="Top" Background="Red" Click="fueledButton_Click" HorizontalAlignment="Right" Width="44.334"/>
-            <Button x:Name="updateButton" Content="Upd" HorizontalAlignment="Right" Height="17" Margin="0,110.279,15,0" VerticalAlignment="Top" Width="36.664" Click="updateButton_Click"/>
-            <Button x:Name="currentButton" Content="CUR" HorizontalAlignment="Right" Height="18.055" Margin="0,127.279,15,0" VerticalAlignment="Top" Width="36.664" Click="currentButton_Click"/>
-            <Image x:Name="statusImage" HorizontalAlignment="Left" Margin="10,0,0,15.388" Width="28.709" Source="pack://siteoforigin:,,,/Resources/green_light.png" Panel.ZIndex="10" Height="27" VerticalAlignment="Bottom"/>
-            <Label x:Name="label" Content="Online" HorizontalAlignment="Left" Margin="43.709,0,0,15.388" Width="71" Height="27" VerticalAlignment="Bottom"/>
-            <Button x:Name="turnButton" Content="TURN" Margin="0,211.047,188.415,0" Background="Red" Height="17.453" VerticalAlignment="Top" HorizontalAlignment="Right" Width="37.958"/>
-            <Button x:Name="directButton" Content="DIRECT" Margin="0,211.047,138.374,0" Background="#FF2EFF00" Height="17.453" VerticalAlignment="Top" HorizontalAlignment="Right" Width="50.041"/>
-            <Button x:Name="stunButton" Content="STUN" Margin="0,211.047,226.373,0" Background="Red" Height="17.453" VerticalAlignment="Top" HorizontalAlignment="Right" Width="38.958"/>
-            <Button x:Name="syncButton" Content="SYNC" Margin="0,211.047,102.04,0" Background="Lime" Height="17.453" VerticalAlignment="Top" HorizontalAlignment="Right" Width="36.334"/>
-            <GroupBox x:Name="groupBox" Header="Connection Information" HorizontalAlignment="Right" Margin="0,267,10,176.686" Width="259.54"/>
-            <Grid HorizontalAlignment="Right" Margin="0,288,15,176.686" Width="248.331">
+            <Label x:Name="label2" Content="Client" Height="26" Margin="0,36,207,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="59" Grid.Column="1"/>
+            <TextBox x:Name="clientName" Height="19" Margin="0,63,51,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" HorizontalAlignment="Right" Width="212" Grid.Column="1"/>
+            <Label x:Name="label3" Content="System" Height="26" Margin="0,92,215,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="51" Grid.Column="1"/>
+            <TextBox x:Name="systemName" Height="17" Margin="0,118,51,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" HorizontalAlignment="Right" Width="214" Grid.Column="1"/>
+            <Label x:Name="label4" Content="Status" Height="26" Margin="0,140,212,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54" Grid.Column="1"/>
+            <Button x:Name="ratButton" Content="Rats" Height="19" Margin="0,171,231,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="35" Grid.Column="1"/>
+            <Button x:Name="frButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,171,192,0" VerticalAlignment="Top" Width="35" Background="Red" Click="frButton_Click" Grid.Column="1"/>
+            <Button x:Name="wrButton" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,171,157,0" VerticalAlignment="Top" Width="35" Background="Red" Click="wrButton_Click" Grid.Column="1"/>
+            <Button x:Name="bcnButton" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,171,122,0" VerticalAlignment="Top" Width="35" Background="Red" Click="bcnButton_Click" Grid.Column="1"/>
+            <Button x:Name="instButton" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,171,88,0" VerticalAlignment="Top" Width="35" Background="Red" Click="instButton_Click" Grid.Column="1"/>
+            <Button x:Name="fueledButton" Content="Fueled" Height="19" Margin="0,171,21,0" VerticalAlignment="Top" Background="Red" Click="fueledButton_Click" HorizontalAlignment="Right" Width="44" Grid.Column="1"/>
+            <Button x:Name="updateButton" Content="Upd" HorizontalAlignment="Right" Height="17" Margin="0,110,15,0" VerticalAlignment="Top" Width="37" Click="updateButton_Click" Grid.Column="1"/>
+            <Button x:Name="currentButton" Content="CUR" HorizontalAlignment="Right" Height="18" Margin="0,127,15,0" VerticalAlignment="Top" Width="37" Click="currentButton_Click" Grid.Column="1"/>
+            <Image x:Name="statusImage" HorizontalAlignment="Left" Margin="10,0,0,15" Width="29" Source="pack://siteoforigin:,,,/Resources/green_light.png" Panel.ZIndex="10" Height="27" VerticalAlignment="Bottom" Grid.Row="1"/>
+            <Label x:Name="label" Content="Online" HorizontalAlignment="Left" Margin="44,0,0,15" Width="71" Height="27" VerticalAlignment="Bottom" Grid.Row="1"/>
+            <Button x:Name="turnButton" Content="TURN" Margin="0,211,188,0" Background="Red" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="38" Grid.Column="1"/>
+            <Button x:Name="directButton" Content="DIRECT" Margin="0,211,138,0" Background="#FF2EFF00" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="50" Grid.Column="1"/>
+            <Button x:Name="stunButton" Content="STUN" Margin="0,211,226,0" Background="Red" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="39" Grid.Column="1"/>
+            <Button x:Name="syncButton" Content="SYNC" Margin="0,211,102,0" Background="Lime" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="36" Grid.Column="1"/>
+            <GroupBox x:Name="groupBox" Header="Connection Information" HorizontalAlignment="Right" Margin="0,267,10,177" Width="260" Grid.Column="1" Grid.RowSpan="2"/>
+            <Grid HorizontalAlignment="Right" Margin="0,4,15,177" Width="248" Grid.Column="1" Grid.Row="1">
                 <Label x:Name="label5" Content="Connection type:&#xD;&#xA;" Height="28" VerticalAlignment="Top" HorizontalAlignment="Left" Width="105"/>
                 <Label x:Name="label6" Content="STUN address:" Height="23" Margin="0,28,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="89"/>
                 <Label x:Name="connTypeLabel" Content="Portmapped direct" Height="25" Margin="115.331,0,10,0" VerticalAlignment="Top"/>
                 <Label x:Name="stunAddrLabel" Content="0.0.0.0:5555" Margin="115.331,27.314,13.791,55.686"/>
                 <Label x:Name="turnAddrLabel" Content="123.234.123.234:58102" Height="28" Margin="115.331,0,0,27.686" VerticalAlignment="Bottom"/>
             </Grid>
-            <Label x:Name="label7" Content="TURN server:" HorizontalAlignment="Right" Height="23" Margin="0,0,172.331,207.907" VerticalAlignment="Bottom" Width="91"/>
-            <Button x:Name="startButton" Content="Start" HorizontalAlignment="Right" Height="23" Margin="0,63.279,20,0" VerticalAlignment="Top" Width="31.664" Click="startButton_Click"/>
-            <Label x:Name="label8" Content="Current system:" HorizontalAlignment="Left" Height="24" Margin="25,404,0,0" VerticalAlignment="Top" Width="98"/>
-            <Label x:Name="systemNameLabel" Content="Unknown" HorizontalAlignment="Left" Height="24" Margin="128,404,0,0" VerticalAlignment="Top" Width="250"/>
-            <DataGrid x:Name="rescueGrid" HorizontalAlignment="Left" Height="145" Margin="378,401,0,0" VerticalAlignment="Top" Width="267"/>
+            <Label x:Name="label7" Content="TURN server:" HorizontalAlignment="Right" Height="23" Margin="0,0,172,208" VerticalAlignment="Bottom" Width="91" Grid.Column="1" Grid.Row="1"/>
+            <Button x:Name="startButton" Content="Start" HorizontalAlignment="Right" Height="23" Margin="0,63,20,0" VerticalAlignment="Top" Width="32" Click="startButton_Click" Grid.Column="1"/>
+            <Label x:Name="label8" Content="Current system:" HorizontalAlignment="Left" Height="24" Margin="335,127,0,0" VerticalAlignment="Top" Width="98" Grid.Column="1" Grid.Row="1"/>
+            <Label x:Name="systemNameLabel" Content="Unknown" HorizontalAlignment="Left" Height="24" Margin="335,151,0,0" VerticalAlignment="Top" Width="250" Grid.Column="1" Grid.Row="1"/>
+            <DataGrid x:Name="rescueGrid" Margin="10,18,279,32" ItemsSource="{Binding}" IsReadOnly="True" AutoGenerateColumns="False" Grid.ColumnSpan="2" Grid.Row="1">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Binding="{Binding client}" ClipboardContentBinding="{x:Null}" Header="Client"/>
+                    <DataGridTextColumn Binding="{Binding rats, Converter={StaticResource ratConverter}}" Header="Rats"/>
+                    <DataGridTextColumn Binding="{Binding active}" ClipboardContentBinding="{x:Null}" Header="Active"/>
+                    <DataGridTextColumn Binding="{Binding open}" ClipboardContentBinding="{x:Null}" Header="Open"/>
+                    <DataGridTextColumn Binding="{Binding system}" ClipboardContentBinding="{x:Null}" Header="System"/>
+                    <DataGridCheckBoxColumn Binding="{Binding codeRed}" ClipboardContentBinding="{x:Null}" Header="Code Red"/>
+                </DataGrid.Columns>
+            </DataGrid>
         </Grid>
     </Grid>
 </Window>

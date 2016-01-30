@@ -25,7 +25,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("G:\\Frontier\\EDLaunch\\")]
         public string EDPath {
             get {
                 return ((string)(this["EDPath"]));
@@ -37,7 +37,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("G:\\Frontier\\EDLaunch\\Products\\elite-dangerous-64\\Logs")]
         public string NetLogPath {
             get {
                 return ((string)(this["NetLogPath"]));
@@ -49,7 +49,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("mecha@squeak.net")]
         public string APIUsername {
             get {
                 return ((string)(this["APIUsername"]));
@@ -80,6 +80,30 @@ namespace RatTracker_WPF.Properties {
             }
             set {
                 this["SetupComplete"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://dev.api.fuelrats.com/")]
+        public string APIURL {
+            get {
+                return ((string)(this["APIURL"]));
+            }
+            set {
+                this["APIURL"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool EnableTTS {
+            get {
+                return ((bool)(this["EnableTTS"]));
+            }
+            set {
+                this["EnableTTS"] = value;
             }
         }
     }

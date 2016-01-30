@@ -3,19 +3,25 @@
   <Profiles />
   <Settings>
     <Setting Name="EDPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">G:\Frontier\EDLaunch\</Value>
     </Setting>
     <Setting Name="NetLogPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">G:\Frontier\EDLaunch\Products\elite-dangerous-64\Logs</Value>
     </Setting>
     <Setting Name="APIUsername" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">mecha@squeak.net</Value>
     </Setting>
     <Setting Name="APIPassword" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="SetupComplete" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="APIURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://dev.api.fuelrats.com/</Value>
+    </Setting>
+    <Setting Name="EnableTTS" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
     </Setting>
   </Settings>
 </SettingsFile>

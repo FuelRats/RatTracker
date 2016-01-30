@@ -2,32 +2,38 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Threading;
+using System.IO;
+using System.Net.Http;
+using System.Data;
+using System.Threading;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using System.Collections.Specialized;
+using System.Web;
+using SpeechLib;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using WebSocket4Net;
+using Ookii.Dialogs.Wpf;
+
+// May be able to drop these.
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Windows.Threading;
-using System.IO;
-using System.Net;
-using System.Net.Http;
 using System.Reflection;
 using System.Diagnostics;
 using System.Security.Permissions;
-using System.Threading;
 using System.ComponentModel;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
-using Newtonsoft.Json;
-using System.Collections.Specialized;
-using System.Web;
-using WebSocket4Net;
-using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
+using System.Net;
+using System.Globalization;
 
 namespace RatTracker_WPF
 {
@@ -35,7 +41,81 @@ namespace RatTracker_WPF
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     /// 
+    public class ratConverter : IValueConverter
+    {
+            public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            {
+            List<string> myrats = value as List<string>;
+            if (myrats == null)
+                return "I am a null rat.";
+            //APIWorker aw = new APIWorker();
+            string composedrats = string.Join(",", myrats);
+            //String col = await aw.queryAPI("rats", new Dictionary<string, string>() { { "id", composedrats } });
+            HttpClient wc = new HttpClient();
+            var response= wc.GetAsync("http://dev.api.fuelrats.com/rats/?_id=" + composedrats).Result;
+            var content = response.Content;
+            string responsestring = content.ReadAsStringAsync().Result;
+            //Console.WriteLine("Raw response line:" + responsestring);
+            JObject jsondecoded = JObject.Parse(responsestring);
+            string cmdrname = (string)jsondecoded["data"][0]["CMDRname"];
+            //Console.WriteLine("Maybe cmdrname? " + cmdrname);
+            //Console.WriteLine("I have a jar of dirt! "+cdata);
+            /* if (cdata.CMDRname == null)
+                Console.WriteLine("Well, ratname is null..");
+            else
+                Console.WriteLine("Not null ratline!" + cdata.CMDRname); */
+            return cmdrname;
+            
+            }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+                return "I am a negative rat";
+        }
+    }
+        public class Links
+    {
+        public string self { get; set; }
+    }
 
+    public class Meta
+    {
+        public int count { get; set; }
+        public int limit { get; set; }
+        public int offset { get; set; }
+        public int total { get; set; }
+    }
+
+    public class Client
+    {
+    }
+
+    public class Datum
+    {
+        public bool active { get; set; }
+        public bool archive { get; set; }
+        public Client client { get; set; }
+        public bool codeRed { get; set; }
+        public string createdAt { get; set; }
+        public bool epic { get; set; }
+        public string lastModified { get; set; }
+        public bool open { get; set; }
+        public string notes { get; set; }
+        public string platform { get; set; }
+        public List<string> quotes { get; set; }
+        public List<string> rats { get; set; }
+        public List<string> tempRats { get; set; }
+        public bool successful { get; set; }
+        public string system { get; set; }
+        public string _id { get; set; }
+        public float score { get; set; }
+    }
+
+    public class RootObject 
+    {
+        public Links links { get; set; }
+        public Meta meta { get; set; }
+        public List<Datum> data { get; set; }
+    }
     public class netLogFile
     {
         public string netLogFileName;
@@ -89,7 +169,7 @@ namespace RatTracker_WPF
     {
         public bool stopNetLog;
         bool onDuty=false;
-        string logDirectory="G:\\Frontier\\EDLaunch\\Products\\elite-dangerous-64\\Logs";
+        string logDirectory = Properties.Settings.Default.NetLogPath;
         FileSystemWatcher watcher;
         FileInfo logFile;
         long fileOffset =0L;
@@ -100,14 +180,15 @@ namespace RatTracker_WPF
         APIWorker apworker;
         private static string wsURL = "ws://dev.api.fuelrats.com/";
         private static string edsmURL = "http://www.edsm.net/api-v1/";
-        internal static MainWindow Main;
         WebSocket ws;
+        SpVoice voice = new SpVoice();
+        string currentSystem;
+        RootObject activeRescues = new RootObject();
 
         public MainWindow()
         {
             InitializeComponent();
             checkLogDirectory();
-            Main = this;
         }
         public void initWS()
         {
@@ -243,6 +324,7 @@ namespace RatTracker_WPF
                         appendStatus("Pending invite from CMDR " + System.Text.Encoding.UTF8.GetString(byteenc) + "detected!");
                         var disp = Dispatcher;
                         Brush frbrush=null;
+                        voice.Speak("You have a pending friend invite from commander " + System.Text.Encoding.UTF8.GetString(byteenc));
                         disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => { frbrush = frButton.Background; }));
                         if (frbrush != Brushes.Green)
                         { /* Dear gods, you're a cheap hack, aren't you? */
@@ -259,6 +341,7 @@ namespace RatTracker_WPF
                         if (xdoc.Element("data").Element("OK").Value.Contains("Invitation accepted"))
                         {
                             appendStatus("Friend request accepted!");
+                            voice.Speak("Friend request accepted.");
                             var disp = Dispatcher;
                             disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => frButton.Background = Brushes.Green));
                         }
@@ -282,7 +365,7 @@ namespace RatTracker_WPF
             {
                 XDocument xdoc = XDocument.Parse(wingInvite);
                 appendStatus("Successful XML parse.");
-
+                voice.Speak("Wing invite detected.");
                 IEnumerable<XElement> wing = xdoc.Descendants("commander");
                 foreach (var wingdata in wing)
                 {
@@ -319,10 +402,16 @@ namespace RatTracker_WPF
         }
         private async void  checkLogDirectory()
         {
-            NameValueCollection col;
+            Object col;
             if(logDirectory==null | logDirectory == "")
             {
                 MessageBox.Show("Error: No log directory is specified, please do so before attempting to go on duty.");
+                return;
+            }
+            if (!Directory.Exists(Properties.Settings.Default.NetLogPath))
+            {
+                MessageBox.Show("Error: Couldn't find E:D Netlog directory: " + Properties.Settings.Default.NetLogPath + ". Please ensure that it is correct in Settings.");
+                return;
             }
             textBox.Text = logDirectory;
             statusDisplay.Text = "Beginning to watch " + logDirectory + " for changes...";
@@ -350,11 +439,15 @@ namespace RatTracker_WPF
             appendStatus("Call to APIworker returning :"+apworker.connectAPI().ToString());
             //NameValueCollection col = await apworker.queryAPI("login", new List<KeyValuePair<string, string>>());
             col = await apworker.sendAPI("login", logindata);
-            if (col.Count == 0)
+            if (col.ToString() == null)
                 appendStatus("Login returned NULL");
             else
-                appendStatus("From col I have :" + col[0]);
-            //appendStatus("I'm after queryAPI:"+col.ToString());
+            {
+                //appendStatus("From col I have :" + col.ToString());
+                appendStatus("Login returned: " + col);
+                
+            }
+            appendStatus("I'm after queryAPI:"+col.ToString());
             initWS();
             openWS();
             readLogfile(logFile.FullName);
@@ -424,6 +517,7 @@ namespace RatTracker_WPF
                     if (stopSnooping == false)
                     {
                         appendStatus("Client connectivity detection complete. You have a direct port mapped address that E:D can use, and should be connectable.");
+
                     }
                 }
             }
@@ -443,9 +537,9 @@ namespace RatTracker_WPF
                     if (fileOffset == 0L)
                     {
                         appendStatus("First peek...");
-                        if (sr.BaseStream.Length > 30000)
+                        if (sr.BaseStream.Length > 5000)
                         {
-                            sr.BaseStream.Seek(-30000, SeekOrigin.End); /* First peek into the file, rewind a bit and scan from there. */
+                            sr.BaseStream.Seek(-5000, SeekOrigin.End); /* First peek into the file, rewind a bit and scan from there. */
                         }
                     }
                     else
@@ -512,13 +606,14 @@ namespace RatTracker_WPF
                 disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => wrButton.Background = Brushes.Yellow));
 
             }
-            if (line.Contains("JoinSession:WingSession:"))
+            if (line.Contains("JoinSession:WingSession:") && line.Contains(myClient.clientIP.ToString()))
             {
                 appendStatus("Prewing communication underway...");
             }
             if (line.Contains("TalkChannelManager::OpenOutgoingChannelTo"))
             {
                 appendStatus("Wing established, opening voice comms.");
+                voice.Speak("Wing established.");
                 Dispatcher disp = Dispatcher;
                 disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => wrButton.Background = Brushes.Green));
 
@@ -530,6 +625,7 @@ namespace RatTracker_WPF
             if (line.Contains("NormalFlight"))
             {
                 appendStatus("Drop to normal space detected.");
+                voice.Speak("Dropping to normal space.");
             }
             if(line.Contains("CLAIMED ------------vvv"))
             {
@@ -543,10 +639,18 @@ namespace RatTracker_WPF
             {
                 appendStatus("Session join message seen.");
             }
+            if (line.Contains("JoinSession:BeaconSession") && line.Contains(myClient.clientIP.ToString()))
+            {
+                appendStatus("Client's Beacon in sight.");
+                
+            }
         }
 
         private async void triggerSystemChange(string value)
         {
+            Dispatcher disp = Dispatcher;
+            if (value == currentSystem)
+                return;
             try
             {
                 using (var client = new HttpClient())
@@ -562,12 +666,15 @@ namespace RatTracker_WPF
                     appendStatus("Response string:" + responseString);
                     NameValueCollection temp = new NameValueCollection();
                     dynamic m = JsonConvert.DeserializeObject(responseString);
-                    Dispatcher disp = Dispatcher;
+                    voice.Speak("Welcome to " + value);
+                    currentSystem = value;
                     await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => systemNameLabel.Content = value));
                     if (responseString.Contains("-1"))
                         await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => systemNameLabel.Foreground = Brushes.Red));
                     else
                         await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => systemNameLabel.Foreground = Brushes.Yellow));
+                    if(responseString.Contains("coords"))
+                        await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => systemNameLabel.Foreground = Brushes.Green));
                     return;
                 }
             }
@@ -742,9 +849,58 @@ namespace RatTracker_WPF
             systemName.Text = "Fuelum";
         }
 
-        private void updateButton_Click(object sender, RoutedEventArgs e)
+        private async void updateButton_Click(object sender, RoutedEventArgs e)
         {
-            appendStatus("Sending updated client system location: " + systemName.Text);
+            appendStatus("Trying to fetch rescues...");
+            Dictionary<string,string> data = new Dictionary<string, string>();
+            data.Add("rats", "56a8fcc7abdd7cc91123fd25");
+            String col = await apworker.queryAPI("rescues",data);
+            
+            if (col == null)
+                appendStatus("No COL returned from Rescues.");
+            else
+            {
+                appendStatus("Got a COL from Rescues query!");
+                RootObject rescues = JsonConvert.DeserializeObject<RootObject>(col);
+                /* appendStatus("rescues object has data: " + rescues.ToString());
+                foreach (var myrescue in rescues.data)
+                {
+                    appendStatus("Client: " + myrescue.client.ToString()+" Rats:"+myrescue.tempRats.ToString());
+                    
+                } */
+                /* Trying this one more time from the designer... 
+                DataGridTextColumn colClient = new DataGridTextColumn();
+                DataGridTextColumn colRats = new DataGridTextColumn();
+                DataGridTextColumn colActive = new DataGridTextColumn();
+                colClient.Header = "tempRats";
+                colClient.Binding = new Binding("client");
+                colRats.Header = "Rats";
+                colRats.Binding=new Binding("tempRats");
+                colActive.Header = "Active";
+                colActive.Binding = new Binding("active");
+                rescueGrid.Columns.Add(colClient);
+                rescueGrid.Columns.Add(colRats);
+                rescueGrid.Columns.Add(colActive);
+                */
+                rescueGrid.ItemsSource = rescues.data;
+                rescueGrid.AutoGenerateColumns = false;
+                /* rescueGrid.Columns[0].Visibility = System.Windows.Visibility.Hidden;
+                rescueGrid.Columns[1].Visibility = System.Windows.Visibility.Hidden;
+                rescueGrid.Columns[3].Visibility = System.Windows.Visibility.Hidden;
+                rescueGrid.Columns[5].Visibility = System.Windows.Visibility.Hidden;
+                rescueGrid.Columns[6].Visibility = System.Windows.Visibility.Hidden;
+                rescueGrid.Columns[7].Visibility = System.Windows.Visibility.Hidden;
+                rescueGrid.Columns[8].Visibility = System.Windows.Visibility.Hidden;
+                rescueGrid.Columns[9].Visibility = System.Windows.Visibility.Hidden;
+                rescueGrid.Columns[10].Visibility = System.Windows.Visibility.Hidden; */
+                foreach (DataGridColumn column in rescueGrid.Columns)
+                {
+                    appendStatus("Column:" + column.Header);
+                    if ((string)column.Header == "rats")
+                        appendStatus("It's the rats.");
+                }
+            }
+            return;
         }
 
         private void startButton_Click(object sender, RoutedEventArgs e)
@@ -757,6 +913,12 @@ namespace RatTracker_WPF
             bcnButton.Background = Brushes.Red;
             fueledButton.Background = Brushes.Red;
 
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            wndSettings swindow = new wndSettings();
+            swindow.Show();
         }
     }
 }

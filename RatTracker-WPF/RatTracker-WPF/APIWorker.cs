@@ -9,6 +9,7 @@ using System.Web;
 using System.Net.Http;
 using System.Diagnostics;
 using Newtonsoft.Json;
+using System.Data;
 
 namespace RatTracker_WPF
 {
@@ -26,7 +27,7 @@ namespace RatTracker_WPF
         /*
          * queryAPI sends a GET request to the API. Kindasorta deprecated behavior.
          */
-        public async Task<NameValueCollection> queryAPI(string action, List<KeyValuePair<String, String>> data)
+        public async Task<String> queryAPI(string action, Dictionary<string, string> data)
         {
             try
             {
@@ -42,7 +43,7 @@ namespace RatTracker_WPF
                         query[entry.Key] = entry.Value;
                     }
                     content.Query = query.ToString();
-                    //appendStatus("Built query string:" + content.ToString());
+                    Console.WriteLine("Built query string:" + content.ToString());
                     var response = await client.GetAsync(content.ToString());
                     //appendStatus("AsyncPost sent.");
                     if (response.IsSuccessStatusCode)
@@ -54,7 +55,7 @@ namespace RatTracker_WPF
                     else
                     {
                         Console.WriteLine("HTTP request returned an error:" + response.StatusCode);
-                        return new NameValueCollection();
+                        return "";
                     }
                     
                 }
@@ -62,33 +63,19 @@ namespace RatTracker_WPF
             catch (Exception ex)
             {
                 Console.WriteLine("Exception in QueryAPI: " + ex.Message);
-                return new NameValueCollection();
+                return "";
             }
             /* Again, waiting for Trezy. For now, return a placeholder field. */
         }
         /* apiGetResponse is called by queryAPI asynchronously when the response arrives from the
          * server. This is then passed as a NVC to the main class.
          * TODO: Recode to use IDictionary.
+         * REDONE: Now returns the JSON itself, do parsing in main.
          */
-        public NameValueCollection apiGetResponse(string data)
+        public string apiGetResponse(string data)
         {
-            Console.WriteLine("apiGetResponse has string:" + data);
-            try {
-                NameValueCollection temp = new NameValueCollection();
-                object m = JsonConvert.DeserializeObject(data);
-                foreach (PropertyDescriptor pd in TypeDescriptor.GetProperties(m)) {
-                    string value = pd.GetValue(m).ToString();
-                    Console.WriteLine("Add value " + pd.Name + ": " + value);
-                    temp.Add(pd.Name, value);
-                }
-
-                return temp;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error in apiGetResponse:" + ex.Message);
-                return new NameValueCollection();
-            }
+            //Console.WriteLine("apiGetResponse has string:" + data);
+            return data;
         }
         public bool connectAPI()
         {
@@ -100,24 +87,14 @@ namespace RatTracker_WPF
         {
             Process.Start(url);
         }
-        public NameValueCollection apiResponse(string data)
+        public string apiResponse(string data)
         {
-            NameValueCollection temp= new NameValueCollection();
-            Console.WriteLine("Task apiResponse processing:" + data);
-            object m = JsonConvert.DeserializeObject(data);
-            foreach (PropertyDescriptor pd in TypeDescriptor.GetProperties(m))
-            {
-                string value = pd.GetValue(m).ToString();
-                Console.WriteLine("Add value " + pd.Name + ": " + value);
-                temp.Add(pd.Name, value);
-            }
-
-            return temp;
+            return data;
         }
         /* sendAPI is called from the main class to send POST requests to the API.
          * Primarily used for login, as most of what we need to do is handled through WS.
          */
-        public async Task<NameValueCollection> sendAPI(string action, List<KeyValuePair<string, string>> data)
+        public async Task<Object> sendAPI(string action, List<KeyValuePair<string, string>> data)
         {
             Console.WriteLine("SendAPI was called with action" + action);
             try
@@ -136,7 +113,7 @@ namespace RatTracker_WPF
                     else
                     {
                         Console.WriteLine("HTTP request returned an error:" + response.StatusCode);
-                        return new NameValueCollection();
+                        return new Object();
                     }
                     //connectWS();
                 }
@@ -144,7 +121,7 @@ namespace RatTracker_WPF
             catch (Exception ex)
             {
                 Console.WriteLine("Well, that didn't go well. SendAPI exception: " + ex.Message);
-                return new NameValueCollection();
+                return new Object();
             }
         }
 
