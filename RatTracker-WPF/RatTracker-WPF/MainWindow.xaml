@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:RatTracker_WPF"
         xmlns:Properties="clr-namespace:RatTracker_WPF.Properties" x:Class="RatTracker_WPF.MainWindow"
         mc:Ignorable="d"
-        Title="Fuel Rats RatTracker" Height="608.686" Width="931.54" FontFamily="Rockwell">
+        Title="Fuel Rats RatTracker" Height="633.686" Width="931.54" FontFamily="Rockwell">
     <Window.TaskbarItemInfo>
         <TaskbarItemInfo/>
     </Window.TaskbarItemInfo>
@@ -72,7 +72,7 @@
             <Button x:Name="stunButton" Content="STUN" Margin="0,211,226,0" Background="Red" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="39" Grid.Column="1"/>
             <Button x:Name="syncButton" Content="SYNC" Margin="0,211,102,0" Background="Lime" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="36" Grid.Column="1"/>
             <GroupBox x:Name="groupBox" Header="Connection Information" HorizontalAlignment="Right" Margin="0,267,10,177" Width="260" Grid.Column="1" Grid.RowSpan="2"/>
-            <Grid HorizontalAlignment="Right" Margin="0,4,15,177" Width="248" Grid.Column="1" Grid.Row="1">
+            <Grid HorizontalAlignment="Right" Margin="0,4,15,152" Width="248" Grid.Column="1" Grid.Row="1">
                 <Label x:Name="label5" Content="Connection type:&#xD;&#xA;" Height="28" VerticalAlignment="Top" HorizontalAlignment="Left" Width="105"/>
                 <Label x:Name="label6" Content="STUN address:" Height="23" Margin="0,28,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="89"/>
                 <Label x:Name="connTypeLabel" Content="Portmapped direct" Height="25" Margin="115.331,0,10,0" VerticalAlignment="Top"/>
@@ -83,7 +83,7 @@
             <Button x:Name="startButton" Content="Start" HorizontalAlignment="Right" Height="23" Margin="0,63,20,0" VerticalAlignment="Top" Width="32" Click="startButton_Click" Grid.Column="1"/>
             <Label x:Name="label8" Content="Current system:" HorizontalAlignment="Left" Height="24" Margin="335,127,0,0" VerticalAlignment="Top" Width="98" Grid.Column="1" Grid.Row="1"/>
             <Label x:Name="systemNameLabel" Content="Unknown" HorizontalAlignment="Left" Height="24" Margin="335,151,0,0" VerticalAlignment="Top" Width="250" Grid.Column="1" Grid.Row="1"/>
-            <DataGrid x:Name="rescueGrid" Margin="10,18,279,32" ItemsSource="{Binding}" IsReadOnly="True" AutoGenerateColumns="False" Grid.ColumnSpan="2" Grid.Row="1">
+            <DataGrid x:Name="rescueGrid" Margin="10,18,279,10" ItemsSource="{Binding}" IsReadOnly="True" AutoGenerateColumns="False" Grid.ColumnSpan="2" Grid.Row="1">
                 <DataGrid.Columns>
                     <DataGridTextColumn Binding="{Binding client}" ClipboardContentBinding="{x:Null}" Header="Client"/>
                     <DataGridTextColumn Binding="{Binding rats, Converter={StaticResource ratConverter}}" Header="Rats"/>
