@@ -34,10 +34,10 @@ namespace RatTracker_WPF
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static readonly string wsURL = "ws://dev.api.fuelrats.com/";
+        private string wsURL = "ws://dev.api.fuelrats.com/";
         private static readonly string edsmURL = "http://www.edsm.net/api-v1/";
-        private readonly string logDirectory = Settings.Default.NetLogPath;
-        private readonly ClientInfo myClient = new ClientInfo();
+        private string logDirectory = Settings.Default.NetLogPath;
+        private ClientInfo myClient = new ClientInfo();
         private readonly SpVoice voice = new SpVoice();
         private RootObject activeRescues = new RootObject();
         private APIWorker apworker;
@@ -299,7 +299,6 @@ namespace RatTracker_WPF
                 return;
             }
 
-            TextBox.Text = logDirectory;
             StatusDisplay.Text = "Beginning to watch " + logDirectory + " for changes...";
             if (watcher == null)
             {
@@ -324,11 +323,8 @@ namespace RatTracker_WPF
             logindata.Add(new KeyValuePair<string, string>("password", "password"));
             apworker = new APIWorker();
             AppendStatus("Call to APIworker returning :" + apworker.connectAPI());
-            //NameValueCollection col = await apworker.queryAPI("login", new List<KeyValuePair<string, string>>());
             object col = await apworker.sendAPI("login", logindata);
-            //appendStatus("From col I have :" + col.ToString());
             AppendStatus("Login returned: " + col);
-            AppendStatus("I'm after queryAPI:" + col);
             InitWs();
             OpenWs();
             ReadLogfile(logFile.FullName);
@@ -782,6 +778,7 @@ namespace RatTracker_WPF
             AppendStatus("Sending fake rescue request!");
             IDictionary<string, string> req = new Dictionary<string, string>();
             req.Add("open", "true");
+            //req.Add("_id", myRescue.id); /* TODO: Must hold a handle to my rescue ID somewhere to identify for API interaction */
             SendWs("rescues", req);
         }
 
