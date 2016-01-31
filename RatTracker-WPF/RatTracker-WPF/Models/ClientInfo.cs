@@ -17,6 +17,7 @@ namespace RatTracker_WPF.Models
         public bool Beacon { get; set; }
         public bool InSystem { get; set; }
         public bool InInstance { get; set; }
+        public bool Fueled { get; set; }
     }
 
 

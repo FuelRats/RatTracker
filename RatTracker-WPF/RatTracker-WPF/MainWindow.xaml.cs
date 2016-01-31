@@ -691,18 +691,7 @@ namespace RatTracker_WPF
 
         private void frButton_Click(object sender, RoutedEventArgs e)
         {
-            switch (myClient.FriendRequest)
-            {
-                case RequestState.NotRecieved:
-                    myClient.FriendRequest = RequestState.Recieved;
-                    break;
-                case RequestState.Recieved:
-                    myClient.FriendRequest = RequestState.Accepted;
-                    break;
-                case RequestState.Accepted:
-                    myClient.FriendRequest = RequestState.NotRecieved;
-                    break;
-            }
+            myClient.FriendRequest = GetNextState(myClient.FriendRequest);
 
             SetBackgroundColour(myClient.FriendRequest, FrButton);
 
@@ -719,6 +708,21 @@ namespace RatTracker_WPF
                     data = new Dictionary<string, string> {{"ReceivedFR", "false"}};
                     SendWs("FriendsRequest", data);
                     break;
+            }
+        }
+
+        private RequestState GetNextState(RequestState state)
+        {
+            switch (state)
+            {
+                case RequestState.NotRecieved:
+                    return RequestState.Recieved;
+                case RequestState.Recieved:
+                    return RequestState.Accepted;
+                case RequestState.Accepted:
+                    return RequestState.NotRecieved;
+                default:
+                    return RequestState.NotRecieved;
             }
         }
 
@@ -742,33 +746,49 @@ namespace RatTracker_WPF
 
         private void wrButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Equals(WrButton.Background, Brushes.Red))
+            myClient.WingRequest = GetNextState(myClient.WingRequest);
+            SetBackgroundColour(myClient.WingRequest, WrButton);
+
+            IDictionary<string, string> data;
+            switch (myClient.FriendRequest)
             {
-                AppendStatus("Sending Wing Request acknowledgement.");
-                IDictionary<string, string> data = new Dictionary<string, string>();
-                data.Add("ReceivedWR", "true");
-                SendWs("WingRequest", data);
-                WrButton.Background = Brushes.Green;
-                /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+                case RequestState.Accepted:
+                    AppendStatus("Sending Wing Request acknowledgement.");
+                    data = new Dictionary<string, string> {{"ReceivedWR", "true"}};
+                    SendWs("WingRequest", data);
+                    break;
+                case RequestState.NotRecieved:
+                    AppendStatus("Cancelled WR status.");
+                    data = new Dictionary<string, string> {{"ReceivedWR", "false"}};
+                    SendWs("WingRequest", data);
+                    break;
+            }
+        }
+
+        private void sysButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.InSystem = !myClient.InSystem;
+
+            if (myClient.InSystem)
+            {
+                AppendStatus("Sending System acknowledgement.");
+                SysButton.Background = Brushes.LightGreen;
             }
             else
             {
-                AppendStatus("Cancelled WR status.");
-                IDictionary<string, string> data = new Dictionary<string, string>();
-                data.Add("ReceivedWR", "false");
-                SendWs("WingRequest", data);
-
-                WrButton.Background = Brushes.Red;
+                AppendStatus("Cancelling System status.");
+                SysButton.Background = Brushes.Red;
             }
         }
 
         private void bcnButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Equals(BcnButton.Background, Brushes.Red))
+            myClient.Beacon = !myClient.Beacon;
+
+            if (myClient.Beacon)
             {
                 AppendStatus("Sending Beacon acknowledgement.");
-                BcnButton.Background = Brushes.Green;
-                /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+                BcnButton.Background = Brushes.LightGreen;
             }
             else
             {
@@ -779,11 +799,11 @@ namespace RatTracker_WPF
 
         private void instButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Equals(InstButton.Background, Brushes.Red))
+            myClient.InInstance = !myClient.InInstance;
+            if (myClient.InInstance)
             {
                 AppendStatus("Sending Good Instance message.");
-                InstButton.Background = Brushes.Green;
-                /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+                InstButton.Background = Brushes.LightGreen;
             }
             else
             {
@@ -794,17 +814,18 @@ namespace RatTracker_WPF
 
         private void fueledButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Equals(FueledButton.Background, Brushes.Red))
+            myClient.Fueled = !myClient.Fueled;
+            if (myClient.Fueled)
             {
                 AppendStatus("Reporting fueled status, requesting paperwork link...");
-                FueledButton.Background = Brushes.Green;
-                /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+                FueledButton.Background = Brushes.LightGreen;
             }
             else
             {
                 AppendStatus("Fueled status now negative.");
                 FueledButton.Background = Brushes.Red;
             }
+
             AppendStatus("Sending fake rescue request!");
             IDictionary<string, string> req = new Dictionary<string, string>();
             req.Add("open", "true");
@@ -902,5 +923,6 @@ namespace RatTracker_WPF
             wndSettings swindow = new wndSettings();
             swindow.Show();
         }
+
     }
 }
