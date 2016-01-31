@@ -37,7 +37,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -112,9 +112,20 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="APIWorker.cs" />
+    <Compile Include="Models\Client.cs" />
+    <Compile Include="Models\ClientInfo.cs" />
+    <Compile Include="Converter\ClientConverter.cs" />
+    <Compile Include="Models\Datum.cs" />
+    <Compile Include="Models\Friend.cs" />
+    <Compile Include="Models\Meta.cs" />
     <Compile Include="Models\DrillStatus.cs" />
+    <Compile Include="Models\Links.cs" />
     <Compile Include="Models\Rat.cs" />
-    <Compile Include="netLogParser.cs" />
+    <Compile Include="NetLogFile.cs" />
+    <Compile Include="NetLogParser.cs" />
+    <Compile Include="Converter\RatConverter.cs" />
+    <Compile Include="Models\Rescue.cs" />
+    <Compile Include="Models\RootObject.cs" />
     <Compile Include="Settings.xaml.cs">
       <DependentUpon>Settings.xaml</DependentUpon>
     </Compile>
@@ -200,6 +211,7 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>(if exist "$(TargetDir)*old.pdb" del "$(TargetDir)*old.pdb") &amp; (if exist "$(TargetDir)*.pdb" ren "$(TargetDir)*.pdb" *.old.pdb)
