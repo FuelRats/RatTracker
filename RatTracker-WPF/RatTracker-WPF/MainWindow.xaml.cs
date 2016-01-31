@@ -691,22 +691,52 @@ namespace RatTracker_WPF
 
         private void frButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Equals(FrButton.Background, Brushes.Red))
+            switch (myClient.FriendRequest)
             {
-                FrButton.Background = Brushes.Green;
-                AppendStatus("Sending Friend Request acknowledgement.");
-                IDictionary<string, string> data = new Dictionary<string, string>();
-                data.Add("ReceivedFR", "true");
-                SendWs("FriendRequest", data);
-                /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+                case RequestState.NotRecieved:
+                    myClient.FriendRequest = RequestState.Recieved;
+                    break;
+                case RequestState.Recieved:
+                    myClient.FriendRequest = RequestState.Accepted;
+                    break;
+                case RequestState.Accepted:
+                    myClient.FriendRequest = RequestState.NotRecieved;
+                    break;
             }
-            else
+
+            SetBackgroundColour(myClient.FriendRequest, FrButton);
+
+            IDictionary<string, string> data;
+            switch (myClient.FriendRequest)
             {
-                AppendStatus("Cancelling FR status.");
-                FrButton.Background = Brushes.Red;
-                IDictionary<string, string> data = new Dictionary<string, string>();
-                data.Add("ReceivedFR", "false");
-                SendWs("FriendsRequest", data);
+                case RequestState.Accepted:
+                    AppendStatus("Sending Friend Request acknowledgement.");
+                    data = new Dictionary<string, string> {{"ReceivedFR", "true"}};
+                    SendWs("FriendRequest", data);
+                    break;
+                case RequestState.NotRecieved:
+                    AppendStatus("Cancelling FR status.");
+                    data = new Dictionary<string, string> {{"ReceivedFR", "false"}};
+                    SendWs("FriendsRequest", data);
+                    break;
+            }
+        }
+
+        private void SetBackgroundColour(RequestState state, Button button)
+        {
+            switch (state)
+            {
+                case RequestState.NotRecieved:
+                    button.Background = Brushes.Red;
+                    break;
+                case RequestState.Recieved:
+                    button.Background = Brushes.Orange;
+                    break;
+                case RequestState.Accepted:
+                    button.Background = Brushes.LightGreen;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -805,6 +835,7 @@ namespace RatTracker_WPF
                 AppendStatus("Got a COL from Rescues query!");
                 RootObject rescues = JsonConvert.DeserializeObject<RootObject>(col);
                 await GetMissingRats(rescues);
+                GetMyRescueIfAssigned(rescues);
 
                 RescueGrid.ItemsSource = rescues.Data;
                 RescueGrid.AutoGenerateColumns = false;
@@ -817,6 +848,20 @@ namespace RatTracker_WPF
                         AppendStatus("It's the rats.");
                     }
                 }
+            }
+        }
+
+        private void GetMyRescueIfAssigned(RootObject rescues)
+        {
+            Datum openCase = rescues.Data.FirstOrDefault(x => x.Rats.Contains(""));
+
+            if (openCase != null)
+            {
+                myClient = new ClientInfo {Rescue = openCase};
+            }
+            else
+            {
+                myClient = null;
             }
         }
 
@@ -844,7 +889,7 @@ namespace RatTracker_WPF
         private void startButton_Click(object sender, RoutedEventArgs e)
         {
             AppendStatus("Started tracking new client " + ClientName.Text);
-            myClient.ClientName = ClientName.Text;
+            // myClient.ClientName = ClientName.Text;
             FrButton.Background = Brushes.Red;
             WrButton.Background = Brushes.Red;
             InstButton.Background = Brushes.Red;
