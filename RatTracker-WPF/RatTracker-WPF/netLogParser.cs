@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RatTracker_WPF
 {
-    class netLogParser
+    class NetLogParser
     {
 
     }
