@@ -106,5 +106,17 @@ namespace RatTracker_WPF.Properties {
                 this["EnableTTS"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("80")]
+        public int APIPort {
+            get {
+                return ((int)(this["APIPort"]));
+            }
+            set {
+                this["APIPort"] = value;
+            }
+        }
     }
 }

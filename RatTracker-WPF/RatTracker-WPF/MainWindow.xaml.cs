@@ -80,6 +80,21 @@ namespace RatTracker_WPF
                 return "I am a negative rat";
         }
     }
+    public class clientConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            Console.WriteLine("Typeof value is " + value.GetType() + " and is " + value.ToString());
+            Client myclient = value as Client;
+            if (myclient == null)
+                return "No client data";
+            return myclient.cmdrname;
+        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return "I am a negative client";
+        }
+    }
         public class Links
     {
         public string self { get; set; }
@@ -95,6 +110,8 @@ namespace RatTracker_WPF
 
     public class Client
     {
+        public string cmdrname { get; set; }
+        public string nickname { get; set; }
     }
 
     public class Datum
@@ -900,7 +917,8 @@ namespace RatTracker_WPF
         {
             appendStatus("Trying to fetch rescues...");
             Dictionary<string,string> data = new Dictionary<string, string>();
-            data.Add("rats", "56a8fcc7abdd7cc91123fd25");
+            //data.Add("rats", "56a8fcc7abdd7cc91123fd25");
+            data.Add("open", "true");
             String col = await apworker.queryAPI("rescues",data);
             
             if (col == null)

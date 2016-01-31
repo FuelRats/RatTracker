@@ -34,10 +34,10 @@ namespace RatTracker_WPF
                 using (var client = new HttpClient())
                 {
                     var content = new UriBuilder(apiURL + action+"/");
-                    content.Port = -1;
+                    content.Port = Properties.Settings.Default.APIPort;
                     var query = HttpUtility.ParseQueryString(content.Query);
                     if (query==null)
-                        return apiGetResponse("{\"Error\", \"No response\"");
+                        return apiGetResponse("{\"Error\", \"No response\"}");
                     foreach (KeyValuePair<string, string> entry in data)
                     {
                         query[entry.Key] = entry.Value;

@@ -13,6 +13,7 @@
     </Window.TaskbarItemInfo>
     <Window.Resources>
         <local:ratConverter x:Key="ratConverter"/>
+        <local:clientConverter x:Key="clientConverter"/>
     </Window.Resources>
     <Grid>
         <StatusBar x:Name="mainStatusBar" HorizontalAlignment="Left" Height="2" Margin="-504.958,302.279,0,0" VerticalAlignment="Top" Width="9" RenderTransformOrigin="0.5,0.5">
@@ -87,7 +88,7 @@
             <Label x:Name="systemNameLabel" Content="Unknown" HorizontalAlignment="Left" Height="24" Margin="335,151,0,0" VerticalAlignment="Top" Width="250" Grid.Column="1" Grid.Row="1"/>
             <DataGrid x:Name="rescueGrid" Margin="10,18,279,10" ItemsSource="{Binding}" IsReadOnly="True" AutoGenerateColumns="False" Grid.ColumnSpan="2" Grid.Row="1">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding client}" ClipboardContentBinding="{x:Null}" Header="Client"/>
+                    <DataGridTextColumn Binding="{Binding client, Converter={StaticResource clientConverter}}" ClipboardContentBinding="{x:Null}" Header="Client"/>
                     <DataGridTextColumn Binding="{Binding rats, Converter={StaticResource ratConverter}}" Header="Rats"/>
                     <DataGridTextColumn Binding="{Binding active}" ClipboardContentBinding="{x:Null}" Header="Active"/>
                     <DataGridTextColumn Binding="{Binding open}" ClipboardContentBinding="{x:Null}" Header="Open"/>
