@@ -857,5 +857,47 @@ namespace RatTracker_WPF
             wndSettings swindow = new wndSettings();
             swindow.Show();
         }
+
+        /* Attempts to calculate a distance in lightyears between two given systems.
+         * This is done using EDSM coordinates.
+         * TODO: Once done with testing, transition source to be a <List>TravelLog.
+         */
+         public EDSMSystem QueryEDSMSystem(string system)
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    UriBuilder content = new UriBuilder(edsmURL + "systems?sysname=" + system + "&coords=1") { Port = -1 };
+                    NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
+                    content.Query = query.ToString();
+                    HttpResponseMessage response = client.GetAsync(content.ToString()).Result;
+                    response.EnsureSuccessStatusCode();
+                    string responseString = response.Content.ReadAsStringAsync().Result;
+                    NameValueCollection temp = new NameValueCollection();
+                    EDSMSystem m = JsonConvert.DeserializeObject<EDSMSystem>(responseString);
+                    return m;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendStatus("Exception in QueryEDSMSystem: " + ex.Message);
+                return new EDSMSystem();
+            }
+        }
+        public int CalculateEDSMDistance(string source, string target)
+        {
+            if (source == target)
+                return 0; /* Well, it COULD happen? People have been known to do stupid things. */
+            EDSMSystem sourcesystem = QueryEDSMSystem(source);
+            if (true)
+            {
+            }
+            if (false)
+            {
+            }
+
+            return -1; /* Unable to calculate distance. */
+        }
     }
 }
