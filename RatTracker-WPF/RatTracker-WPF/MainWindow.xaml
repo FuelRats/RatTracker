@@ -38,8 +38,9 @@
                 <MenuItem x:Name="MainMenu1" Header="Main Menu" Click="Main_Menu_Click">
                     <MenuItem/>
                 </MenuItem>
-                <MenuItem Header="Settings" Click="MenuItem_Click"/>
-            </Menu>
+				<MenuItem Header="Settings" Click="MenuItem_Click"/>
+				<MenuItem Header="DispatchInterface" Click="MenuItem_Click_1"/>
+			</Menu>
             <Image x:Name="StatusImage" HorizontalAlignment="Left" Margin="10,6,0,15" Width="29" Source="Resources/green_light.png" Panel.ZIndex="10" Grid.Row="2"/>
             <Label x:Name="Label" Content="Online" HorizontalAlignment="Left" Margin="44,6,0,15" Width="71" Grid.Row="2"/>
             <GroupBox x:Name="GroupBox" Header="Connection Information" HorizontalAlignment="Right" Margin="0,28,10,0" Width="260" Grid.Column="1" Height="128" VerticalAlignment="Top">
@@ -93,6 +94,6 @@
                     <Label x:Name="SystemNameLabel" Content="Unknown" HorizontalAlignment="Left" Height="24" Margin="10,10,0,0" VerticalAlignment="Top" Width="220"/>
                 </Grid>
             </GroupBox>
-        </Grid>
+		</Grid>
     </Grid>
 </Window>

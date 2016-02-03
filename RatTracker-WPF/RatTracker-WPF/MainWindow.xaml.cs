@@ -864,5 +864,12 @@ namespace RatTracker_WPF
             wndSettings swindow = new wndSettings();
             swindow.Show();
         }
-    }
+
+		private void MenuItem_Click_1(object sender, RoutedEventArgs e)
+		{
+			//open the dispatch interface
+			DispatchInterface.DispatchMain dlg = new DispatchInterface.DispatchMain();
+			dlg.Show();
+		}
+	}
 }
