@@ -8,7 +8,7 @@ namespace RatTracker_WPF.Models
 {
     public class TravelLog
     {
-        public string SystemName { get; set; }
-        public string Coords { get; set; }
+        public EDSMSystem system { get; set; }
+        public DateTime lastvisited { get; set; }
     }
 }

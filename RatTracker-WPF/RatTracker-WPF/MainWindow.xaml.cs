@@ -52,7 +52,8 @@ namespace RatTracker_WPF
         private Thread threadLogWatcher;
         private FileSystemWatcher watcher;
         private WebSocket ws;
-
+        private ICollection<TravelLog> myTravelLog;
+        static EDSMCoords fuelumCoords = new EDSMCoords() { x = 42, y = -711.09375, z = 39.8125 };
         public MainWindow()
         {
             InitializeComponent();
@@ -328,6 +329,7 @@ namespace RatTracker_WPF
             InitWs();
             OpenWs();
             ReadLogfile(logFile.FullName);
+            myTravelLog = new List<TravelLog>();
         }
 
         private void ProcessAPIResponse(IAsyncResult result)
@@ -589,8 +591,18 @@ namespace RatTracker_WPF
                     string responseString = await response.Content.ReadAsStringAsync();
                     AppendStatus("Response string:" + responseString);
                     NameValueCollection temp = new NameValueCollection();
-                    dynamic m = JsonConvert.DeserializeObject(responseString);
+                    IEnumerable<EDSMSystem> m = JsonConvert.DeserializeObject<IEnumerable<EDSMSystem>>(responseString);
                     //voice.Speak("Welcome to " + value);
+                    EDSMSystem firstsys = m.FirstOrDefault(); // EDSM should return the closest lexical match as the first element. Trust that - for now.
+                    if (firstsys.name == value)
+                    {
+                        if (firstsys.coords == default(EDSMCoords))
+                            AppendStatus("Got a match on " + firstsys.name + " but it has no coords.");
+                        else
+                            AppendStatus("Got definite match in first pos, disregarding extra hits:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
+                        //AppendStatus("Got M:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
+                        myTravelLog.Add(new TravelLog() { system = firstsys, lastvisited = DateTime.Now }); // Should we add systems even if they don't exist in EDSM? Maybe submit them?
+                    }
                     currentSystem = value;
                     await disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => SystemNameLabel.Content = value));
                     if (responseString.Contains("-1"))
@@ -639,7 +651,6 @@ namespace RatTracker_WPF
                 threadLogWatcher.Name = "Netlog watcher";
                 threadLogWatcher.Start();
 
-                /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
                 ClientName.Text = "Absolver";
                 SystemName.Text = "Sagittarius A*";
             }
@@ -862,7 +873,7 @@ namespace RatTracker_WPF
          * This is done using EDSM coordinates.
          * TODO: Once done with testing, transition source to be a <List>TravelLog.
          */
-         public EDSMSystem QueryEDSMSystem(string system)
+         public IEnumerable<EDSMSystem> QueryEDSMSystem(string system)
         {
             try
             {
@@ -875,29 +886,90 @@ namespace RatTracker_WPF
                     response.EnsureSuccessStatusCode();
                     string responseString = response.Content.ReadAsStringAsync().Result;
                     NameValueCollection temp = new NameValueCollection();
-                    EDSMSystem m = JsonConvert.DeserializeObject<EDSMSystem>(responseString);
+                    IEnumerable<EDSMSystem> m = JsonConvert.DeserializeObject<IEnumerable<EDSMSystem>>(responseString);
                     return m;
                 }
             }
             catch (Exception ex)
             {
                 AppendStatus("Exception in QueryEDSMSystem: " + ex.Message);
-                return new EDSMSystem();
+                return new List<EDSMSystem>() { };
             }
         }
-        public int CalculateEDSMDistance(string source, string target)
+        public double CalculateEDSMDistance(string source, string target)
         {
+            EDSMCoords sourcecoords= new EDSMCoords();
+            EDSMCoords targetcoords= new EDSMCoords();
+            IEnumerable<EDSMSystem> candidates;
             if (source == target)
                 return 0; /* Well, it COULD happen? People have been known to do stupid things. */
-            EDSMSystem sourcesystem = QueryEDSMSystem(source);
-            if (true)
+            foreach(TravelLog mysource in myTravelLog.Reverse())
             {
+                if (mysource.system.coords == default(EDSMCoords))
+                {
+                    AppendStatus("System in travellog has no coords:" + mysource.system.name);
+                }
+                else
+                {
+                    AppendStatus("Found coord'ed system " + mysource.system.name+", using as source.");
+                    sourcecoords = mysource.system.coords;
+                }
             }
-            if (false)
+            if(sourcecoords == default(EDSMCoords))
             {
+                AppendStatus("Search for travellog coordinated system failed, using Fuelum coords"); // Add a static Fuelum system reference so we don't have to query EDSM for it.
+                sourcecoords = fuelumCoords;
             }
+            candidates = QueryEDSMSystem(target);
+            if (candidates == default(EDSMSystem))
+            {
+                AppendStatus("No candidate systems found! Aborting distance search.");
+            }
+            else
+            {
+                foreach(EDSMSystem mysystem in candidates)
+                {
+                    if(mysystem.name == target)
+                    {
+                        AppendStatus("Found exact target system match:" + mysystem.name);
+                        if (mysystem.coords == default(EDSMCoords))
+                            AppendStatus("Unfortunately, it has no coords.");
+                        else
+                        {
+                            AppendStatus("It even has coordinates! " + mysystem.coords.x + " " + mysystem.coords.y + " " + mysystem.coords.z);
+                            targetcoords = mysystem.coords;
+                        }
+                    }
+                }
+            }
+            //IEnumerable<EDSMSystem> sourcesystem = QueryEDSMSystem(source);
+            if (sourcecoords != default(EDSMCoords) && targetcoords != default(EDSMCoords))
+            {
+                AppendStatus("We have two sets of coords that we can use to find a distance.");
+                double deltaX = sourcecoords.x - targetcoords.x;
+                double deltaY = sourcecoords.y - targetcoords.y;
+                double deltaZ = sourcecoords.z - targetcoords.z;
+                double distance = (double)Math.Sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+                AppendStatus("Distance should be " + distance.ToString());
+                return distance;
+            }
+            else
+            {
+                AppendStatus("Failed to find source or target coords. Giving up.");
+                return -1;
+            }
+        }
 
-            return -1; /* Unable to calculate distance. */
+        private void button_Click_1(object sender, RoutedEventArgs e)
+        {
+            TriggerSystemChange("Sol");
+            TriggerSystemChange("Blaa Hypai AI-I b26-1");
+            DateTime testdate = DateTime.Now;
+/*            myTravelLog.Add(new TravelLog{ system=new EDSMSystem(){ name = "Sol" }, lastvisited=testdate});
+            myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name = "Fuelum" }, lastvisited = testdate});
+            myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name= "Leesti" }, lastvisited = testdate}); */
+            //AppendStatus("Travellog now contains " + myTravelLog.Count() + " systems. Timestamp of first is " + myTravelLog.First().lastvisited +" name "+myTravelLog.First().system.name);
+            CalculateEDSMDistance("Sol", "Blaa Hypai EO-G b27-0");
         }
     }
 }
