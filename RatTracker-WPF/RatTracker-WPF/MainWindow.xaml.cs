@@ -880,11 +880,15 @@ namespace RatTracker_WPF
                 using (HttpClient client = new HttpClient())
                 {
                     UriBuilder content = new UriBuilder(edsmURL + "systems?sysname=" + system + "&coords=1") { Port = -1 };
+                    AppendStatus("Querying EDSM for " + system);
                     NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
                     content.Query = query.ToString();
                     HttpResponseMessage response = client.GetAsync(content.ToString()).Result;
                     response.EnsureSuccessStatusCode();
                     string responseString = response.Content.ReadAsStringAsync().Result;
+                    //AppendStatus("Got response: " + responseString);
+                    if (responseString =="-1")
+                        return new List<EDSMSystem>() { };
                     NameValueCollection temp = new NameValueCollection();
                     IEnumerable<EDSMSystem> m = JsonConvert.DeserializeObject<IEnumerable<EDSMSystem>>(responseString);
                     return m;
@@ -895,6 +899,45 @@ namespace RatTracker_WPF
                 AppendStatus("Exception in QueryEDSMSystem: " + ex.Message);
                 return new List<EDSMSystem>() { };
             }
+        }
+
+        /* This is much nicer than doing all this inline... 
+         */
+        public IEnumerable<EDSMSystem> FilterCoordinateSystems(IEnumerable<EDSMSystem> candidates)
+        {
+            List<EDSMSystem> finalcandidates = new List<EDSMSystem>();
+            foreach (EDSMSystem candidate in candidates)
+            {
+                if (candidate.coords != default(EDSMCoords))
+                {
+                    finalcandidates.Add(candidate);
+                }
+            }
+            return finalcandidates;
+        }
+        public IEnumerable<EDSMSystem> GetCandidateSystems(string target)
+        {
+            IEnumerable<EDSMSystem> candidates;
+            IEnumerable<EDSMSystem> finalcandidates= new List<EDSMSystem>();
+            string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-z])+(\\d+(?:-\\d+)+?)";
+            Match mymatch = Regex.Match(target, sysmatch);
+            candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
+            AppendStatus("Candidate count is " + candidates.Count().ToString() + " from a subgroup of " + mymatch.Groups[3].Value);
+            finalcandidates = FilterCoordinateSystems(candidates); 
+            AppendStatus("FinalCandidates with coords only is size " + finalcandidates.Count());
+            if (finalcandidates.Count() < 1)
+            {
+                AppendStatus("No final candidates, widening search further...");
+                candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[2].Value)));
+                finalcandidates = FilterCoordinateSystems(candidates);
+                if (finalcandidates.Count() < 1)
+                {
+                    AppendStatus("Still nothing! Querying whole sector.");
+                    candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[1].Value)));
+                    finalcandidates = FilterCoordinateSystems(candidates);
+                }
+            }
+            return finalcandidates;
         }
         public double CalculateEDSMDistance(string source, string target)
         {
@@ -921,28 +964,27 @@ namespace RatTracker_WPF
                 sourcecoords = fuelumCoords;
             }
             candidates = QueryEDSMSystem(target);
-            if (candidates == default(EDSMSystem))
+            if (candidates == default(EDSMSystem) || candidates.Count() <1)
             {
-                AppendStatus("No candidate systems found! Aborting distance search.");
+                AppendStatus("EDSM does not know that system. Widening search...");
+                candidates = GetCandidateSystems(target);
+            }
+            if(candidates.FirstOrDefault().coords == default(EDSMCoords))
+            {
+                AppendStatus("Known system, but no coords. Widening search...");
+                candidates = GetCandidateSystems(target);
+            }
+            if (candidates == default(EDSMSystem) || candidates.Count() < 1)
+            {
+                    //Still couldn't find something, abort.
+                    AppendStatus("Couldn't find a candidate system, aborting...");
+                    return -1;
             }
             else
             {
-                foreach(EDSMSystem mysystem in candidates)
-                {
-                    if(mysystem.name == target)
-                    {
-                        AppendStatus("Found exact target system match:" + mysystem.name);
-                        if (mysystem.coords == default(EDSMCoords))
-                            AppendStatus("Unfortunately, it has no coords.");
-                        else
-                        {
-                            AppendStatus("It even has coordinates! " + mysystem.coords.x + " " + mysystem.coords.y + " " + mysystem.coords.z);
-                            targetcoords = mysystem.coords;
-                        }
-                    }
-                }
+                AppendStatus("I got " + candidates.Count() + " systems with coordinates. Picking the first.");
+                targetcoords = candidates.FirstOrDefault().coords;
             }
-            //IEnumerable<EDSMSystem> sourcesystem = QueryEDSMSystem(source);
             if (sourcecoords != default(EDSMCoords) && targetcoords != default(EDSMCoords))
             {
                 AppendStatus("We have two sets of coords that we can use to find a distance.");
@@ -955,21 +997,21 @@ namespace RatTracker_WPF
             }
             else
             {
-                AppendStatus("Failed to find source or target coords. Giving up.");
+                AppendStatus("Failed to find target coords. Giving up.");
                 return -1;
             }
         }
 
         private void button_Click_1(object sender, RoutedEventArgs e)
         {
-            TriggerSystemChange("Sol");
-            TriggerSystemChange("Blaa Hypai AI-I b26-1");
-            DateTime testdate = DateTime.Now;
+            //TriggerSystemChange("Sol");
+            //TriggerSystemChange("Blaa Hypai AI-I b26-1");
+            //DateTime testdate = DateTime.Now;
 /*            myTravelLog.Add(new TravelLog{ system=new EDSMSystem(){ name = "Sol" }, lastvisited=testdate});
             myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name = "Fuelum" }, lastvisited = testdate});
             myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name= "Leesti" }, lastvisited = testdate}); */
             //AppendStatus("Travellog now contains " + myTravelLog.Count() + " systems. Timestamp of first is " + myTravelLog.First().lastvisited +" name "+myTravelLog.First().system.name);
-            CalculateEDSMDistance("Sol", "Blaa Hypai EO-G b27-0");
+            CalculateEDSMDistance("Sol", SystemName.Text);
         }
     }
 }
