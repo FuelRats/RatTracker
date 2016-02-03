@@ -314,21 +314,28 @@ namespace RatTracker_WPF
                 watcher.EnableRaisingEvents = true;
             }
 
-            DirectoryInfo tempDir = new DirectoryInfo(logDirectory);
-            logFile = (from f in tempDir.GetFiles("*.log") orderby f.LastWriteTime descending select f).First();
-            AppendStatus("Started watching file " + logFile.FullName);
-            CheckClientConn(logFile.FullName);
-            List<KeyValuePair<string, string>> logindata = new List<KeyValuePair<string, string>>();
-            logindata.Add(new KeyValuePair<string, string>("email", "mecha@squeak.net"));
-            logindata.Add(new KeyValuePair<string, string>("password", "password"));
-            apworker = new APIWorker();
-            AppendStatus("Call to APIworker returning :" + apworker.connectAPI());
-            object col = await apworker.sendAPI("login", logindata);
-            AppendStatus("Login returned: " + col);
-            InitWs();
-            OpenWs();
-            ReadLogfile(logFile.FullName);
-        }
+						try
+						{
+							DirectoryInfo tempDir = new DirectoryInfo(logDirectory);
+							logFile = (from f in tempDir.GetFiles("*.log") orderby f.LastWriteTime descending select f).First();
+							AppendStatus("Started watching file " + logFile.FullName);
+							CheckClientConn(logFile.FullName);
+							List<KeyValuePair<string, string>> logindata = new List<KeyValuePair<string, string>>();
+							logindata.Add(new KeyValuePair<string, string>("email", "mecha@squeak.net"));
+							logindata.Add(new KeyValuePair<string, string>("password", "password"));
+							apworker = new APIWorker();
+							AppendStatus("Call to APIworker returning :" + apworker.connectAPI());
+							object col = await apworker.sendAPI("login", logindata);
+							AppendStatus("Login returned: " + col);
+							InitWs();
+							OpenWs();
+							ReadLogfile(logFile.FullName);
+						}
+						catch
+						{
+							//added this as RT would be irritated and crash if there were no .log files in the log directory...
+						}
+				}
 
         private void ProcessAPIResponse(IAsyncResult result)
         {
