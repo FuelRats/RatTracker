@@ -908,7 +908,7 @@ namespace RatTracker_WPF
             List<EDSMSystem> finalcandidates = new List<EDSMSystem>();
             foreach (EDSMSystem candidate in candidates)
             {
-                if (candidate.coords != default(EDSMCoords))
+                if (candidate.coords != null)
                 {
                     finalcandidates.Add(candidate);
                 }
@@ -919,8 +919,8 @@ namespace RatTracker_WPF
         {
             IEnumerable<EDSMSystem> candidates;
             IEnumerable<EDSMSystem> finalcandidates= new List<EDSMSystem>();
-            string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-z])+(\\d+(?:-\\d+)+?)";
-            Match mymatch = Regex.Match(target, sysmatch);
+            string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-zA-Z])+(\\d+(?:-\\d+)+?)";
+            Match mymatch = Regex.Match(target, sysmatch,RegexOptions.IgnoreCase);
             candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
             AppendStatus("Candidate count is " + candidates.Count().ToString() + " from a subgroup of " + mymatch.Groups[3].Value);
             finalcandidates = FilterCoordinateSystems(candidates); 
@@ -929,12 +929,12 @@ namespace RatTracker_WPF
             {
                 AppendStatus("No final candidates, widening search further...");
                 candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[2].Value)));
-                finalcandidates = FilterCoordinateSystems(candidates);
+                finalcandidates = candidates.Where(x=>x.coords!= null);
                 if (finalcandidates.Count() < 1)
                 {
                     AppendStatus("Still nothing! Querying whole sector.");
                     candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[1].Value)));
-                    finalcandidates = FilterCoordinateSystems(candidates);
+                    finalcandidates = candidates.Where(x=>x.coords != null);
                 }
             }
             return finalcandidates;
@@ -948,7 +948,7 @@ namespace RatTracker_WPF
                 return 0; /* Well, it COULD happen? People have been known to do stupid things. */
             foreach(TravelLog mysource in myTravelLog.Reverse())
             {
-                if (mysource.system.coords == default(EDSMCoords))
+                if (mysource.system.coords == null)
                 {
                     AppendStatus("System in travellog has no coords:" + mysource.system.name);
                 }
@@ -958,23 +958,23 @@ namespace RatTracker_WPF
                     sourcecoords = mysource.system.coords;
                 }
             }
-            if(sourcecoords == default(EDSMCoords))
+            if(sourcecoords == null)
             {
                 AppendStatus("Search for travellog coordinated system failed, using Fuelum coords"); // Add a static Fuelum system reference so we don't have to query EDSM for it.
                 sourcecoords = fuelumCoords;
             }
             candidates = QueryEDSMSystem(target);
-            if (candidates == default(EDSMSystem) || candidates.Count() <1)
+            if (candidates == null || candidates.Count() <1)
             {
                 AppendStatus("EDSM does not know that system. Widening search...");
                 candidates = GetCandidateSystems(target);
             }
-            if(candidates.FirstOrDefault().coords == default(EDSMCoords))
+            if(candidates.FirstOrDefault().coords == null)
             {
                 AppendStatus("Known system, but no coords. Widening search...");
                 candidates = GetCandidateSystems(target);
             }
-            if (candidates == default(EDSMSystem) || candidates.Count() < 1)
+            if (candidates == null || candidates.Count() < 1)
             {
                     //Still couldn't find something, abort.
                     AppendStatus("Couldn't find a candidate system, aborting...");
@@ -985,7 +985,7 @@ namespace RatTracker_WPF
                 AppendStatus("I got " + candidates.Count() + " systems with coordinates. Picking the first.");
                 targetcoords = candidates.FirstOrDefault().coords;
             }
-            if (sourcecoords != default(EDSMCoords) && targetcoords != default(EDSMCoords))
+            if (sourcecoords != null && targetcoords != null)
             {
                 AppendStatus("We have two sets of coords that we can use to find a distance.");
                 double deltaX = sourcecoords.x - targetcoords.x;
