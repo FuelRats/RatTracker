@@ -116,11 +116,13 @@
     <Compile Include="Models\ClientInfo.cs" />
     <Compile Include="Converter\ClientConverter.cs" />
     <Compile Include="Models\Datum.cs" />
+    <Compile Include="Models\EDSMSystem.cs" />
     <Compile Include="Models\Friend.cs" />
     <Compile Include="Models\Meta.cs" />
     <Compile Include="Models\DrillStatus.cs" />
     <Compile Include="Models\Links.cs" />
     <Compile Include="Models\Rat.cs" />
+    <Compile Include="Models\TravelLog.cs" />
     <Compile Include="NetLogFile.cs" />
     <Compile Include="NetLogParser.cs" />
     <Compile Include="Converter\RatConverter.cs" />

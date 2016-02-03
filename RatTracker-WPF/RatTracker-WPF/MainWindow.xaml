@@ -93,6 +93,7 @@
                     <Label x:Name="SystemNameLabel" Content="Unknown" HorizontalAlignment="Left" Height="24" Margin="10,10,0,0" VerticalAlignment="Top" Width="220"/>
                 </Grid>
             </GroupBox>
+            <Button x:Name="button" Content="Run tests" Grid.Column="1" HorizontalAlignment="Left" Height="21" Margin="433,111,0,0" Grid.Row="1" VerticalAlignment="Top" Width="95" Click="button_Click_1"/>
         </Grid>
     </Grid>
 </Window>
