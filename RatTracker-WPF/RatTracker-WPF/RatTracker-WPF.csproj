@@ -126,6 +126,7 @@
     <Compile Include="Models\Links.cs" />
     <Compile Include="Models\Rat.cs" />
     <Compile Include="Models\TravelLog.cs" />
+    <Compile Include="Models\WsApiData.cs" />
     <Compile Include="NetLogFile.cs" />
     <Compile Include="NetLogParser.cs" />
     <Compile Include="Converter\RatConverter.cs" />

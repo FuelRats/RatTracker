@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Net.Http;
 using System.Diagnostics;
+using WebSocket4Net;
 using Newtonsoft.Json;
-using System.Data;
+using ErrorEventArgs = SuperSocket.ClientEngine.ErrorEventArgs;
 
 namespace RatTracker_WPF
 {
@@ -25,10 +22,83 @@ namespace RatTracker_WPF
     class APIWorker
     {
         static string apiURL = Properties.Settings.Default.APIURL; /* To be replaced with Settings property. */
-
+        public WebSocket ws;
         /*
          * queryAPI sends a GET request to the API. Kindasorta deprecated behavior.
          */
+        public void InitWs()
+        {
+            try
+            {
+                string wsurl = "ws://dev.api.fuelrats.com/";
+                Console.WriteLine("Connecting to WS at " + wsurl);
+                ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455);
+                ws.Error += websocketClient_Error;
+                ws.Opened += websocketClient_Opened;
+                ws.MessageReceived += websocketClient_MessageReceieved;
+                ws.Closed += websocket_Client_Closed;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Well, that went tits up real fast: " + ex.Message);
+            }
+        }
+        public void OpenWs()
+        {
+            ws.Open();
+
+            Console.WriteLine("WS client is " + ws.State);
+        }
+
+        public void SendWs(string action, IDictionary<string, string> data)
+        {
+            data.Add("action", action);
+            string json = JsonConvert.SerializeObject(data);
+            Console.WriteLine("sendWS Serialized to: " + json);
+            ws.Send(json);
+        }
+
+        private void websocket_Client_Closed(object sender, EventArgs e)
+        {
+            Console.WriteLine("API WS Connection closed. Reconnecting...");
+            OpenWs();
+        }
+
+        private void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
+        {
+            dynamic data = JsonConvert.DeserializeObject(e.Message);
+            switch ((string)data.type)
+            {
+                case "welcome":
+                    Console.WriteLine("API MOTD: " + data.data);
+                    break;
+                case "assignment":
+                    Console.WriteLine("Got a new assignment datafield: " + data.data);
+                    break;
+                default:
+                    Console.WriteLine("Unknown API type field: " + data.type + ": " + data.data);
+                    break;
+            }
+
+            //appendStatus("Direct parse. Type:" + data.type + " Data:" + data.data);
+        }
+
+        public void websocketClient_Error(object sender, ErrorEventArgs e)
+        {
+            Console.WriteLine("Websocket: Exception thrown: " + e.Exception.Message);
+        }
+
+        public void websocketClient_Opened(object sender, EventArgs e)
+        {
+            Console.WriteLine("Websocket: Connection to API established.");
+            string message = JsonConvert.SerializeObject(new { cmd = "message", msg = "Fukken message" },
+                new JsonSerializerSettings { Formatting = Formatting.None });
+            ws.Send(message);
+            IDictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("Foo", "bar");
+            SendWs("assignment", data);
+        }
+
         public async Task<String> queryAPI(string action, Dictionary<string, string> data)
         {
             try
