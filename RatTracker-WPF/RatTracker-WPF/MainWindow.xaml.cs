@@ -1013,5 +1013,12 @@ namespace RatTracker_WPF
             //AppendStatus("Travellog now contains " + myTravelLog.Count() + " systems. Timestamp of first is " + myTravelLog.First().lastvisited +" name "+myTravelLog.First().system.name);
             CalculateEDSMDistance("Sol", SystemName.Text);
         }
-    }
+
+				private void MenuItem_Click_1(object sender, RoutedEventArgs e)
+				{
+					//open the dispatch interface
+					DispatchInterface.DispatchMain dlg = new DispatchInterface.DispatchMain();
+					dlg.Show();
+				}
+	}
 }
