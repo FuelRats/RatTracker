@@ -18,6 +18,8 @@ namespace RatTracker_WPF
      * APIWorker is the HTTP based API query mechanism for RatTracker. As opposed to the WS version, it
      * hits HTTP endpoints on the API. This is primarily used to asynchronously fetch long JSON without
      * tieing up the WS connection, or if the WS connection is unavailable.
+     * (And because Trezy still hasn't made WS do much more than be an echo chamber. See, it's still
+     * all his fault. :P )
      */
 
     class APIWorker

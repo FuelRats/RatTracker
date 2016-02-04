@@ -52,7 +52,8 @@ namespace RatTracker_WPF
         private Thread threadLogWatcher;
         private FileSystemWatcher watcher;
         private WebSocket ws;
-
+        private ICollection<TravelLog> myTravelLog;
+        static EDSMCoords fuelumCoords = new EDSMCoords() { x = 42, y = -711.09375, z = 39.8125 };
         public MainWindow()
         {
             InitializeComponent();
@@ -314,28 +315,22 @@ namespace RatTracker_WPF
                 watcher.EnableRaisingEvents = true;
             }
 
-						try
-						{
-							DirectoryInfo tempDir = new DirectoryInfo(logDirectory);
-							logFile = (from f in tempDir.GetFiles("*.log") orderby f.LastWriteTime descending select f).First();
-							AppendStatus("Started watching file " + logFile.FullName);
-							CheckClientConn(logFile.FullName);
-							List<KeyValuePair<string, string>> logindata = new List<KeyValuePair<string, string>>();
-							logindata.Add(new KeyValuePair<string, string>("email", "mecha@squeak.net"));
-							logindata.Add(new KeyValuePair<string, string>("password", "password"));
-							apworker = new APIWorker();
-							AppendStatus("Call to APIworker returning :" + apworker.connectAPI());
-							object col = await apworker.sendAPI("login", logindata);
-							AppendStatus("Login returned: " + col);
-							InitWs();
-							OpenWs();
-							ReadLogfile(logFile.FullName);
-						}
-						catch
-						{
-							//added this as RT would be irritated and crash if there were no .log files in the log directory...
-						}
-				}
+            DirectoryInfo tempDir = new DirectoryInfo(logDirectory);
+            logFile = (from f in tempDir.GetFiles("*.log") orderby f.LastWriteTime descending select f).First();
+            AppendStatus("Started watching file " + logFile.FullName);
+            CheckClientConn(logFile.FullName);
+            List<KeyValuePair<string, string>> logindata = new List<KeyValuePair<string, string>>();
+            logindata.Add(new KeyValuePair<string, string>("email", "mecha@squeak.net"));
+            logindata.Add(new KeyValuePair<string, string>("password", "password"));
+            apworker = new APIWorker();
+            AppendStatus("Call to APIworker returning :" + apworker.connectAPI());
+            object col = await apworker.sendAPI("login", logindata);
+            AppendStatus("Login returned: " + col);
+            InitWs();
+            OpenWs();
+            ReadLogfile(logFile.FullName);
+            myTravelLog = new List<TravelLog>();
+        }
 
         private void ProcessAPIResponse(IAsyncResult result)
         {
@@ -596,8 +591,18 @@ namespace RatTracker_WPF
                     string responseString = await response.Content.ReadAsStringAsync();
                     AppendStatus("Response string:" + responseString);
                     NameValueCollection temp = new NameValueCollection();
-                    dynamic m = JsonConvert.DeserializeObject(responseString);
+                    IEnumerable<EDSMSystem> m = JsonConvert.DeserializeObject<IEnumerable<EDSMSystem>>(responseString);
                     //voice.Speak("Welcome to " + value);
+                    EDSMSystem firstsys = m.FirstOrDefault(); // EDSM should return the closest lexical match as the first element. Trust that - for now.
+                    if (firstsys.name == value)
+                    {
+                        if (firstsys.coords == default(EDSMCoords))
+                            AppendStatus("Got a match on " + firstsys.name + " but it has no coords.");
+                        else
+                            AppendStatus("Got definite match in first pos, disregarding extra hits:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
+                        //AppendStatus("Got M:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
+                        myTravelLog.Add(new TravelLog() { system = firstsys, lastvisited = DateTime.Now }); // Should we add systems even if they don't exist in EDSM? Maybe submit them?
+                    }
                     currentSystem = value;
                     await disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => SystemNameLabel.Content = value));
                     if (responseString.Contains("-1"))
@@ -646,7 +651,6 @@ namespace RatTracker_WPF
                 threadLogWatcher.Name = "Netlog watcher";
                 threadLogWatcher.Start();
 
-                /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
                 ClientName.Text = "Absolver";
                 SystemName.Text = "Sagittarius A*";
             }
@@ -865,11 +869,156 @@ namespace RatTracker_WPF
             swindow.Show();
         }
 
-		private void MenuItem_Click_1(object sender, RoutedEventArgs e)
-		{
-			//open the dispatch interface
-			DispatchInterface.DispatchMain dlg = new DispatchInterface.DispatchMain();
-			dlg.Show();
-		}
+        /* Attempts to calculate a distance in lightyears between two given systems.
+         * This is done using EDSM coordinates.
+         * TODO: Once done with testing, transition source to be a <List>TravelLog.
+         */
+         public IEnumerable<EDSMSystem> QueryEDSMSystem(string system)
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    UriBuilder content = new UriBuilder(edsmURL + "systems?sysname=" + system + "&coords=1") { Port = -1 };
+                    AppendStatus("Querying EDSM for " + system);
+                    NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
+                    content.Query = query.ToString();
+                    HttpResponseMessage response = client.GetAsync(content.ToString()).Result;
+                    response.EnsureSuccessStatusCode();
+                    string responseString = response.Content.ReadAsStringAsync().Result;
+                    //AppendStatus("Got response: " + responseString);
+                    if (responseString =="-1")
+                        return new List<EDSMSystem>() { };
+                    NameValueCollection temp = new NameValueCollection();
+                    IEnumerable<EDSMSystem> m = JsonConvert.DeserializeObject<IEnumerable<EDSMSystem>>(responseString);
+                    return m;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendStatus("Exception in QueryEDSMSystem: " + ex.Message);
+                return new List<EDSMSystem>() { };
+            }
+        }
+
+        /* This is much nicer than doing all this inline... 
+         */
+        public IEnumerable<EDSMSystem> FilterCoordinateSystems(IEnumerable<EDSMSystem> candidates)
+        {
+            List<EDSMSystem> finalcandidates = new List<EDSMSystem>();
+            foreach (EDSMSystem candidate in candidates)
+            {
+                if (candidate.coords != default(EDSMCoords))
+                {
+                    finalcandidates.Add(candidate);
+                }
+            }
+            return finalcandidates;
+        }
+        public IEnumerable<EDSMSystem> GetCandidateSystems(string target)
+        {
+            IEnumerable<EDSMSystem> candidates;
+            IEnumerable<EDSMSystem> finalcandidates= new List<EDSMSystem>();
+            string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-z])+(\\d+(?:-\\d+)+?)";
+            Match mymatch = Regex.Match(target, sysmatch);
+            candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
+            AppendStatus("Candidate count is " + candidates.Count().ToString() + " from a subgroup of " + mymatch.Groups[3].Value);
+            finalcandidates = FilterCoordinateSystems(candidates); 
+            AppendStatus("FinalCandidates with coords only is size " + finalcandidates.Count());
+            if (finalcandidates.Count() < 1)
+            {
+                AppendStatus("No final candidates, widening search further...");
+                candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[2].Value)));
+                finalcandidates = FilterCoordinateSystems(candidates);
+                if (finalcandidates.Count() < 1)
+                {
+                    AppendStatus("Still nothing! Querying whole sector.");
+                    candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[1].Value)));
+                    finalcandidates = FilterCoordinateSystems(candidates);
+                }
+            }
+            return finalcandidates;
+        }
+        public double CalculateEDSMDistance(string source, string target)
+        {
+            EDSMCoords sourcecoords= new EDSMCoords();
+            EDSMCoords targetcoords= new EDSMCoords();
+            IEnumerable<EDSMSystem> candidates;
+            if (source == target)
+                return 0; /* Well, it COULD happen? People have been known to do stupid things. */
+            foreach(TravelLog mysource in myTravelLog.Reverse())
+            {
+                if (mysource.system.coords == default(EDSMCoords))
+                {
+                    AppendStatus("System in travellog has no coords:" + mysource.system.name);
+                }
+                else
+                {
+                    AppendStatus("Found coord'ed system " + mysource.system.name+", using as source.");
+                    sourcecoords = mysource.system.coords;
+                }
+            }
+            if(sourcecoords == default(EDSMCoords))
+            {
+                AppendStatus("Search for travellog coordinated system failed, using Fuelum coords"); // Add a static Fuelum system reference so we don't have to query EDSM for it.
+                sourcecoords = fuelumCoords;
+            }
+            candidates = QueryEDSMSystem(target);
+            if (candidates == default(EDSMSystem) || candidates.Count() <1)
+            {
+                AppendStatus("EDSM does not know that system. Widening search...");
+                candidates = GetCandidateSystems(target);
+            }
+            if(candidates.FirstOrDefault().coords == default(EDSMCoords))
+            {
+                AppendStatus("Known system, but no coords. Widening search...");
+                candidates = GetCandidateSystems(target);
+            }
+            if (candidates == default(EDSMSystem) || candidates.Count() < 1)
+            {
+                    //Still couldn't find something, abort.
+                    AppendStatus("Couldn't find a candidate system, aborting...");
+                    return -1;
+            }
+            else
+            {
+                AppendStatus("I got " + candidates.Count() + " systems with coordinates. Picking the first.");
+                targetcoords = candidates.FirstOrDefault().coords;
+            }
+            if (sourcecoords != default(EDSMCoords) && targetcoords != default(EDSMCoords))
+            {
+                AppendStatus("We have two sets of coords that we can use to find a distance.");
+                double deltaX = sourcecoords.x - targetcoords.x;
+                double deltaY = sourcecoords.y - targetcoords.y;
+                double deltaZ = sourcecoords.z - targetcoords.z;
+                double distance = (double)Math.Sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+                AppendStatus("Distance should be " + distance.ToString());
+                return distance;
+            }
+            else
+            {
+                AppendStatus("Failed to find target coords. Giving up.");
+                return -1;
+            }
+        }
+
+        private void button_Click_1(object sender, RoutedEventArgs e)
+        {
+            //TriggerSystemChange("Sol");
+            //TriggerSystemChange("Blaa Hypai AI-I b26-1");
+            //DateTime testdate = DateTime.Now;
+/*            myTravelLog.Add(new TravelLog{ system=new EDSMSystem(){ name = "Sol" }, lastvisited=testdate});
+            myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name = "Fuelum" }, lastvisited = testdate});
+            myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name= "Leesti" }, lastvisited = testdate}); */
+            //AppendStatus("Travellog now contains " + myTravelLog.Count() + " systems. Timestamp of first is " + myTravelLog.First().lastvisited +" name "+myTravelLog.First().system.name);
+            CalculateEDSMDistance("Sol", SystemName.Text);
+        }
+
+				private void MenuItem_Click_1(object sender, RoutedEventArgs e)
+				{
+					//open the dispatch interface
+					DispatchInterface.DispatchMain dlg = new DispatchInterface.DispatchMain();
+					dlg.Show();
+				}
 	}
 }
