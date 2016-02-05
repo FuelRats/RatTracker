@@ -66,6 +66,9 @@ namespace RatTracker_WPF
 
         private void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
         {
+            /* We can let this go away fairly soon, since there's not much we can do in the API Worker anyways
+             * at this point. Maybe attach a logger here?
+             */
             dynamic data = JsonConvert.DeserializeObject(e.Message);
             switch ((string)data.type)
             {
@@ -164,8 +167,9 @@ namespace RatTracker_WPF
         }
         /* sendAPI is called from the main class to send POST requests to the API.
          * Primarily used for login, as most of what we need to do is handled through WS.
+         * REDONE: Now returns the response as string, process in main.
          */
-        public async Task<Object> sendAPI(string action, List<KeyValuePair<string, string>> data)
+        public async Task<string> sendAPI(string action, List<KeyValuePair<string, string>> data)
         {
             Console.WriteLine("SendAPI was called with action" + action);
             try
@@ -184,7 +188,7 @@ namespace RatTracker_WPF
                     else
                     {
                         Console.WriteLine("HTTP request returned an error:" + response.StatusCode);
-                        return new Object();
+                        return "";
                     }
                     //connectWS();
                 }
@@ -192,7 +196,7 @@ namespace RatTracker_WPF
             catch (Exception ex)
             {
                 Console.WriteLine("Well, that didn't go well. SendAPI exception: " + ex.Message);
-                return new Object();
+                return "";
             }
         }
 

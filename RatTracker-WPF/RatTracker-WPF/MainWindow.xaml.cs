@@ -34,7 +34,6 @@ namespace RatTracker_WPF
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-		private string wsURL = "ws://dev.api.fuelrats.com/";
 		private static readonly string edsmURL = "http://www.edsm.net/api-v1/";
 		private string logDirectory = Settings.Default.NetLogPath;
 		private ClientInfo myClient = new ClientInfo();
@@ -46,12 +45,11 @@ namespace RatTracker_WPF
 		private long fileSize;
 		private FileInfo logFile;
 		private bool onDuty;
-		private string parserState;
+		private string parserState = "normal";
 		private string scState;
 		public bool stopNetLog;
 		private Thread threadLogWatcher;
 		private FileSystemWatcher watcher;
-		private WebSocket ws;
 		private ICollection<TravelLog> myTravelLog;
 		static EDSMCoords fuelumCoords = new EDSMCoords() { x = 42, y = -711.09375, z = 39.8125 };
 		public MainWindow()
@@ -265,7 +263,25 @@ namespace RatTracker_WPF
          */
         private void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
         {
-            AppendStatus("I'm parsing messages in the main window too now.");
+            dynamic data = JsonConvert.DeserializeObject(e.Message);
+            switch ((string)data.type)
+            {
+                case "welcome":
+                    Console.WriteLine("API MOTD: " + data.data);
+                    break;
+                case "assignment":
+                    Console.WriteLine("Got a new assignment datafield: " + data.data);
+                    break;
+                case "test":
+                    /* This is our echo chamber for WS before it actually does anything useful.
+                     */
+                    AppendStatus("Test data from WS receieved: "+data.data);
+                    break;
+                default:
+                    Console.WriteLine("Unknown API type field: " + data.type + ": " + data.data);
+                    break;
+            }
+
         }
 
         private void ProcessAPIResponse(IAsyncResult result)
@@ -558,6 +574,9 @@ namespace RatTracker_WPF
 						await
 							disp.BeginInvoke(DispatcherPriority.Normal,
 								(Action) (() => SystemNameLabel.Foreground = Brushes.Green));
+                        Console.WriteLine("Getting distance from fuelum to " + firstsys.name);
+                        string distance = CalculateEDSMDistance("Fuelum", firstsys.name).ToString();
+                        await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => distanceLabel.Content = distance + "LY from Fuelum"));
 					}
 				}
 			}
@@ -805,10 +824,6 @@ namespace RatTracker_WPF
 			swindow.Show();
 		}
 
-		/* Attempts to calculate a distance in lightyears between two given systems.
-		 * This is done using EDSM coordinates.
-		 * TODO: Once done with testing, transition source to be a <List>TravelLog.
-		 */
 		 public IEnumerable<EDSMSystem> QueryEDSMSystem(string system)
 		{
 			try
@@ -837,20 +852,6 @@ namespace RatTracker_WPF
 			}
 		}
 
-		/* This is much nicer than doing all this inline... 
-		 */
-		public IEnumerable<EDSMSystem> FilterCoordinateSystems(IEnumerable<EDSMSystem> candidates)
-		{
-			List<EDSMSystem> finalcandidates = new List<EDSMSystem>();
-			foreach (EDSMSystem candidate in candidates)
-			{
-				if (candidate.coords != null)
-				{
-					finalcandidates.Add(candidate);
-				}
-			}
-			return finalcandidates;
-		}
 		public IEnumerable<EDSMSystem> GetCandidateSystems(string target)
 		{
 			IEnumerable<EDSMSystem> candidates;
@@ -859,7 +860,7 @@ namespace RatTracker_WPF
 			Match mymatch = Regex.Match(target, sysmatch,RegexOptions.IgnoreCase);
 			candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
 			AppendStatus("Candidate count is " + candidates.Count().ToString() + " from a subgroup of " + mymatch.Groups[3].Value);
-			finalcandidates = FilterCoordinateSystems(candidates); 
+			finalcandidates = candidates.Where(x=>x.coords != null); 
 			AppendStatus("FinalCandidates with coords only is size " + finalcandidates.Count());
 			if (finalcandidates.Count() < 1)
 			{
@@ -875,7 +876,15 @@ namespace RatTracker_WPF
 			}
 			return finalcandidates;
 		}
-		public double CalculateEDSMDistance(string source, string target)
+        /* Attempts to calculate a distance in lightyears between two given systems.
+        * This is done using EDSM coordinates.
+        * TODO: Once done with testing, transition source to be a <List>TravelLog.
+        * TODO: Wait - this is not smart. CalculateEDSMDistance should just give you
+        * the distances between those two systems, not do any stunts with the source.
+        * Move this functionality out of there, and leave CED requiring a valid source
+        * coord - maybe even require source to be type EDSMCoords.
+        */
+        public double CalculateEDSMDistance(string source, string target)
 		{
 			EDSMCoords sourcecoords= new EDSMCoords();
 			EDSMCoords targetcoords= new EDSMCoords();
@@ -894,7 +903,7 @@ namespace RatTracker_WPF
 					sourcecoords = mysource.system.coords;
 				}
 			}
-			if(sourcecoords == null)
+			if(sourcecoords == null || source=="Fuelum")
 			{
 				AppendStatus("Search for travellog coordinated system failed, using Fuelum coords"); // Add a static Fuelum system reference so we don't have to query EDSM for it.
 				sourcecoords = fuelumCoords;
@@ -940,7 +949,7 @@ namespace RatTracker_WPF
 
 		private void button_Click_1(object sender, RoutedEventArgs e)
 		{
-			//TriggerSystemChange("Sol");
+			TriggerSystemChange("Lave");
 			//TriggerSystemChange("Blaa Hypai AI-I b26-1");
 			//DateTime testdate = DateTime.Now;
 /*            myTravelLog.Add(new TravelLog{ system=new EDSMSystem(){ name = "Sol" }, lastvisited=testdate});
