@@ -1,4 +1,4 @@
-namespace RatTracker_WPF.Models
+namespace RatTracker_WPF.Models.App
 {
     public enum RequestState
     {
