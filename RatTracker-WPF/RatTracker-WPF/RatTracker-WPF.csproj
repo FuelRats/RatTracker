@@ -112,6 +112,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="APIWorker.cs" />
+    <Compile Include="Converter\BooleanToColourConverter.cs" />
+    <Compile Include="Converter\RequestStateToColourConverter.cs" />
     <Compile Include="DispatchInterface\DispatchMain.xaml.cs">
       <DependentUpon>DispatchMain.xaml</DependentUpon>
     </Compile>
@@ -125,7 +127,9 @@
     <Compile Include="Models\Meta.cs" />
     <Compile Include="Models\DrillStatus.cs" />
     <Compile Include="Models\Links.cs" />
+    <Compile Include="Models\PropertyChangedBase.cs" />
     <Compile Include="Models\Rat.cs" />
+    <Compile Include="Models\RatState.cs" />
     <Compile Include="Models\RequestState.cs" />
     <Compile Include="Models\TravelLog.cs" />
     <Compile Include="Models\WsApiData.cs" />

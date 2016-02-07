@@ -7,12 +7,14 @@
         x:Class="RatTracker_WPF.MainWindow"
         mc:Ignorable="d"
         Title="Fuel Rats RatTracker" Height="633.686" Width="931.54" FontFamily="Rockwell"
-        Closing="MainWindow_Closing">
+        Closing="MainWindow_Closing" DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Window.TaskbarItemInfo>
         <TaskbarItemInfo/>
     </Window.TaskbarItemInfo>
     <Window.Resources>
         <converter:RatConverter x:Key="RatConverter"/>
+        <converter:RequestStateToColourConverter x:Key="RequestStateToColourConverter"/>
+        <converter:BooleanToColourConverter x:Key="BooleanToColourConverter"/>
         <converter:ClientConverter x:Key="ClientConverter"/>
         <ImageBrush x:Key="BackgroundBrush" ImageSource="pack://siteoforigin:,,,/Resources/rank-9.png"/>
         <SolidColorBrush x:Key="brushEliteRed" Color="Red"/>
@@ -97,27 +99,27 @@
             </GroupBox>
         </Grid>
         <Grid x:Name="rat2Grid" HorizontalAlignment="Left" Height="61" Margin="676,109,0,0" VerticalAlignment="Top" Width="187" Visibility="Visible">
-            <Button x:Name="FrButton_Copy" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click"/>
-            <Button x:Name="WrButton_Copy" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
-            <Button x:Name="SysButton_Copy" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-            <Button x:Name="BcnButton_Copy" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-            <Button x:Name="InstButton_Copy" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click"/>
+            <Button x:Name="FrButton_Copy" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="{Binding MyClient.Rat2.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="frButton_Click"/>
+            <Button x:Name="WrButton_Copy" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat2.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
+            <Button x:Name="SysButton_Copy" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat2.InSystem, Converter={StaticResource BooleanToColourConverter}}" Click="sysButton_Click"/>
+            <Button x:Name="BcnButton_Copy" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat2.Beacon, Converter={StaticResource BooleanToColourConverter}}" Click="bcnButton_Click"/>
+            <Button x:Name="InstButton_Copy" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat2.InInstance, Converter={StaticResource BooleanToColourConverter}}" Click="instButton_Click"/>
             <Label x:Name="Label4_Copy" Content="Rat2" Height="26" Margin="0,0,123,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
         </Grid>
         <Grid x:Name="rat3Grid" HorizontalAlignment="Left" Height="61" Margin="676,175,0,0" VerticalAlignment="Top" Width="187" Visibility="Visible">
-            <Button x:Name="FrButton_Copy1" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click"/>
-            <Button x:Name="WrButton_Copy1" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
-            <Button x:Name="SysButton_Copy1" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-            <Button x:Name="BcnButton_Copy1" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-            <Button x:Name="InstButton_Copy1" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click"/>
+            <Button x:Name="FrButton_Copy1" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="{Binding MyClient.Rat3.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="frButton_Click"/>
+            <Button x:Name="WrButton_Copy1" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat3.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
+            <Button x:Name="SysButton_Copy1" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat3.InSystem, Converter={StaticResource BooleanToColourConverter}}" Click="sysButton_Click"/>
+            <Button x:Name="BcnButton_Copy1" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat3.Beacon, Converter={StaticResource BooleanToColourConverter}}" Click="bcnButton_Click"/>
+            <Button x:Name="InstButton_Copy1" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat3.InInstance, Converter={StaticResource BooleanToColourConverter}}" Click="instButton_Click"/>
             <Label x:Name="Label4_Copy1" Content="Rat3" Height="26" Margin="0,0,123,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
         </Grid>
         <Grid x:Name="selfRatGrid" HorizontalAlignment="Left" Height="61" Margin="676,48,0,0" VerticalAlignment="Top" Width="187">
-            <Button x:Name="FrButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click"/>
-            <Button x:Name="WrButton" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
-            <Button x:Name="SysButton" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-            <Button x:Name="BcnButton" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-            <Button x:Name="InstButton" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click"/>
+            <Button x:Name="FrButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="{Binding MyClient.Self.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="frButton_Click"/>
+            <Button x:Name="WrButton" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Self.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
+            <Button x:Name="SysButton" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Self.InSystem, Converter={StaticResource BooleanToColourConverter}}" Click="sysButton_Click"/>
+            <Button x:Name="BcnButton" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Self.Beacon, Converter={StaticResource BooleanToColourConverter}}" Click="bcnButton_Click"/>
+            <Button x:Name="InstButton" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Self.InInstance, Converter={StaticResource BooleanToColourConverter}}" Click="instButton_Click"/>
             <Label x:Name="Label4" Content="Rat1" Height="26" Margin="0,0,123,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
         </Grid>
     </Grid>
