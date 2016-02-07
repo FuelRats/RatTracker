@@ -24,6 +24,8 @@ using RatTracker_WPF.Properties;
 using SpeechLib;
 using WebSocket4Net;
 using ErrorEventArgs = SuperSocket.ClientEngine.ErrorEventArgs;
+using System.Windows.Interop;
+using System.Windows.Input;
 
 // May be able to drop these.
 
@@ -980,14 +982,53 @@ namespace RatTracker_WPF
                 }
             }
             overlay.Topmost = true;
-
+            HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)HwndSource.FromVisual(App.Current.MainWindow));
+            hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
+            hotKeyHost.HotKeyPressed += handleHotkeyPress;
         }
-        private void App_Deactivated(object sender, EventArgs e)
+
+        private void handleHotkeyPress(object sender, HotKeyEventArgs e)
+        {
+            Console.WriteLine("Hotkey pressed: "+Name+e.HotKey.Key.ToString());
+            if (e.HotKey.Key == Key.O)
+            {
+                if (overlay.Visibility == Visibility.Hidden)
+                    overlay.Visibility = Visibility.Visible;
+                else
+                    overlay.Visibility = Visibility.Hidden;
+            }
+        }
+
+        [Serializable]
+        public class CustomHotKey : HotKey
+        {
+            public CustomHotKey(string name, Key key, ModifierKeys modifiers, bool enabled)
+                : base(key, modifiers, enabled)
+            {
+                Name = name;
+            }
+
+            private string name;
+            public string Name
+            {
+                get { return name; }
+                set
+                {
+                    if (value != name)
+                    {
+                        name = value;
+                        OnPropertyChanged(name);
+                    }
+                }
+            }
+        }
+            private void App_Deactivated(object sender, EventArgs e)
         {
             if(overlay != null)
             {
                 overlay.Topmost = true;
             }
         }
+
     }
 }
