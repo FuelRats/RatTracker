@@ -813,7 +813,7 @@ namespace RatTracker_WPF
 		private void startButton_Click(object sender, RoutedEventArgs e)
 		{
 			AppendStatus("Started tracking new client " + ClientName.Text);
-			myClient.ClientName = ClientName.Text;
+			// TODO myClient.ClientName = ClientName.Text;
 			FrButton.Background = Brushes.Red;
 			WrButton.Background = Brushes.Red;
 			InstButton.Background = Brushes.Red;
