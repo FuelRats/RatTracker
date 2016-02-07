@@ -989,6 +989,63 @@ namespace RatTracker_WPF
 
         private void handleHotkeyPress(object sender, HotKeyEventArgs e)
         {
+<<<<<<< HEAD
+            /* Fleh? */
+        }
+
+        private void frButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.FriendRequest = GetNextState(myClient.FriendRequest);
+
+            SetBackgroundColour(myClient.FriendRequest, FrButton);
+
+            IDictionary<string, string> data;
+            switch (myClient.FriendRequest)
+            {
+                case RequestState.Accepted:
+                    AppendStatus("Sending Friend Request acknowledgement.");
+                    data = new Dictionary<string, string> {{"ReceivedFR", "true"}};
+                    SendWs("FriendRequest", data);
+                    break;
+                case RequestState.NotRecieved:
+                    AppendStatus("Cancelling FR status.");
+                    data = new Dictionary<string, string> {{"ReceivedFR", "false"}};
+                    SendWs("FriendsRequest", data);
+                    break;
+            }
+        }
+
+        private RequestState GetNextState(RequestState state)
+        {
+            switch (state)
+            {
+                case RequestState.NotRecieved:
+                    return RequestState.Recieved;
+                case RequestState.Recieved:
+                    return RequestState.Accepted;
+                case RequestState.Accepted:
+                    return RequestState.NotRecieved;
+                default:
+                    return RequestState.NotRecieved;
+            }
+        }
+
+        private void SetBackgroundColour(RequestState state, Button button)
+        {
+            switch (state)
+            {
+                case RequestState.NotRecieved:
+                    button.Background = Brushes.Red;
+                    break;
+                case RequestState.Recieved:
+                    button.Background = Brushes.Orange;
+                    break;
+                case RequestState.Accepted:
+                    button.Background = Brushes.LightGreen;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+=======
             Console.WriteLine("Hotkey pressed: "+Name+e.HotKey.Key.ToString());
             if (e.HotKey.Key == Key.O)
             {
@@ -996,23 +1053,143 @@ namespace RatTracker_WPF
                     overlay.Visibility = Visibility.Visible;
                 else
                     overlay.Visibility = Visibility.Hidden;
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
             }
         }
 
         [Serializable]
         public class CustomHotKey : HotKey
         {
+<<<<<<< HEAD
+            myClient.WingRequest = GetNextState(myClient.WingRequest);
+            SetBackgroundColour(myClient.WingRequest, WrButton);
+
+            IDictionary<string, string> data;
+            switch (myClient.FriendRequest)
+            {
+                case RequestState.Accepted:
+                    AppendStatus("Sending Wing Request acknowledgement.");
+                    data = new Dictionary<string, string> {{"ReceivedWR", "true"}};
+                    SendWs("WingRequest", data);
+                    break;
+                case RequestState.NotRecieved:
+                    AppendStatus("Cancelled WR status.");
+                    data = new Dictionary<string, string> {{"ReceivedWR", "false"}};
+                    SendWs("WingRequest", data);
+                    break;
+            }
+        }
+
+        private void sysButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.InSystem = !myClient.InSystem;
+
+            if (myClient.InSystem)
+            {
+                AppendStatus("Sending System acknowledgement.");
+                SysButton.Background = Brushes.LightGreen;
+            }
+            else
+            {
+                AppendStatus("Cancelling System status.");
+                SysButton.Background = Brushes.Red;
+=======
             public CustomHotKey(string name, Key key, ModifierKeys modifiers, bool enabled)
                 : base(key, modifiers, enabled)
             {
                 Name = name;
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
             }
 
+<<<<<<< HEAD
+        private void bcnButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.Beacon = !myClient.Beacon;
+
+            if (myClient.Beacon)
+            {
+                AppendStatus("Sending Beacon acknowledgement.");
+                BcnButton.Background = Brushes.LightGreen;
+            }
+            else
+            {
+                AppendStatus("Cancelling Beacon status.");
+                BcnButton.Background = Brushes.Red;
+            }
+        }
+
+        private void instButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.InInstance = !myClient.InInstance;
+            if (myClient.InInstance)
+            {
+                AppendStatus("Sending Good Instance message.");
+                InstButton.Background = Brushes.LightGreen;
+            }
+            else
+            {
+                AppendStatus("Cancelling good instance message.");
+                InstButton.Background = Brushes.Red;
+            }
+        }
+
+        private void fueledButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.Fueled = !myClient.Fueled;
+            if (myClient.Fueled)
+            {
+                AppendStatus("Reporting fueled status, requesting paperwork link...");
+                FueledButton.Background = Brushes.LightGreen;
+            }
+            else
+            {
+                AppendStatus("Fueled status now negative.");
+                FueledButton.Background = Brushes.Red;
+            }
+
+            AppendStatus("Sending fake rescue request!");
+            IDictionary<string, string> req = new Dictionary<string, string>();
+            req.Add("open", "true");
+            //req.Add("_id", myRescue.id); /* TODO: Must hold a handle to my rescue ID somewhere to identify for API interaction */
+            SendWs("rescues", req);
+        }
+
+        private void currentButton_Click(object sender, RoutedEventArgs e)
+        {
+            AppendStatus("Setting client location to current system: Fuelum");
+            SystemName.Text = "Fuelum";
+        }
+
+        private async void updateButton_Click(object sender, RoutedEventArgs e)
+        {
+            AppendStatus("Trying to fetch rescues...");
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            //data.Add("rats", "56a8fcc7abdd7cc91123fd25");
+            data.Add("open", "true");
+            string col = await apworker.queryAPI("rescues", data);
+
+            if (col == null)
+            {
+                AppendStatus("No COL returned from Rescues.");
+            }
+            else
+            {
+                AppendStatus("Got a COL from Rescues query!");
+                RootObject rescues = JsonConvert.DeserializeObject<RootObject>(col);
+                await GetMissingRats(rescues);
+                GetMyRescueIfAssigned(rescues);
+
+                RescueGrid.ItemsSource = rescues.Data;
+                RescueGrid.AutoGenerateColumns = false;
+
+                foreach (DataGridColumn column in RescueGrid.Columns)
+=======
             private string name;
             public string Name
             {
                 get { return name; }
                 set
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
                 {
                     if (value != name)
                     {
@@ -1022,7 +1199,26 @@ namespace RatTracker_WPF
                 }
             }
         }
+<<<<<<< HEAD
+
+        private void GetMyRescueIfAssigned(RootObject rescues)
+        {
+            Datum openCase = rescues.Data.FirstOrDefault(x => x.Rats.Contains(""));
+
+            if (openCase != null)
+            {
+                myClient = new ClientInfo {Rescue = openCase};
+            }
+            else
+            {
+                myClient = null;
+            }
+        }
+
+        private async Task GetMissingRats(RootObject rescues)
+=======
             private void App_Deactivated(object sender, EventArgs e)
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
         {
             if(overlay != null)
             {
@@ -1030,5 +1226,25 @@ namespace RatTracker_WPF
             }
         }
 
+<<<<<<< HEAD
+        private void startButton_Click(object sender, RoutedEventArgs e)
+        {
+            AppendStatus("Started tracking new client " + ClientName.Text);
+            // myClient.ClientName = ClientName.Text;
+            FrButton.Background = Brushes.Red;
+            WrButton.Background = Brushes.Red;
+            InstButton.Background = Brushes.Red;
+            BcnButton.Background = Brushes.Red;
+            FueledButton.Background = Brushes.Red;
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            wndSettings swindow = new wndSettings();
+            swindow.Show();
+        }
+
+=======
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
     }
 }

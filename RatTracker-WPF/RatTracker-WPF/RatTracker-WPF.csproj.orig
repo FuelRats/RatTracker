@@ -126,9 +126,13 @@
     <Compile Include="Models\DrillStatus.cs" />
     <Compile Include="Models\Links.cs" />
     <Compile Include="Models\Rat.cs" />
+<<<<<<< HEAD
+    <Compile Include="Models\RequestState.cs" />
+=======
     <Compile Include="Models\TravelLog.cs" />
     <Compile Include="Models\WsApiData.cs" />
     <Compile Include="Monitor.cs" />
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
     <Compile Include="NetLogFile.cs" />
     <Compile Include="NetLogParser.cs" />
     <Compile Include="Converter\RatConverter.cs" />

@@ -68,6 +68,17 @@
                     <Button x:Name="StartButton" Content="Start" HorizontalAlignment="Right" Height="23" Margin="0,33,15,0" VerticalAlignment="Top" Width="32" Click="startButton_Click"/>
                     <Button x:Name="UpdateButton" Content="Upd" HorizontalAlignment="Right" Height="17" Margin="0,73,8,0" VerticalAlignment="Top" Width="37" Click="updateButton_Click"/>
                     <Button x:Name="CurrentButton" Content="CUR" HorizontalAlignment="Right" Height="18" Margin="0,90,8,0" VerticalAlignment="Top" Width="37" Click="currentButton_Click"/>
+<<<<<<< HEAD
+                    <Label x:Name="Label4" Content="Status" Height="26" Margin="0,155,210,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
+                    <Button x:Name="RatButton" Content="Rats" Height="19" Margin="0,181,229,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="35"/>
+                    <Button x:Name="FrButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,181,194,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click"/>
+                    <Button x:Name="WrButton" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,181,162,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
+                    <Button x:Name="SysButton" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,181,130,0" VerticalAlignment="Top" Width="32" Background="Red" Click="sysButton_Click"/>
+                    <Button x:Name="BcnButton" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,181,98,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
+                    <Button x:Name="InstButton" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,181,66,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click"/>
+                    <Button x:Name="FueledButton" Content="Fueled" Height="19" Margin="0,181,10,0" VerticalAlignment="Top" Background="Red" Click="fueledButton_Click" HorizontalAlignment="Right" Width="44"/>
+=======
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
                 </Grid>
             </GroupBox>
             <GroupBox x:Name="groupBox1" Header="Active Rescues" HorizontalAlignment="Left" Height="236" Margin="19,28,0,0" VerticalAlignment="Top" Width="341" Grid.ColumnSpan="2">

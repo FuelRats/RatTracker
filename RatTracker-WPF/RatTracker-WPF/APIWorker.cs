@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Net.Http;
 using System.Diagnostics;
+using WebSocket4Net;
 using Newtonsoft.Json;
-using System.Data;
+using ErrorEventArgs = SuperSocket.ClientEngine.ErrorEventArgs;
 
 namespace RatTracker_WPF
 {
@@ -18,15 +15,93 @@ namespace RatTracker_WPF
      * APIWorker is the HTTP based API query mechanism for RatTracker. As opposed to the WS version, it
      * hits HTTP endpoints on the API. This is primarily used to asynchronously fetch long JSON without
      * tieing up the WS connection, or if the WS connection is unavailable.
+     * (And because Trezy still hasn't made WS do much more than be an echo chamber. See, it's still
+     * all his fault. :P )
      */
 
     class APIWorker
     {
         static string apiURL = Properties.Settings.Default.APIURL; /* To be replaced with Settings property. */
-
+        public WebSocket ws;
         /*
          * queryAPI sends a GET request to the API. Kindasorta deprecated behavior.
          */
+        public void InitWs()
+        {
+            try
+            {
+                string wsurl = "ws://dev.api.fuelrats.com/";
+                Console.WriteLine("Connecting to WS at " + wsurl);
+                ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455);
+                ws.Error += websocketClient_Error;
+                ws.Opened += websocketClient_Opened;
+                ws.MessageReceived += websocketClient_MessageReceieved;
+                ws.Closed += websocket_Client_Closed;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Well, that went tits up real fast: " + ex.Message);
+            }
+        }
+        public void OpenWs()
+        {
+            ws.Open();
+
+            Console.WriteLine("WS client is " + ws.State);
+        }
+
+        public void SendWs(string action, IDictionary<string, string> data)
+        {
+            data.Add("action", action);
+            string json = JsonConvert.SerializeObject(data);
+            Console.WriteLine("sendWS Serialized to: " + json);
+            ws.Send(json);
+        }
+
+        private void websocket_Client_Closed(object sender, EventArgs e)
+        {
+            Console.WriteLine("API WS Connection closed. Reconnecting...");
+            OpenWs();
+        }
+
+        private void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
+        {
+            /* We can let this go away fairly soon, since there's not much we can do in the API Worker anyways
+             * at this point. Maybe attach a logger here?
+             */
+            dynamic data = JsonConvert.DeserializeObject(e.Message);
+            switch ((string)data.type)
+            {
+                case "welcome":
+                    Console.WriteLine("API MOTD: " + data.data);
+                    break;
+                case "assignment":
+                    Console.WriteLine("Got a new assignment datafield: " + data.data);
+                    break;
+                default:
+                    Console.WriteLine("Unknown API type field: " + data.type + ": " + data.data);
+                    break;
+            }
+
+            //appendStatus("Direct parse. Type:" + data.type + " Data:" + data.data);
+        }
+
+        public void websocketClient_Error(object sender, ErrorEventArgs e)
+        {
+            Console.WriteLine("Websocket: Exception thrown: " + e.Exception.Message);
+        }
+
+        public void websocketClient_Opened(object sender, EventArgs e)
+        {
+            Console.WriteLine("Websocket: Connection to API established.");
+            string message = JsonConvert.SerializeObject(new { cmd = "message", msg = "Fukken message" },
+                new JsonSerializerSettings { Formatting = Formatting.None });
+            ws.Send(message);
+            IDictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("Foo", "bar");
+            SendWs("assignment", data);
+        }
+
         public async Task<String> queryAPI(string action, Dictionary<string, string> data)
         {
             try
@@ -92,8 +167,9 @@ namespace RatTracker_WPF
         }
         /* sendAPI is called from the main class to send POST requests to the API.
          * Primarily used for login, as most of what we need to do is handled through WS.
+         * REDONE: Now returns the response as string, process in main.
          */
-        public async Task<Object> sendAPI(string action, List<KeyValuePair<string, string>> data)
+        public async Task<string> sendAPI(string action, List<KeyValuePair<string, string>> data)
         {
             Console.WriteLine("SendAPI was called with action" + action);
             try
@@ -112,7 +188,7 @@ namespace RatTracker_WPF
                     else
                     {
                         Console.WriteLine("HTTP request returned an error:" + response.StatusCode);
-                        return new Object();
+                        return "";
                     }
                     //connectWS();
                 }
@@ -120,7 +196,7 @@ namespace RatTracker_WPF
             catch (Exception ex)
             {
                 Console.WriteLine("Well, that didn't go well. SendAPI exception: " + ex.Message);
-                return new Object();
+                return "";
             }
         }
 

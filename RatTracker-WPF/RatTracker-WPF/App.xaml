@@ -4,6 +4,11 @@
              xmlns:local="clr-namespace:RatTracker_WPF"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+
+        <SolidColorBrush x:Key="brushEliteOrange" Color="#FFFF7100"/>
+        <SolidColorBrush x:Key="brushEliteGreen" Color="#FF029E4C"/>
+        <SolidColorBrush x:Key="brushEliteBlue" Color="#FF00B3F7"/>
+        <SolidColorBrush x:Key="brushTransparent" Color="#00000000"/>
+
     </Application.Resources>
 </Application>
