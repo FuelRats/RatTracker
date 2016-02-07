@@ -41,10 +41,11 @@
                 </MenuItem>
                 <MenuItem Header="Settings" Click="MenuItem_Click"/>
                 <MenuItem Header="DispatchInterface" Click="MenuItem_Click_1"/>
+                <MenuItem x:Name="OverlayMenu" Header="Overlay" Click="OverlayMenu_Click"/>
             </Menu>
             <Image x:Name="StatusImage" HorizontalAlignment="Left" Margin="10,6,0,15" Width="29" Source="Resources/green_light.png" Panel.ZIndex="10" Grid.Row="2"/>
             <Label x:Name="Label" Content="Online" HorizontalAlignment="Left" Margin="44,6,0,15" Width="71" Grid.Row="2"/>
-            <GroupBox x:Name="GroupBox" Header="Connection Information" HorizontalAlignment="Right" Margin="0,10,10,0" Width="260" Grid.Column="1" Height="128" VerticalAlignment="Top" Grid.Row="1">
+            <GroupBox x:Name="ConnectionInfoBox" Header="Connection Information" HorizontalAlignment="Right" Margin="0,10,10,0" Width="260" Grid.Column="1" Height="128" VerticalAlignment="Top" Grid.Row="1">
                 <Grid HorizontalAlignment="Right" Margin="0,10,1,0" Width="237" Grid.Column="1" Grid.Row="1" Height="95" VerticalAlignment="Top">
                     <Label x:Name="Label5" Content="Connection:" Height="28" VerticalAlignment="Top" HorizontalAlignment="Left" Width="105" Margin="5,0,0,0"/>
                     <Label x:Name="Label6" Content="STUN address:" Height="23" Margin="5,43,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="89"/>
@@ -58,7 +59,7 @@
                     <Button x:Name="SyncButton" Content="SYNC" Margin="0,68,49,0" Background="Lime" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="36"/>
                 </Grid>
             </GroupBox>
-            <GroupBox x:Name="groupBox" Grid.Column="1" Header="Active Case" HorizontalAlignment="Left" Height="235" Margin="39,28,0,0" VerticalAlignment="Top" Width="284">
+            <GroupBox x:Name="ActiveCaseBox" Grid.Column="1" Header="Active Case" HorizontalAlignment="Left" Height="235" Margin="39,28,0,0" VerticalAlignment="Top" Width="284">
                 <Grid Margin="0,-10,-2,-12">
                     <Label x:Name="Label2" Content="Client" Height="26" Margin="0,10,205,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="59"/>
                     <TextBox x:Name="ClientName" Height="19" Margin="0,36,52,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" HorizontalAlignment="Right" Width="212"/>
@@ -81,37 +82,43 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </GroupBox>
-            <GroupBox x:Name="groupBox2" Grid.Column="1" Header="System Info" HorizontalAlignment="Left" Height="102" Margin="328,139,0,0" VerticalAlignment="Top" Width="260" Grid.Row="1">
+            <GroupBox x:Name="SystemInfoBox" Grid.Column="1" Header="System Info" HorizontalAlignment="Left" Height="102" Margin="328,139,0,0" VerticalAlignment="Top" Width="260" Grid.Row="1">
                 <Grid HorizontalAlignment="Left" Height="77" VerticalAlignment="Top" Width="240" Margin="0,0,-2,0">
                     <Label x:Name="distanceLabel" Content="Unknown Coordinates" HorizontalAlignment="Left" Height="24" Margin="10,43,0,0" VerticalAlignment="Top" Width="220"/>
                     <Label x:Name="SystemNameLabel" Content="Unknown" HorizontalAlignment="Left" Height="24" Margin="10,10,0,0" VerticalAlignment="Top" Width="220"/>
                 </Grid>
             </GroupBox>
             <Button x:Name="button" Content="Run tests" Grid.Column="1" HorizontalAlignment="Left" Height="21" Margin="335,246,0,0" Grid.Row="1" VerticalAlignment="Top" Width="95" Click="button_Click_1"/>
-            <GroupBox x:Name="groupBox3" Grid.Column="1" Header="Your Rescue" HorizontalAlignment="Left" Height="235" Margin="335,28,0,0" VerticalAlignment="Top" Width="253">
+            <GroupBox x:Name="YourRescueBox" Grid.Column="1" Header="Your Rescue" HorizontalAlignment="Left" Height="235" Margin="335,28,0,0" VerticalAlignment="Top" Width="253">
                 <Grid HorizontalAlignment="Left" Height="219" Margin="1,0,-6,-6" VerticalAlignment="Top" Width="246">
                     <Button x:Name="RatButton" Content="Rats" Height="19" Margin="0,190,201,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="35"/>
-                    <Button x:Name="FrButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,40,207,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click"/>
-                    <Button x:Name="WrButton" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,40,175,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
-                    <Button x:Name="SysButton" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,40,143,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-                    <Button x:Name="BcnButton" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,40,111,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-                    <Button x:Name="InstButton" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,40,79,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click"/>
                     <Button x:Name="FueledButton" Content="Fueled" Height="19" Margin="0,190,10,0" VerticalAlignment="Top" Background="Red" Click="fueledButton_Click" HorizontalAlignment="Right" Width="44"/>
-                    <Label x:Name="Label4" Content="Rat1" Height="26" Margin="0,10,182,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
-                    <Button x:Name="FrButton_Copy" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,87,207,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click"/>
-                    <Button x:Name="WrButton_Copy" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,87,175,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
-                    <Button x:Name="SysButton_Copy" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,87,143,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-                    <Button x:Name="BcnButton_Copy" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,87,111,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-                    <Button x:Name="InstButton_Copy" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,87,79,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click"/>
-                    <Button x:Name="FrButton_Copy1" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,135,207,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click"/>
-                    <Button x:Name="WrButton_Copy1" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,135,175,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
-                    <Button x:Name="SysButton_Copy1" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,135,143,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-                    <Button x:Name="BcnButton_Copy1" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,135,111,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
-                    <Button x:Name="InstButton_Copy1" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,135,79,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click"/>
-                    <Label x:Name="Label4_Copy" Content="Rat2" Height="26" Margin="0,56,182,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
-                    <Label x:Name="Label4_Copy1" Content="Rat3" Height="26" Margin="0,106,182,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
                 </Grid>
             </GroupBox>
+        </Grid>
+        <Grid x:Name="rat2Grid" HorizontalAlignment="Left" Height="61" Margin="676,109,0,0" VerticalAlignment="Top" Width="187" Visibility="Visible">
+            <Button x:Name="FrButton_Copy" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click"/>
+            <Button x:Name="WrButton_Copy" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
+            <Button x:Name="SysButton_Copy" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
+            <Button x:Name="BcnButton_Copy" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
+            <Button x:Name="InstButton_Copy" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click"/>
+            <Label x:Name="Label4_Copy" Content="Rat2" Height="26" Margin="0,0,123,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
+        </Grid>
+        <Grid x:Name="rat3Grid" HorizontalAlignment="Left" Height="61" Margin="676,175,0,0" VerticalAlignment="Top" Width="187" Visibility="Visible">
+            <Button x:Name="FrButton_Copy1" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click"/>
+            <Button x:Name="WrButton_Copy1" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
+            <Button x:Name="SysButton_Copy1" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
+            <Button x:Name="BcnButton_Copy1" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
+            <Button x:Name="InstButton_Copy1" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click"/>
+            <Label x:Name="Label4_Copy1" Content="Rat3" Height="26" Margin="0,0,123,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
+        </Grid>
+        <Grid x:Name="selfRatGrid" HorizontalAlignment="Left" Height="61" Margin="676,48,0,0" VerticalAlignment="Top" Width="187">
+            <Button x:Name="FrButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="Red" Click="frButton_Click"/>
+            <Button x:Name="WrButton" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="Red" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"/>
+            <Button x:Name="SysButton" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
+            <Button x:Name="BcnButton" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="Red" Click="bcnButton_Click"/>
+            <Button x:Name="InstButton" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="Red" Click="instButton_Click"/>
+            <Label x:Name="Label4" Content="Rat1" Height="26" Margin="0,0,123,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
         </Grid>
     </Grid>
 </Window>

@@ -51,7 +51,8 @@ namespace RatTracker_WPF
 		private Thread threadLogWatcher;
 		private FileSystemWatcher watcher;
 		private ICollection<TravelLog> myTravelLog;
-		static EDSMCoords fuelumCoords = new EDSMCoords() { x = 42, y = -711.09375, z = 39.8125 };
+        private Overlay overlay;
+        static EDSMCoords fuelumCoords = new EDSMCoords() { x = 42, y = -711.09375, z = 39.8125 };
 		public MainWindow()
 		{
 			InitializeComponent();
@@ -965,5 +966,28 @@ namespace RatTracker_WPF
 					DispatchInterface.DispatchMain dlg = new DispatchInterface.DispatchMain();
 					dlg.Show();
 				}
-	}
+
+        private void OverlayMenu_Click(object sender, RoutedEventArgs e)
+        {
+            overlay = new Overlay();
+            overlay.Show();
+            IEnumerable<Monitor> monitors = Monitor.AllMonitors;
+            foreach(Monitor mymonitor in monitors)
+            {
+                if (mymonitor.IsPrimary == true){
+                    overlay.Left = mymonitor.Bounds.Right-overlay.Width;
+                    overlay.Top = mymonitor.Bounds.Top;
+                }
+            }
+            overlay.Topmost = true;
+
+        }
+        private void App_Deactivated(object sender, EventArgs e)
+        {
+            if(overlay != null)
+            {
+                overlay.Topmost = true;
+            }
+        }
+    }
 }

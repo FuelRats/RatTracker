@@ -127,11 +127,15 @@
     <Compile Include="Models\Rat.cs" />
     <Compile Include="Models\TravelLog.cs" />
     <Compile Include="Models\WsApiData.cs" />
+    <Compile Include="Monitor.cs" />
     <Compile Include="NetLogFile.cs" />
     <Compile Include="NetLogParser.cs" />
     <Compile Include="Converter\RatConverter.cs" />
     <Compile Include="Models\Rescue.cs" />
     <Compile Include="Models\RootObject.cs" />
+    <Compile Include="Overlay.xaml.cs">
+      <DependentUpon>Overlay.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Settings.xaml.cs">
       <DependentUpon>Settings.xaml</DependentUpon>
     </Compile>
@@ -151,6 +155,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Overlay.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Settings.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
