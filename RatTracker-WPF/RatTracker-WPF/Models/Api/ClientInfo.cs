@@ -1,4 +1,6 @@
-namespace RatTracker_WPF.Models
+using RatTracker_WPF.Models.App;
+
+namespace RatTracker_WPF.Models.Api
 {
     public class ClientInfo
     {

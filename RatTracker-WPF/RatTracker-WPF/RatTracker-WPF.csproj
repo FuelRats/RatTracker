@@ -118,27 +118,28 @@
       <DependentUpon>DispatchMain.xaml</DependentUpon>
     </Compile>
     <Compile Include="GlobalHotkey.cs" />
-    <Compile Include="Models\Client.cs" />
-    <Compile Include="Models\ClientInfo.cs" />
+    <Compile Include="Models\Api\Client.cs" />
+    <Compile Include="Models\Api\ClientInfo.cs" />
     <Compile Include="Converter\ClientConverter.cs" />
-    <Compile Include="Models\Datum.cs" />
-    <Compile Include="Models\EDSMSystem.cs" />
-    <Compile Include="Models\Friend.cs" />
-    <Compile Include="Models\Meta.cs" />
-    <Compile Include="Models\DrillStatus.cs" />
-    <Compile Include="Models\Links.cs" />
-    <Compile Include="Models\PropertyChangedBase.cs" />
-    <Compile Include="Models\Rat.cs" />
-    <Compile Include="Models\RatState.cs" />
-    <Compile Include="Models\RequestState.cs" />
-    <Compile Include="Models\TravelLog.cs" />
-    <Compile Include="Models\WsApiData.cs" />
+    <Compile Include="Models\Api\Datum.cs" />
+    <Compile Include="Models\Edsm\EDSMCoords.cs" />
+    <Compile Include="Models\Edsm\EDSMSystem.cs" />
+    <Compile Include="Models\NetLog\Friend.cs" />
+    <Compile Include="Models\Api\Meta.cs" />
+    <Compile Include="Models\Api\DrillStatus.cs" />
+    <Compile Include="Models\Api\Links.cs" />
+    <Compile Include="Models\App\PropertyChangedBase.cs" />
+    <Compile Include="Models\Api\Rat.cs" />
+    <Compile Include="Models\App\RatState.cs" />
+    <Compile Include="Models\App\RequestState.cs" />
+    <Compile Include="Models\NetLog\TravelLog.cs" />
+    <Compile Include="Models\Api\WsApiData.cs" />
     <Compile Include="Monitor.cs" />
     <Compile Include="NetLogFile.cs" />
     <Compile Include="NetLogParser.cs" />
     <Compile Include="Converter\RatConverter.cs" />
-    <Compile Include="Models\Rescue.cs" />
-    <Compile Include="Models\RootObject.cs" />
+    <Compile Include="Models\Api\Rescue.cs" />
+    <Compile Include="Models\Api\RootObject.cs" />
     <Compile Include="Overlay.xaml.cs">
       <DependentUpon>Overlay.xaml</DependentUpon>
     </Compile>

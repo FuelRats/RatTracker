@@ -3,6 +3,7 @@ using System.Windows.Media;
 using System.Globalization;
 using System.Windows.Data;
 using RatTracker_WPF.Models;
+using RatTracker_WPF.Models.App;
 
 namespace RatTracker_WPF.Converter
 {

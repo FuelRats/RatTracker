@@ -23,6 +23,10 @@ using System.Xml.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RatTracker_WPF.Models;
+using RatTracker_WPF.Models.Api;
+using RatTracker_WPF.Models.App;
+using RatTracker_WPF.Models.Edsm;
+using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
 using SpeechLib;
 using WebSocket4Net;
@@ -39,7 +43,7 @@ namespace RatTracker_WPF
 		public static readonly Brush RatStatusColourNegative = Brushes.Red;
 
 		private static readonly string edsmURL = "http://www.edsm.net/api-v1/";
-		private static EDSMCoords fuelumCoords = new EDSMCoords() {x = 42, y = -711.09375, z = 39.8125};
+		private static EdsmCoords fuelumCoords = new EdsmCoords() {X = 42, Y = -711.09375, Z = 39.8125};
 
 		private readonly SpVoice voice = new SpVoice();
 		private RootObject activeRescues = new RootObject();
@@ -563,17 +567,17 @@ namespace RatTracker_WPF
 					string responseString = await response.Content.ReadAsStringAsync();
 					AppendStatus("Response string:" + responseString);
 					NameValueCollection temp = new NameValueCollection();
-					IEnumerable<EDSMSystem> m = JsonConvert.DeserializeObject<IEnumerable<EDSMSystem>>(responseString);
+					IEnumerable<EdsmSystem> m = JsonConvert.DeserializeObject<IEnumerable<EdsmSystem>>(responseString);
 					//voice.Speak("Welcome to " + value);
-					EDSMSystem firstsys = m.FirstOrDefault();
+					EdsmSystem firstsys = m.FirstOrDefault();
 					// EDSM should return the closest lexical match as the first element. Trust that - for now.
-					if (firstsys.name == value)
+					if (firstsys.Name == value)
 					{
-						if (firstsys.coords == default(EDSMCoords))
-							AppendStatus("Got a match on " + firstsys.name + " but it has no coords.");
+						if (firstsys.Coords == default(EdsmCoords))
+							AppendStatus("Got a match on " + firstsys.Name + " but it has no coords.");
 						else
-							AppendStatus("Got definite match in first pos, disregarding extra hits:" + firstsys.name + " X:" +
-										firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
+							AppendStatus("Got definite match in first pos, disregarding extra hits:" + firstsys.Name + " X:" +
+										firstsys.Coords.X + " Y:" + firstsys.Coords.Y + " Z:" + firstsys.Coords.Z);
 						//AppendStatus("Got M:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
 						myTravelLog.Add(new TravelLog() {system = firstsys, lastvisited = DateTime.Now});
 						// Should we add systems even if they don't exist in EDSM? Maybe submit them?
@@ -597,8 +601,8 @@ namespace RatTracker_WPF
 						await
 							disp.BeginInvoke(DispatcherPriority.Normal,
 								(Action) (() => SystemNameLabel.Foreground = Brushes.Green));
-						Console.WriteLine("Getting distance from fuelum to " + firstsys.name);
-						string distance = CalculateEDSMDistance("Fuelum", firstsys.name).ToString();
+						Console.WriteLine("Getting distance from fuelum to " + firstsys.Name);
+						string distance = CalculateEDSMDistance("Fuelum", firstsys.Name).ToString();
 						await
 							disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => distanceLabel.Content = distance + "LY from Fuelum"));
 					}
@@ -756,7 +760,7 @@ namespace RatTracker_WPF
 			swindow.Show();
 		}
 
-		public IEnumerable<EDSMSystem> QueryEDSMSystem(string system)
+		public IEnumerable<EdsmSystem> QueryEDSMSystem(string system)
 		{
 			try
 			{
@@ -771,39 +775,39 @@ namespace RatTracker_WPF
 					string responseString = response.Content.ReadAsStringAsync().Result;
 					//AppendStatus("Got response: " + responseString);
 					if (responseString == "-1")
-						return new List<EDSMSystem>() {};
+						return new List<EdsmSystem>() {};
 					NameValueCollection temp = new NameValueCollection();
-					IEnumerable<EDSMSystem> m = JsonConvert.DeserializeObject<IEnumerable<EDSMSystem>>(responseString);
+					IEnumerable<EdsmSystem> m = JsonConvert.DeserializeObject<IEnumerable<EdsmSystem>>(responseString);
 					return m;
 				}
 			}
 			catch (Exception ex)
 			{
 				AppendStatus("Exception in QueryEDSMSystem: " + ex.Message);
-				return new List<EDSMSystem>() {};
+				return new List<EdsmSystem>() {};
 			}
 		}
 
-		public IEnumerable<EDSMSystem> GetCandidateSystems(string target)
+		public IEnumerable<EdsmSystem> GetCandidateSystems(string target)
 		{
-			IEnumerable<EDSMSystem> candidates;
-			IEnumerable<EDSMSystem> finalcandidates = new List<EDSMSystem>();
+			IEnumerable<EdsmSystem> candidates;
+			IEnumerable<EdsmSystem> finalcandidates = new List<EdsmSystem>();
 			string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-zA-Z])+(\\d+(?:-\\d+)+?)";
 			Match mymatch = Regex.Match(target, sysmatch, RegexOptions.IgnoreCase);
 			candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
 			AppendStatus("Candidate count is " + candidates.Count().ToString() + " from a subgroup of " + mymatch.Groups[3].Value);
-			finalcandidates = candidates.Where(x => x.coords != null);
+			finalcandidates = candidates.Where(x => x.Coords != null);
 			AppendStatus("FinalCandidates with coords only is size " + finalcandidates.Count());
 			if (finalcandidates.Count() < 1)
 			{
 				AppendStatus("No final candidates, widening search further...");
 				candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[2].Value)));
-				finalcandidates = candidates.Where(x => x.coords != null);
+				finalcandidates = candidates.Where(x => x.Coords != null);
 				if (finalcandidates.Count() < 1)
 				{
 					AppendStatus("Still nothing! Querying whole sector.");
 					candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[1].Value)));
-					finalcandidates = candidates.Where(x => x.coords != null);
+					finalcandidates = candidates.Where(x => x.Coords != null);
 				}
 			}
 			return finalcandidates;
@@ -820,21 +824,21 @@ namespace RatTracker_WPF
 
 		public double CalculateEDSMDistance(string source, string target)
 		{
-			EDSMCoords sourcecoords = new EDSMCoords();
-			EDSMCoords targetcoords = new EDSMCoords();
-			IEnumerable<EDSMSystem> candidates;
+			EdsmCoords sourcecoords = new EdsmCoords();
+			EdsmCoords targetcoords = new EdsmCoords();
+			IEnumerable<EdsmSystem> candidates;
 			if (source == target)
 				return 0; /* Well, it COULD happen? People have been known to do stupid things. */
 			foreach (TravelLog mysource in myTravelLog.Reverse())
 			{
-				if (mysource.system.coords == null)
+				if (mysource.system.Coords == null)
 				{
-					AppendStatus("System in travellog has no coords:" + mysource.system.name);
+					AppendStatus("System in travellog has no coords:" + mysource.system.Name);
 				}
 				else
 				{
-					AppendStatus("Found coord'ed system " + mysource.system.name + ", using as source.");
-					sourcecoords = mysource.system.coords;
+					AppendStatus("Found coord'ed system " + mysource.system.Name + ", using as source.");
+					sourcecoords = mysource.system.Coords;
 				}
 			}
 			if (sourcecoords == null || source == "Fuelum")
@@ -849,7 +853,7 @@ namespace RatTracker_WPF
 				AppendStatus("EDSM does not know that system. Widening search...");
 				candidates = GetCandidateSystems(target);
 			}
-			if (candidates.FirstOrDefault().coords == null)
+			if (candidates.FirstOrDefault().Coords == null)
 			{
 				AppendStatus("Known system, but no coords. Widening search...");
 				candidates = GetCandidateSystems(target);
@@ -863,14 +867,14 @@ namespace RatTracker_WPF
 			else
 			{
 				AppendStatus("I got " + candidates.Count() + " systems with coordinates. Picking the first.");
-				targetcoords = candidates.FirstOrDefault().coords;
+				targetcoords = candidates.FirstOrDefault().Coords;
 			}
 			if (sourcecoords != null && targetcoords != null)
 			{
 				AppendStatus("We have two sets of coords that we can use to find a distance.");
-				double deltaX = sourcecoords.x - targetcoords.x;
-				double deltaY = sourcecoords.y - targetcoords.y;
-				double deltaZ = sourcecoords.z - targetcoords.z;
+				double deltaX = sourcecoords.X - targetcoords.X;
+				double deltaY = sourcecoords.Y - targetcoords.Y;
+				double deltaZ = sourcecoords.Z - targetcoords.Z;
 				double distance = (double) Math.Sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
 				AppendStatus("Distance should be " + distance.ToString());
 				return distance;

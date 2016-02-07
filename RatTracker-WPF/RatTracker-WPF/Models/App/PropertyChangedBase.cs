@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace RatTracker_WPF.Models
+namespace RatTracker_WPF.Models.App
 {
 	public class PropertyChangedBase : INotifyPropertyChanged
 	{
