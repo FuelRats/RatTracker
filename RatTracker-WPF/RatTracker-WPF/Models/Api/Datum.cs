@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace RatTracker_WPF.Models
+namespace RatTracker_WPF.Models.Api
 {
     public class Datum
     {

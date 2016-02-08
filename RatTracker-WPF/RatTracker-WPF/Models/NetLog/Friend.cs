@@ -1,6 +1,6 @@
 using System.Xml.Linq;
 
-namespace RatTracker_WPF.Models
+namespace RatTracker_WPF.Models.NetLog
 {
     public class Friend
     {

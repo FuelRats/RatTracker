@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -15,74 +14,55 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Xml.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RatTracker_WPF.Models;
-using RatTracker_WPF.Models.Api;
-using RatTracker_WPF.Models.App;
-using RatTracker_WPF.Models.Edsm;
-using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
 using SpeechLib;
 using WebSocket4Net;
+using ErrorEventArgs = SuperSocket.ClientEngine.ErrorEventArgs;
+using System.Windows.Interop;
+using System.Windows.Input;
+
+// May be able to drop these.
 
 namespace RatTracker_WPF
 {
 	/// <summary>
 	///     Interaction logic for MainWindow.xaml
 	/// </summary>
-	public partial class MainWindow : Window, INotifyPropertyChanged
+	public partial class MainWindow : Window
 	{
-		public static readonly Brush RatStatusColourPositive = Brushes.LightGreen;
-		public static readonly Brush RatStatusColourPending = Brushes.Orange;
-		public static readonly Brush RatStatusColourNegative = Brushes.Red;
-
 		private static readonly string edsmURL = "http://www.edsm.net/api-v1/";
-		private static EdsmCoords fuelumCoords = new EdsmCoords() {X = 42, Y = -711.09375, Z = 39.8125};
-
+		private string logDirectory = Settings.Default.NetLogPath;
+		private ClientInfo myClient = new ClientInfo();
 		private readonly SpVoice voice = new SpVoice();
 		private RootObject activeRescues = new RootObject();
 		private APIWorker apworker;
 		private string currentSystem;
 		private long fileOffset;
 		private long fileSize;
-		private string logDirectory = Settings.Default.NetLogPath;
 		private FileInfo logFile;
-		private ClientInfo myClient = new ClientInfo();
-		private ICollection<TravelLog> myTravelLog;
 		private bool onDuty;
-		private Overlay overlay;
 		private string parserState = "normal";
 		private string scState;
 		public bool stopNetLog;
 		private Thread threadLogWatcher;
 		private FileSystemWatcher watcher;
-
+		private ICollection<TravelLog> myTravelLog;
+        private Overlay overlay;
+        static EDSMCoords fuelumCoords = new EDSMCoords() { x = 42, y = -711.09375, z = 39.8125 };
 		public MainWindow()
 		{
 			InitializeComponent();
 			CheckLogDirectory();
-			DataContext = this;
 		}
 
 		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
 
-		public ClientInfo MyClient
-		{
-			get { return myClient; }
-			set
-			{
-				myClient = value;
-				NotifyPropertyChanged();
-			}
-		}
-
-		public event PropertyChangedEventHandler PropertyChanged;
 
 		private void CheckVerboseLogging()
 		{
@@ -204,22 +184,22 @@ namespace RatTracker_WPF
 					/* string preencode = Regex.Replace(friend.Element("name").Value, ".{2}", "\\x$0"); */
 					byteenc = StringToByteArray(wingdata.Element("name").Value);
 					AppendStatus("Wingmember:" + Encoding.UTF8.GetString(byteenc));
-					if (Encoding.UTF8.GetString(byteenc) == MyClient.ClientName)
+					if (Encoding.UTF8.GetString(byteenc) == myClient.ClientName)
 					{
 						AppendStatus("This data matches our current client! Storing information...");
-						MyClient.ClientId = wingdata.Element("id").Value;
+						myClient.ClientId = wingdata.Element("id").Value;
 						AppendStatus("Wingmember IP data:" + xdoc.Element("connectionDetails"));
 						string wingIPPattern = "IP4NAT:([0-9.]+):\\d+\\,";
 						Match wingMatch = Regex.Match(wingInvite, wingIPPattern, RegexOptions.IgnoreCase);
 						if (wingMatch.Success)
 						{
 							AppendStatus("Successful IP data match: " + wingMatch.Groups[1]);
-							MyClient.ClientIp = wingMatch.Groups[1].Value;
+							myClient.ClientIp = wingMatch.Groups[1].Value;
 						}
 
 						/* If the friend request matches the client name, store his session ID. */
-						MyClient.ClientId = wingdata.Element("commander_id").Value;
-						MyClient.SessionId = wingdata.Element("session_runid").Value;
+						myClient.ClientId = wingdata.Element("commander_id").Value;
+						myClient.SessionId = wingdata.Element("session_runid").Value;
 					}
 				}
 			}
@@ -255,7 +235,7 @@ namespace RatTracker_WPF
 				watcher = new FileSystemWatcher();
 				watcher.Path = logDirectory;
 				watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName |
-										NotifyFilters.DirectoryName | NotifyFilters.Size;
+									   NotifyFilters.DirectoryName | NotifyFilters.Size;
 				watcher.Filter = "*.log";
 				watcher.Changed += OnChanged;
 				watcher.Created += OnChanged;
@@ -278,37 +258,36 @@ namespace RatTracker_WPF
 			apworker.InitWs();
 			apworker.OpenWs();
 			ReadLogfile(logFile.FullName);
-			apworker.ws.MessageReceived += websocketClient_MessageReceieved;
-			myTravelLog = new List<TravelLog>();
+            apworker.ws.MessageReceived += websocketClient_MessageReceieved;
+            myTravelLog = new List<TravelLog>();
 		}
-
-		/* Moved WS connection to the apworker, but to actually parse the messages we have to hook the event
+        /* Moved WS connection to the apworker, but to actually parse the messages we have to hook the event
          * handler here too.
          */
-
-		private void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
-		{
-			dynamic data = JsonConvert.DeserializeObject(e.Message);
-			switch ((string) data.type)
-			{
-				case "welcome":
-					Console.WriteLine("API MOTD: " + data.data);
-					break;
-				case "assignment":
-					Console.WriteLine("Got a new assignment datafield: " + data.data);
-					break;
-				case "test":
-					/* This is our echo chamber for WS before it actually does anything useful.
+        private void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
+        {
+            dynamic data = JsonConvert.DeserializeObject(e.Message);
+            switch ((string)data.type)
+            {
+                case "welcome":
+                    Console.WriteLine("API MOTD: " + data.data);
+                    break;
+                case "assignment":
+                    Console.WriteLine("Got a new assignment datafield: " + data.data);
+                    break;
+                case "test":
+                    /* This is our echo chamber for WS before it actually does anything useful.
                      */
-					AppendStatus("Test data from WS receieved: " + data.data);
-					break;
-				default:
-					Console.WriteLine("Unknown API type field: " + data.type + ": " + data.data);
-					break;
-			}
-		}
+                    AppendStatus("Test data from WS receieved: "+data.data);
+                    break;
+                default:
+                    Console.WriteLine("Unknown API type field: " + data.type + ": " + data.data);
+                    break;
+            }
 
-		private void ProcessAPIResponse(IAsyncResult result)
+        }
+
+        private void ProcessAPIResponse(IAsyncResult result)
 		{
 			this.AppendStatus("Whaddaya know, ProcessAPIResponse got called!");
 		}
@@ -492,12 +471,12 @@ namespace RatTracker_WPF
 				disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => WrButton.Background = Brushes.Yellow));
 			}
 
-			if (line.Contains("JoinSession:WingSession:") && line.Contains(MyClient.ClientIp))
+			if (line.Contains("JoinSession:WingSession:") && line.Contains(myClient.ClientIp))
 			{
 				AppendStatus("Prewing communication underway...");
 			}
 
-			if (line.Contains("TalkChannelManager::OpenOutgoingChannelTo") && line.Contains(MyClient.ClientIp))
+			if (line.Contains("TalkChannelManager::OpenOutgoingChannelTo") && line.Contains(myClient.ClientIp))
 			{
 				AppendStatus("Wing established, opening voice comms.");
 				//voice.Speak("Wing established.");
@@ -541,7 +520,7 @@ namespace RatTracker_WPF
 				AppendStatus("Session join message seen.");
 			}
 
-			if (line.Contains("JoinSession:BeaconSession") && line.Contains(MyClient.ClientIp))
+			if (line.Contains("JoinSession:BeaconSession") && line.Contains(myClient.ClientIp))
 			{
 				AppendStatus("Client's Beacon in sight.");
 			}
@@ -567,20 +546,17 @@ namespace RatTracker_WPF
 					string responseString = await response.Content.ReadAsStringAsync();
 					AppendStatus("Response string:" + responseString);
 					NameValueCollection temp = new NameValueCollection();
-					IEnumerable<EdsmSystem> m = JsonConvert.DeserializeObject<IEnumerable<EdsmSystem>>(responseString);
+					IEnumerable<EDSMSystem> m = JsonConvert.DeserializeObject<IEnumerable<EDSMSystem>>(responseString);
 					//voice.Speak("Welcome to " + value);
-					EdsmSystem firstsys = m.FirstOrDefault();
-					// EDSM should return the closest lexical match as the first element. Trust that - for now.
-					if (firstsys.Name == value)
+					EDSMSystem firstsys = m.FirstOrDefault(); // EDSM should return the closest lexical match as the first element. Trust that - for now.
+					if (firstsys.name == value)
 					{
-						if (firstsys.Coords == default(EdsmCoords))
-							AppendStatus("Got a match on " + firstsys.Name + " but it has no coords.");
+						if (firstsys.coords == default(EDSMCoords))
+							AppendStatus("Got a match on " + firstsys.name + " but it has no coords.");
 						else
-							AppendStatus("Got definite match in first pos, disregarding extra hits:" + firstsys.Name + " X:" +
-										firstsys.Coords.X + " Y:" + firstsys.Coords.Y + " Z:" + firstsys.Coords.Z);
+							AppendStatus("Got definite match in first pos, disregarding extra hits:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
 						//AppendStatus("Got M:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
-						myTravelLog.Add(new TravelLog() {system = firstsys, lastvisited = DateTime.Now});
-						// Should we add systems even if they don't exist in EDSM? Maybe submit them?
+						myTravelLog.Add(new TravelLog() { system = firstsys, lastvisited = DateTime.Now }); // Should we add systems even if they don't exist in EDSM? Maybe submit them?
 					}
 					currentSystem = value;
 					await disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => SystemNameLabel.Content = value));
@@ -601,10 +577,9 @@ namespace RatTracker_WPF
 						await
 							disp.BeginInvoke(DispatcherPriority.Normal,
 								(Action) (() => SystemNameLabel.Foreground = Brushes.Green));
-						Console.WriteLine("Getting distance from fuelum to " + firstsys.Name);
-						string distance = CalculateEDSMDistance("Fuelum", firstsys.Name).ToString();
-						await
-							disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => distanceLabel.Content = distance + "LY from Fuelum"));
+                        Console.WriteLine("Getting distance from fuelum to " + firstsys.name);
+                        string distance = CalculateEDSMDistance("Fuelum", firstsys.name).ToString();
+                        await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => distanceLabel.Content = distance + "LY from Fuelum"));
 					}
 				}
 			}
@@ -683,6 +658,98 @@ namespace RatTracker_WPF
 			/* Fleh? */
 		}
 
+		private void frButton_Click(object sender, RoutedEventArgs e)
+		{
+			if (Equals(FrButton.Background, Brushes.Red))
+			{
+				FrButton.Background = Brushes.Green;
+				AppendStatus("Sending Friend Request acknowledgement.");
+				IDictionary<string, string> data = new Dictionary<string, string>();
+				data.Add("ReceivedFR", "true");
+				apworker.SendWs("FriendRequest", data);
+				/* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+			}
+			else
+			{
+				AppendStatus("Cancelling FR status.");
+				FrButton.Background = Brushes.Red;
+				IDictionary<string, string> data = new Dictionary<string, string>();
+				data.Add("ReceivedFR", "false");
+				apworker.SendWs("FriendsRequest", data);
+			}
+		}
+
+		private void wrButton_Click(object sender, RoutedEventArgs e)
+		{
+			if (Equals(WrButton.Background, Brushes.Red))
+			{
+				AppendStatus("Sending Wing Request acknowledgement.");
+				IDictionary<string, string> data = new Dictionary<string, string>();
+				data.Add("ReceivedWR", "true");
+				apworker.SendWs("WingRequest", data);
+				WrButton.Background = Brushes.Green;
+				/* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+			}
+			else
+			{
+				AppendStatus("Cancelled WR status.");
+				IDictionary<string, string> data = new Dictionary<string, string>();
+				data.Add("ReceivedWR", "false");
+				apworker.SendWs("WingRequest", data);
+
+				WrButton.Background = Brushes.Red;
+			}
+		}
+
+		private void bcnButton_Click(object sender, RoutedEventArgs e)
+		{
+			if (Equals(BcnButton.Background, Brushes.Red))
+			{
+				AppendStatus("Sending Beacon acknowledgement.");
+				BcnButton.Background = Brushes.Green;
+				/* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+			}
+			else
+			{
+				AppendStatus("Cancelling Beacon status.");
+				BcnButton.Background = Brushes.Red;
+			}
+		}
+
+		private void instButton_Click(object sender, RoutedEventArgs e)
+		{
+			if (Equals(InstButton.Background, Brushes.Red))
+			{
+				AppendStatus("Sending Good Instance message.");
+				InstButton.Background = Brushes.Green;
+				/* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+			}
+			else
+			{
+				AppendStatus("Cancelling good instance message.");
+				InstButton.Background = Brushes.Red;
+			}
+		}
+
+		private void fueledButton_Click(object sender, RoutedEventArgs e)
+		{
+			if (Equals(FueledButton.Background, Brushes.Red))
+			{
+				AppendStatus("Reporting fueled status, requesting paperwork link...");
+				FueledButton.Background = Brushes.Green;
+				/* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+			}
+			else
+			{
+				AppendStatus("Fueled status now negative.");
+				FueledButton.Background = Brushes.Red;
+			}
+			AppendStatus("Sending fake rescue request!");
+			IDictionary<string, string> req = new Dictionary<string, string>();
+			req.Add("open", "true");
+			//req.Add("_id", myRescue.id); /* TODO: Must hold a handle to my rescue ID somewhere to identify for API interaction */
+			apworker.SendWs("rescues", req);
+		}
 
 		private void currentButton_Click(object sender, RoutedEventArgs e)
 		{
@@ -746,7 +813,7 @@ namespace RatTracker_WPF
 		private void startButton_Click(object sender, RoutedEventArgs e)
 		{
 			AppendStatus("Started tracking new client " + ClientName.Text);
-			// TODO myClient.ClientName = ClientName.Text;
+			myClient.ClientName = ClientName.Text;
 			FrButton.Background = Brushes.Red;
 			WrButton.Background = Brushes.Red;
 			InstButton.Background = Brushes.Red;
@@ -760,13 +827,13 @@ namespace RatTracker_WPF
 			swindow.Show();
 		}
 
-		public IEnumerable<EdsmSystem> QueryEDSMSystem(string system)
+		 public IEnumerable<EDSMSystem> QueryEDSMSystem(string system)
 		{
 			try
 			{
 				using (HttpClient client = new HttpClient())
 				{
-					UriBuilder content = new UriBuilder(edsmURL + "systems?sysname=" + system + "&coords=1") {Port = -1};
+					UriBuilder content = new UriBuilder(edsmURL + "systems?sysname=" + system + "&coords=1") { Port = -1 };
 					AppendStatus("Querying EDSM for " + system);
 					NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
 					content.Query = query.ToString();
@@ -774,46 +841,45 @@ namespace RatTracker_WPF
 					response.EnsureSuccessStatusCode();
 					string responseString = response.Content.ReadAsStringAsync().Result;
 					//AppendStatus("Got response: " + responseString);
-					if (responseString == "-1")
-						return new List<EdsmSystem>() {};
+					if (responseString =="-1")
+						return new List<EDSMSystem>() { };
 					NameValueCollection temp = new NameValueCollection();
-					IEnumerable<EdsmSystem> m = JsonConvert.DeserializeObject<IEnumerable<EdsmSystem>>(responseString);
+					IEnumerable<EDSMSystem> m = JsonConvert.DeserializeObject<IEnumerable<EDSMSystem>>(responseString);
 					return m;
 				}
 			}
 			catch (Exception ex)
 			{
 				AppendStatus("Exception in QueryEDSMSystem: " + ex.Message);
-				return new List<EdsmSystem>() {};
+				return new List<EDSMSystem>() { };
 			}
 		}
 
-		public IEnumerable<EdsmSystem> GetCandidateSystems(string target)
+		public IEnumerable<EDSMSystem> GetCandidateSystems(string target)
 		{
-			IEnumerable<EdsmSystem> candidates;
-			IEnumerable<EdsmSystem> finalcandidates = new List<EdsmSystem>();
+			IEnumerable<EDSMSystem> candidates;
+			IEnumerable<EDSMSystem> finalcandidates= new List<EDSMSystem>();
 			string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-zA-Z])+(\\d+(?:-\\d+)+?)";
-			Match mymatch = Regex.Match(target, sysmatch, RegexOptions.IgnoreCase);
+			Match mymatch = Regex.Match(target, sysmatch,RegexOptions.IgnoreCase);
 			candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
 			AppendStatus("Candidate count is " + candidates.Count().ToString() + " from a subgroup of " + mymatch.Groups[3].Value);
-			finalcandidates = candidates.Where(x => x.Coords != null);
+			finalcandidates = candidates.Where(x=>x.coords != null); 
 			AppendStatus("FinalCandidates with coords only is size " + finalcandidates.Count());
 			if (finalcandidates.Count() < 1)
 			{
 				AppendStatus("No final candidates, widening search further...");
 				candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[2].Value)));
-				finalcandidates = candidates.Where(x => x.Coords != null);
+				finalcandidates = candidates.Where(x=>x.coords!= null);
 				if (finalcandidates.Count() < 1)
 				{
 					AppendStatus("Still nothing! Querying whole sector.");
 					candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[1].Value)));
-					finalcandidates = candidates.Where(x => x.Coords != null);
+					finalcandidates = candidates.Where(x=>x.coords != null);
 				}
 			}
 			return finalcandidates;
 		}
-
-		/* Attempts to calculate a distance in lightyears between two given systems.
+        /* Attempts to calculate a distance in lightyears between two given systems.
         * This is done using EDSM coordinates.
         * TODO: Once done with testing, transition source to be a <List>TravelLog.
         * TODO: Wait - this is not smart. CalculateEDSMDistance should just give you
@@ -821,61 +887,59 @@ namespace RatTracker_WPF
         * Move this functionality out of there, and leave CED requiring a valid source
         * coord - maybe even require source to be type EDSMCoords.
         */
-
-		public double CalculateEDSMDistance(string source, string target)
+        public double CalculateEDSMDistance(string source, string target)
 		{
-			EdsmCoords sourcecoords = new EdsmCoords();
-			EdsmCoords targetcoords = new EdsmCoords();
-			IEnumerable<EdsmSystem> candidates;
+			EDSMCoords sourcecoords= new EDSMCoords();
+			EDSMCoords targetcoords= new EDSMCoords();
+			IEnumerable<EDSMSystem> candidates;
 			if (source == target)
 				return 0; /* Well, it COULD happen? People have been known to do stupid things. */
-			foreach (TravelLog mysource in myTravelLog.Reverse())
+			foreach(TravelLog mysource in myTravelLog.Reverse())
 			{
-				if (mysource.system.Coords == null)
+				if (mysource.system.coords == null)
 				{
-					AppendStatus("System in travellog has no coords:" + mysource.system.Name);
+					AppendStatus("System in travellog has no coords:" + mysource.system.name);
 				}
 				else
 				{
-					AppendStatus("Found coord'ed system " + mysource.system.Name + ", using as source.");
-					sourcecoords = mysource.system.Coords;
+					AppendStatus("Found coord'ed system " + mysource.system.name+", using as source.");
+					sourcecoords = mysource.system.coords;
 				}
 			}
-			if (sourcecoords == null || source == "Fuelum")
+			if(sourcecoords == null || source=="Fuelum")
 			{
-				AppendStatus("Search for travellog coordinated system failed, using Fuelum coords");
-				// Add a static Fuelum system reference so we don't have to query EDSM for it.
+				AppendStatus("Search for travellog coordinated system failed, using Fuelum coords"); // Add a static Fuelum system reference so we don't have to query EDSM for it.
 				sourcecoords = fuelumCoords;
 			}
 			candidates = QueryEDSMSystem(target);
-			if (candidates == null || candidates.Count() < 1)
+			if (candidates == null || candidates.Count() <1)
 			{
 				AppendStatus("EDSM does not know that system. Widening search...");
 				candidates = GetCandidateSystems(target);
 			}
-			if (candidates.FirstOrDefault().Coords == null)
+			if(candidates.FirstOrDefault().coords == null)
 			{
 				AppendStatus("Known system, but no coords. Widening search...");
 				candidates = GetCandidateSystems(target);
 			}
 			if (candidates == null || candidates.Count() < 1)
 			{
-				//Still couldn't find something, abort.
-				AppendStatus("Couldn't find a candidate system, aborting...");
-				return -1;
+					//Still couldn't find something, abort.
+					AppendStatus("Couldn't find a candidate system, aborting...");
+					return -1;
 			}
 			else
 			{
 				AppendStatus("I got " + candidates.Count() + " systems with coordinates. Picking the first.");
-				targetcoords = candidates.FirstOrDefault().Coords;
+				targetcoords = candidates.FirstOrDefault().coords;
 			}
 			if (sourcecoords != null && targetcoords != null)
 			{
 				AppendStatus("We have two sets of coords that we can use to find a distance.");
-				double deltaX = sourcecoords.X - targetcoords.X;
-				double deltaY = sourcecoords.Y - targetcoords.Y;
-				double deltaZ = sourcecoords.Z - targetcoords.Z;
-				double distance = (double) Math.Sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
+				double deltaX = sourcecoords.x - targetcoords.x;
+				double deltaY = sourcecoords.y - targetcoords.y;
+				double deltaZ = sourcecoords.z - targetcoords.z;
+				double distance = (double)Math.Sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
 				AppendStatus("Distance should be " + distance.ToString());
 				return distance;
 			}
@@ -898,227 +962,289 @@ namespace RatTracker_WPF
 			CalculateEDSMDistance("Sol", SystemName.Text);
 		}
 
-		private void MenuItem_Click_1(object sender, RoutedEventArgs e)
-		{
-			//open the dispatch interface
-			DispatchInterface.DispatchMain dlg = new DispatchInterface.DispatchMain();
-			dlg.Show();
-		}
-
-		private void OverlayMenu_Click(object sender, RoutedEventArgs e)
-		{
-			overlay = new Overlay();
-			overlay.Show();
-			IEnumerable<Monitor> monitors = Monitor.AllMonitors;
-			foreach (Monitor mymonitor in monitors)
-			{
-				if (mymonitor.IsPrimary == true)
+				private void MenuItem_Click_1(object sender, RoutedEventArgs e)
 				{
-					overlay.Left = mymonitor.Bounds.Right - overlay.Width;
-					overlay.Top = mymonitor.Bounds.Top;
+					//open the dispatch interface
+					DispatchInterface.DispatchMain dlg = new DispatchInterface.DispatchMain();
+					dlg.Show();
 				}
-			}
-			overlay.Topmost = true;
-			HotKeyHost hotKeyHost = new HotKeyHost((HwndSource) PresentationSource.FromVisual(Application.Current.MainWindow));
-			hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
-			hotKeyHost.HotKeyPressed += handleHotkeyPress;
-		}
 
-		private void handleHotkeyPress(object sender, HotKeyEventArgs e)
-		{
-			Console.WriteLine("Hotkey pressed: " + Name + e.HotKey.Key.ToString());
-			if (e.HotKey.Key == Key.O)
-			{
-				if (overlay.Visibility == Visibility.Hidden)
-					overlay.Visibility = Visibility.Visible;
-				else
-					overlay.Visibility = Visibility.Hidden;
-			}
-		}
+        private void OverlayMenu_Click(object sender, RoutedEventArgs e)
+        {
+            overlay = new Overlay();
+            overlay.Show();
+            IEnumerable<Monitor> monitors = Monitor.AllMonitors;
+            foreach(Monitor mymonitor in monitors)
+            {
+                if (mymonitor.IsPrimary == true){
+                    overlay.Left = mymonitor.Bounds.Right-overlay.Width;
+                    overlay.Top = mymonitor.Bounds.Top;
+                }
+            }
+            overlay.Topmost = true;
+            HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)HwndSource.FromVisual(App.Current.MainWindow));
+            hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
+            hotKeyHost.HotKeyPressed += handleHotkeyPress;
+        }
 
-		private void App_Deactivated(object sender, EventArgs e)
-		{
-			if (overlay != null)
-			{
-				overlay.Topmost = true;
-			}
-		}
+        private void handleHotkeyPress(object sender, HotKeyEventArgs e)
+        {
+<<<<<<< HEAD
+            /* Fleh? */
+        }
 
-		protected virtual void NotifyPropertyChanged([CallerMemberName] string propertyName = null)
-		{
-			PropertyChangedEventHandler onPropertyChanged = PropertyChanged;
-			onPropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-		}
+        private void frButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.FriendRequest = GetNextState(myClient.FriendRequest);
 
-		/// 
-		/// Rat-Button click handlers
-		/// TODO review api messages
-		/// 
-		private void frButton_Click(object sender, RoutedEventArgs e)
-		{
-			IDictionary<string, string> data = new Dictionary<string, string>();
-			RatState ratState = GetRatStateForButton(sender, FrButton, FrButton_Copy, FrButton_Copy1);
+            SetBackgroundColour(myClient.FriendRequest, FrButton);
 
-			switch (ratState.FriendRequest)
-			{
-				case RequestState.NotRecieved:
-					ratState.FriendRequest = RequestState.Recieved;
-					AppendStatus("Sending Friend Request acknowledgement.");
-					data.Add("ReceivedFR", "true");
-					apworker.SendWs("FriendRequest", data);
-					break;
-				case RequestState.Recieved:
-					ratState.FriendRequest = RequestState.Accepted;
-					break;
-				case RequestState.Accepted:
-					AppendStatus("Cancelling FR status.");
-					data.Add("ReceivedFR", "false");
-					apworker.SendWs("FriendsRequest", data);
-					ratState.FriendRequest = RequestState.NotRecieved;
-					break;
-				default:
-					throw new ArgumentOutOfRangeException();
-			}
-		}
+            IDictionary<string, string> data;
+            switch (myClient.FriendRequest)
+            {
+                case RequestState.Accepted:
+                    AppendStatus("Sending Friend Request acknowledgement.");
+                    data = new Dictionary<string, string> {{"ReceivedFR", "true"}};
+                    SendWs("FriendRequest", data);
+                    break;
+                case RequestState.NotRecieved:
+                    AppendStatus("Cancelling FR status.");
+                    data = new Dictionary<string, string> {{"ReceivedFR", "false"}};
+                    SendWs("FriendsRequest", data);
+                    break;
+            }
+        }
 
-		private void wrButton_Click(object sender, RoutedEventArgs e)
-		{
-			IDictionary<string, string> data = new Dictionary<string, string>();
-			RatState ratState = GetRatStateForButton(sender, WrButton, WrButton_Copy, WrButton_Copy1);
+        private RequestState GetNextState(RequestState state)
+        {
+            switch (state)
+            {
+                case RequestState.NotRecieved:
+                    return RequestState.Recieved;
+                case RequestState.Recieved:
+                    return RequestState.Accepted;
+                case RequestState.Accepted:
+                    return RequestState.NotRecieved;
+                default:
+                    return RequestState.NotRecieved;
+            }
+        }
 
-			switch (ratState.WingRequest)
-			{
-				case RequestState.NotRecieved:
-					ratState.WingRequest = RequestState.Recieved;
-					AppendStatus("Sending Wing Request acknowledgement.");
-					data.Add("ReceivedWR", "true");
-					apworker.SendWs("WingRequest", data);
-					break;
-				case RequestState.Recieved:
-					ratState.WingRequest = RequestState.Accepted;
-					break;
-				case RequestState.Accepted:
-					ratState.WingRequest = RequestState.NotRecieved;
-					AppendStatus("Cancelled WR status.");
-					data.Add("ReceivedWR", "false");
-					apworker.SendWs("WingRequest", data);
-					break;
-				default:
-					throw new ArgumentOutOfRangeException();
-			}
-		}
+        private void SetBackgroundColour(RequestState state, Button button)
+        {
+            switch (state)
+            {
+                case RequestState.NotRecieved:
+                    button.Background = Brushes.Red;
+                    break;
+                case RequestState.Recieved:
+                    button.Background = Brushes.Orange;
+                    break;
+                case RequestState.Accepted:
+                    button.Background = Brushes.LightGreen;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+=======
+            Console.WriteLine("Hotkey pressed: "+Name+e.HotKey.Key.ToString());
+            if (e.HotKey.Key == Key.O)
+            {
+                if (overlay.Visibility == Visibility.Hidden)
+                    overlay.Visibility = Visibility.Visible;
+                else
+                    overlay.Visibility = Visibility.Hidden;
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
+            }
+        }
 
-		private void sysButton_Click(object sender, RoutedEventArgs e)
-		{
-			RatState ratState = GetRatStateForButton(sender, SysButton, SysButton_Copy, SysButton_Copy1);
-			if (ratState.InSystem)
-			{
-				AppendStatus("Sending System acknowledgement.");
-			}
-			else
-			{
-				AppendStatus("Cancelling System status.");
-			}
+        [Serializable]
+        public class CustomHotKey : HotKey
+        {
+<<<<<<< HEAD
+            myClient.WingRequest = GetNextState(myClient.WingRequest);
+            SetBackgroundColour(myClient.WingRequest, WrButton);
 
-			ratState.InSystem = !ratState.InSystem;
-		}
+            IDictionary<string, string> data;
+            switch (myClient.FriendRequest)
+            {
+                case RequestState.Accepted:
+                    AppendStatus("Sending Wing Request acknowledgement.");
+                    data = new Dictionary<string, string> {{"ReceivedWR", "true"}};
+                    SendWs("WingRequest", data);
+                    break;
+                case RequestState.NotRecieved:
+                    AppendStatus("Cancelled WR status.");
+                    data = new Dictionary<string, string> {{"ReceivedWR", "false"}};
+                    SendWs("WingRequest", data);
+                    break;
+            }
+        }
 
-		private void bcnButton_Click(object sender, RoutedEventArgs e)
-		{
-			RatState ratState = GetRatStateForButton(sender, BcnButton, BcnButton_Copy, BcnButton_Copy1);
-			if (ratState.Beacon)
-			{
-				AppendStatus("Sending Beacon acknowledgement.");
-			}
-			else
-			{
-				AppendStatus("Cancelling Beacon status.");
-			}
+        private void sysButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.InSystem = !myClient.InSystem;
 
-			ratState.Beacon = !ratState.Beacon;
-		}
+            if (myClient.InSystem)
+            {
+                AppendStatus("Sending System acknowledgement.");
+                SysButton.Background = Brushes.LightGreen;
+            }
+            else
+            {
+                AppendStatus("Cancelling System status.");
+                SysButton.Background = Brushes.Red;
+=======
+            public CustomHotKey(string name, Key key, ModifierKeys modifiers, bool enabled)
+                : base(key, modifiers, enabled)
+            {
+                Name = name;
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
+            }
 
-		private void instButton_Click(object sender, RoutedEventArgs e)
-		{
-			RatState ratState = GetRatStateForButton(sender, InstButton, InstButton_Copy, InstButton_Copy1);
-			if (ratState.InInstance)
-			{
-				AppendStatus("Sending Good Instance message.");
-			}
-			else
-			{
-				AppendStatus("Cancelling Good instance message.");
-			}
+<<<<<<< HEAD
+        private void bcnButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.Beacon = !myClient.Beacon;
 
-			ratState.InInstance = !ratState.InInstance;
-		}
+            if (myClient.Beacon)
+            {
+                AppendStatus("Sending Beacon acknowledgement.");
+                BcnButton.Background = Brushes.LightGreen;
+            }
+            else
+            {
+                AppendStatus("Cancelling Beacon status.");
+                BcnButton.Background = Brushes.Red;
+            }
+        }
 
-		private RatState GetRatStateForButton(object sender, Button selfButton, Button rat2Button, Button rat3Button)
-		{
-			RatState ratState;
-			if (Equals(sender, selfButton))
-			{
-				ratState = MyClient.Self;
-			}
-			else if (Equals(sender, rat2Button))
-			{
-				ratState = MyClient.Rat2;
-			}
-			else if (Equals(sender, rat3Button))
-			{
-				ratState = MyClient.Rat3;
-			}
-			else
-			{
-				ratState = MyClient.Self;
-			}
+        private void instButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.InInstance = !myClient.InInstance;
+            if (myClient.InInstance)
+            {
+                AppendStatus("Sending Good Instance message.");
+                InstButton.Background = Brushes.LightGreen;
+            }
+            else
+            {
+                AppendStatus("Cancelling good instance message.");
+                InstButton.Background = Brushes.Red;
+            }
+        }
 
-			return ratState;
-		}
+        private void fueledButton_Click(object sender, RoutedEventArgs e)
+        {
+            myClient.Fueled = !myClient.Fueled;
+            if (myClient.Fueled)
+            {
+                AppendStatus("Reporting fueled status, requesting paperwork link...");
+                FueledButton.Background = Brushes.LightGreen;
+            }
+            else
+            {
+                AppendStatus("Fueled status now negative.");
+                FueledButton.Background = Brushes.Red;
+            }
 
+            AppendStatus("Sending fake rescue request!");
+            IDictionary<string, string> req = new Dictionary<string, string>();
+            req.Add("open", "true");
+            //req.Add("_id", myRescue.id); /* TODO: Must hold a handle to my rescue ID somewhere to identify for API interaction */
+            SendWs("rescues", req);
+        }
 
-		private void fueledButton_Click(object sender, RoutedEventArgs e)
-		{
-			if (Equals(FueledButton.Background, Brushes.Red))
-			{
-				AppendStatus("Reporting fueled status, requesting paperwork link...");
-				FueledButton.Background = Brushes.Green;
-				/* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
-			}
-			else
-			{
-				AppendStatus("Fueled status now negative.");
-				FueledButton.Background = Brushes.Red;
-			}
-			AppendStatus("Sending fake rescue request!");
-			IDictionary<string, string> req = new Dictionary<string, string>();
-			req.Add("open", "true");
-			//req.Add("_id", myRescue.id); /* TODO: Must hold a handle to my rescue ID somewhere to identify for API interaction */
-			apworker.SendWs("rescues", req);
-		}
+        private void currentButton_Click(object sender, RoutedEventArgs e)
+        {
+            AppendStatus("Setting client location to current system: Fuelum");
+            SystemName.Text = "Fuelum";
+        }
 
-		[Serializable]
-		public class CustomHotKey : HotKey
-		{
-			private string name;
+        private async void updateButton_Click(object sender, RoutedEventArgs e)
+        {
+            AppendStatus("Trying to fetch rescues...");
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            //data.Add("rats", "56a8fcc7abdd7cc91123fd25");
+            data.Add("open", "true");
+            string col = await apworker.queryAPI("rescues", data);
 
-			public CustomHotKey(string name, Key key, ModifierKeys modifiers, bool enabled) : base(key, modifiers, enabled)
-			{
-				Name = name;
-			}
+            if (col == null)
+            {
+                AppendStatus("No COL returned from Rescues.");
+            }
+            else
+            {
+                AppendStatus("Got a COL from Rescues query!");
+                RootObject rescues = JsonConvert.DeserializeObject<RootObject>(col);
+                await GetMissingRats(rescues);
+                GetMyRescueIfAssigned(rescues);
 
-			public string Name
-			{
-				get { return name; }
-				set
-				{
-					if (value != name)
-					{
-						name = value;
-						OnPropertyChanged(name);
-					}
-				}
-			}
-		}
-	}
+                RescueGrid.ItemsSource = rescues.Data;
+                RescueGrid.AutoGenerateColumns = false;
+
+                foreach (DataGridColumn column in RescueGrid.Columns)
+=======
+            private string name;
+            public string Name
+            {
+                get { return name; }
+                set
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
+                {
+                    if (value != name)
+                    {
+                        name = value;
+                        OnPropertyChanged(name);
+                    }
+                }
+            }
+        }
+<<<<<<< HEAD
+
+        private void GetMyRescueIfAssigned(RootObject rescues)
+        {
+            Datum openCase = rescues.Data.FirstOrDefault(x => x.Rats.Contains(""));
+
+            if (openCase != null)
+            {
+                myClient = new ClientInfo {Rescue = openCase};
+            }
+            else
+            {
+                myClient = null;
+            }
+        }
+
+        private async Task GetMissingRats(RootObject rescues)
+=======
+            private void App_Deactivated(object sender, EventArgs e)
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
+        {
+            if(overlay != null)
+            {
+                overlay.Topmost = true;
+            }
+        }
+
+<<<<<<< HEAD
+        private void startButton_Click(object sender, RoutedEventArgs e)
+        {
+            AppendStatus("Started tracking new client " + ClientName.Text);
+            // myClient.ClientName = ClientName.Text;
+            FrButton.Background = Brushes.Red;
+            WrButton.Background = Brushes.Red;
+            InstButton.Background = Brushes.Red;
+            BcnButton.Background = Brushes.Red;
+            FueledButton.Background = Brushes.Red;
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            wndSettings swindow = new wndSettings();
+            swindow.Show();
+        }
+
+=======
+>>>>>>> c0e5d0bca24f17d64794bd65f994110075151350
+    }
 }
