@@ -5,8 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RatTracker_WPF.DispatchInterface"
         mc:Ignorable="d"
-        Title="DispatchMain" Height="300" Width="300">
+        Title="DispatchMain" Height="300" Width="755.717" MinWidth="750" MinHeight="300" SizeChanged="Window_SizeChanged">
     <Grid>
-        
-    </Grid>
+        <ListBox x:Name="CasesListbox" HorizontalAlignment="Stretch" Margin="10,22,599,20" VerticalAlignment="Stretch"/>
+		<Label x:Name="label" Content="Active cases" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top"/>
+		<ListBox x:Name="listBox" HorizontalAlignment="Left" Height="100" Margin="163,22,0,0" VerticalAlignment="Top" Width="100"/>
+
+	</Grid>
 </Window>
