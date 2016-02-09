@@ -21,12 +21,12 @@ namespace RatTracker_WPF.DispatchInterface
 	public partial class DispatchMain : Window
 	{
 		private APIWorker m_ApiWorker;
+		private string m_PW = "lalala"; //doing this for now as absolver has no field for password in the settings dialog
+		private string m_UN = "am@drl.dk"; //temp hack for username and pw
 		public DispatchMain()
 		{
 			InitializeComponent();
 
-			Properties.Settings.Default.APIPassword = "lalala"; //doing this for now as absolver has no field for password in the settings dialog
-			Properties.Settings.Default.APIUsername = "am@drl.dk";
 		}
 
 		private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -43,8 +43,8 @@ namespace RatTracker_WPF.DispatchInterface
 		private async void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			List<KeyValuePair<string, string>> logindata = new List<KeyValuePair<string, string>>();
-			logindata.Add(new KeyValuePair<string, string>("email", Properties.Settings.Default.APIUsername));
-			logindata.Add(new KeyValuePair<string, string>("password", Properties.Settings.Default.APIPassword));
+			logindata.Add(new KeyValuePair<string, string>("email", m_UN));
+			logindata.Add(new KeyValuePair<string, string>("password", m_PW));
 
 			m_ApiWorker = new APIWorker();
 			object o = await m_ApiWorker.sendAPI("login", logindata);
