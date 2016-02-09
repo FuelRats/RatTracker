@@ -25,7 +25,7 @@ namespace RatTracker_WPF.DispatchInterface
 		{
 			InitializeComponent();
 
-			Properties.Settings.Default.APIPassword = "lalala";
+			Properties.Settings.Default.APIPassword = "lalala"; //doing this for now as absolver has no field for password in the settings dialog
 			Properties.Settings.Default.APIUsername = "am@drl.dk";
 		}
 
