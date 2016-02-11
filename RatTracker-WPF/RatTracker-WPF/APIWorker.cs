@@ -7,6 +7,7 @@ using System.Diagnostics;
 using WebSocket4Net;
 using Newtonsoft.Json;
 using ErrorEventArgs = SuperSocket.ClientEngine.ErrorEventArgs;
+using System.Net;
 
 namespace RatTracker_WPF
 {
@@ -30,13 +31,15 @@ namespace RatTracker_WPF
         {
             try
             {
-                string wsurl = "ws://dev.api.fuelrats.com/";
+                string wsurl = "ws://10.0.0.71:8888/";
                 Console.WriteLine("Connecting to WS at " + wsurl);
                 ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455);
+                ws.AllowUnstrustedCertificate = true;
                 ws.Error += websocketClient_Error;
                 ws.Opened += websocketClient_Opened;
                 ws.MessageReceived += websocketClient_MessageReceieved;
                 ws.Closed += websocket_Client_Closed;
+                ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
             }
             catch (Exception ex)
             {

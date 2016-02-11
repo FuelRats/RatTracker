@@ -117,11 +117,15 @@
     <Compile Include="DispatchInterface\DispatchMain.xaml.cs">
       <DependentUpon>DispatchMain.xaml</DependentUpon>
     </Compile>
+    <Compile Include="EDDBData.cs" />
     <Compile Include="GlobalHotkey.cs" />
     <Compile Include="Models\Api\Client.cs" />
     <Compile Include="Models\Api\ClientInfo.cs" />
     <Compile Include="Converter\ClientConverter.cs" />
     <Compile Include="Models\Api\Datum.cs" />
+    <Compile Include="Models\App\OverlayMessage.cs" />
+    <Compile Include="Models\EDDB\EDDBStation.cs" />
+    <Compile Include="Models\EDDB\EDDBSystem.cs" />
     <Compile Include="Models\Edsm\EDSMCoords.cs" />
     <Compile Include="Models\Edsm\EDSMSystem.cs" />
     <Compile Include="Models\NetLog\Friend.cs" />

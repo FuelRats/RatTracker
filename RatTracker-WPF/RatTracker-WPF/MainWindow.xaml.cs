@@ -886,16 +886,27 @@ namespace RatTracker_WPF
 			}
 		}
 
-		private void button_Click_1(object sender, RoutedEventArgs e)
+		private async void button_Click_1(object sender, RoutedEventArgs e)
 		{
-			TriggerSystemChange("Lave");
+			//TriggerSystemChange("Lave");
 			//TriggerSystemChange("Blaa Hypai AI-I b26-1");
 			//DateTime testdate = DateTime.Now;
 /*            myTravelLog.Add(new TravelLog{ system=new EDSMSystem(){ name = "Sol" }, lastvisited=testdate});
 			myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name = "Fuelum" }, lastvisited = testdate});
 			myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name= "Leesti" }, lastvisited = testdate}); */
 			//AppendStatus("Travellog now contains " + myTravelLog.Count() + " systems. Timestamp of first is " + myTravelLog.First().lastvisited +" name "+myTravelLog.First().system.name);
-			CalculateEDSMDistance("Sol", SystemName.Text);
+			//CalculateEDSMDistance("Sol", SystemName.Text);
+            OverlayMessage mymessage = new OverlayMessage();
+            mymessage.line1header = "Nearest station:";
+            mymessage.line1content = "Wollheim Vision, Fuelum (0LY)";
+            mymessage.line2header = "Pad size:";
+            mymessage.line2content = "Large";
+            mymessage.line3header = "Capabilities:";
+            mymessage.line3content = "Refuel, Rearm, Repair";
+            //overlay.Queue_Message(mymessage, 30);
+            EDDBData edworker = new EDDBData();
+            string status = await edworker.UpdateEDDBData();
+            AppendStatus("EDDB: "+status);
 		}
 
 		private void MenuItem_Click_1(object sender, RoutedEventArgs e)
