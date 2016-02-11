@@ -22,10 +22,10 @@ using System.Windows.Threading;
 using System.Xml.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using RatTracker_WPF.Models;
 using RatTracker_WPF.Models.Api;
 using RatTracker_WPF.Models.App;
 using RatTracker_WPF.Models.Edsm;
+using RatTracker_WPF.Models.EDDB;
 using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
 using SpeechLib;
@@ -896,17 +896,22 @@ namespace RatTracker_WPF
 			myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name= "Leesti" }, lastvisited = testdate}); */
 			//AppendStatus("Travellog now contains " + myTravelLog.Count() + " systems. Timestamp of first is " + myTravelLog.First().lastvisited +" name "+myTravelLog.First().system.name);
 			//CalculateEDSMDistance("Sol", SystemName.Text);
-            OverlayMessage mymessage = new OverlayMessage();
-            mymessage.line1header = "Nearest station:";
-            mymessage.line1content = "Wollheim Vision, Fuelum (0LY)";
-            mymessage.line2header = "Pad size:";
-            mymessage.line2content = "Large";
-            mymessage.line3header = "Capabilities:";
-            mymessage.line3content = "Refuel, Rearm, Repair";
-            //overlay.Queue_Message(mymessage, 30);
-            EDDBData edworker = new EDDBData();
-            string status = await edworker.UpdateEDDBData();
-            AppendStatus("EDDB: "+status);
+			OverlayMessage mymessage = new OverlayMessage();
+			mymessage.line1header = "Nearest station:";
+			mymessage.line1content = "Wollheim Vision, Fuelum (0LY)";
+			mymessage.line2header = "Pad size:";
+			mymessage.line2content = "Large";
+			mymessage.line3header = "Capabilities:";
+			mymessage.line3content = "Refuel, Rearm, Repair";
+			//overlay.Queue_Message(mymessage, 30);
+			EDDBData edworker = new EDDBData();
+			string status = await edworker.UpdateEDDBData();
+			AppendStatus("EDDB: " + status);
+
+			EDDBSystem eddbSystem = edworker.systems.First(s => s.name == "Fuelum");
+			var station = edworker.GetClosestStation(new EdsmCoords {X = eddbSystem.x, Y = eddbSystem.y, Z = eddbSystem.z});
+			AppendStatus("Closest system to 'Fuelum' is '" + eddbSystem.name +
+						"', closest station to star with known coordinates (should be 'Wollheim Vision') is '" + station.name + "'.");
 		}
 
 		private void MenuItem_Click_1(object sender, RoutedEventArgs e)
