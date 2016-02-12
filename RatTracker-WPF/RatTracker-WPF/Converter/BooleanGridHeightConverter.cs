@@ -2,21 +2,18 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Markup;
-using System.Windows.Media;
-using RatTracker_WPF.Models;
 
 namespace RatTracker_WPF.Converter
 {
-	public class BooleanToColourConverter :MarkupExtension, IValueConverter
+	public class BooleanGridHeightConverter : MarkupExtension, IValueConverter
 	{
-		public Brush RatStatusColourPositive { get; set; }= MainWindow.RatStatusColourPositive;
-		public Brush RatStatusColourNegative { get; set; } = MainWindow.RatStatusColourNegative;
+		public string TrueValue { get; set; }
 
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
 			bool state = value as bool? ?? false;
-			Brush result = state ? RatStatusColourPositive : RatStatusColourNegative;
-			return result;
+
+			return "1*";
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
