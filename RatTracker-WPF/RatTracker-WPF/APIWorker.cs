@@ -27,11 +27,11 @@ namespace RatTracker_WPF
         /*
          * queryAPI sends a GET request to the API. Kindasorta deprecated behavior.
          */
-        public void InitWs()
+        public async void InitWs()
         {
             try
             {
-                string wsurl = "ws://10.0.0.71:8888/";
+                string wsurl = "ws://10.0.0.71:8888/"; //TODO: Remove this hardcoding!
                 Console.WriteLine("Connecting to WS at " + wsurl);
                 ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455);
                 ws.AllowUnstrustedCertificate = true;
@@ -46,7 +46,7 @@ namespace RatTracker_WPF
                 Console.WriteLine("Well, that went tits up real fast: " + ex.Message);
             }
         }
-        public void OpenWs()
+        public async void OpenWs()
         {
             ws.Open();
 
@@ -55,7 +55,16 @@ namespace RatTracker_WPF
 
         public void SendWs(string action, IDictionary<string, string> data)
         {
+            switch (action)
+            {
+                case "rescue:update":
+                    break;
+                default:
+                    break;
+
+            }
             data.Add("action", action);
+            data.Add("applicationid", "0xDEADBEEF");
             string json = JsonConvert.SerializeObject(data);
             Console.WriteLine("sendWS Serialized to: " + json);
             ws.Send(json);
@@ -73,7 +82,19 @@ namespace RatTracker_WPF
              * at this point. Maybe attach a logger here?
              */
             dynamic data = JsonConvert.DeserializeObject(e.Message);
-            switch ((string)data.type)
+            //TODO: Implement error handling.
+            if(data.errors!= null)
+            {
+                Console.WriteLine("API error! " + data.data);
+                return;
+            }
+            //TODO: Implement actual pass to our 3PA logic.
+            if(data.application != null)
+            {
+                Console.WriteLine("Got an application message, pass to own parser.");
+                return;
+            }
+            switch ((string)data.action)
             {
                 case "welcome":
                     Console.WriteLine("API MOTD: " + data.data);

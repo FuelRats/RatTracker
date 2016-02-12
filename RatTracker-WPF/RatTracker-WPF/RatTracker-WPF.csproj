@@ -123,6 +123,8 @@
     <Compile Include="Models\Api\ClientInfo.cs" />
     <Compile Include="Converter\ClientConverter.cs" />
     <Compile Include="Models\Api\Datum.cs" />
+    <Compile Include="Models\App\ConnectionInfo.cs" />
+    <Compile Include="Models\App\NATType.cs" />
     <Compile Include="Models\App\OverlayMessage.cs" />
     <Compile Include="Models\EDDB\EDDBStation.cs" />
     <Compile Include="Models\EDDB\EDDBSystem.cs" />

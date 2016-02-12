@@ -35,7 +35,7 @@
                 <ColumnDefinition Width="163*"/>
                 <ColumnDefinition Width="299*"/>
             </Grid.ColumnDefinitions>
-            <Button x:Name="Button" Content="Go On-Duty" Margin="0,0,10,5" Background="#FFEE1313" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111" Grid.Column="1" Grid.Row="2"/>
+            <Button x:Name="Button" Content="Go On-Duty" Margin="0,0,10,41" Background="#FFEE1313" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2"/>
             <TextBox x:Name="StatusDisplay" Margin="10,10,279,40" TextWrapping="Wrap" Text="Status display" IsReadOnlyCaretVisible="True" VerticalScrollBarVisibility="Visible" Grid.Row="1" Grid.ColumnSpan="2"/>
             <Menu x:Name="MenuCopy" Height="19" VerticalAlignment="Top" Grid.ColumnSpan="2">
                 <MenuItem x:Name="MainMenu1" Header="Main Menu" Click="Main_Menu_Click">
@@ -45,8 +45,8 @@
                 <MenuItem Header="DispatchInterface" Click="MenuItem_Click_1"/>
                 <MenuItem x:Name="OverlayMenu" Header="Overlay" Click="OverlayMenu_Click"/>
             </Menu>
-            <Image x:Name="StatusImage" HorizontalAlignment="Left" Margin="10,6,0,15" Width="29" Source="Resources/green_light.png" Panel.ZIndex="10" Grid.Row="2"/>
-            <Label x:Name="Label" Content="Online" HorizontalAlignment="Left" Margin="44,6,0,15" Width="71" Grid.Row="2"/>
+            <Image x:Name="StatusImage" HorizontalAlignment="Left" Margin="10,262,0,41" Width="29" Source="Resources/green_light.png" Panel.ZIndex="10" Grid.Row="1" Grid.RowSpan="2"/>
+            <Label x:Name="Label" Content="Online" HorizontalAlignment="Left" Margin="44,262,0,41" Width="71" Grid.Row="1" Grid.RowSpan="2"/>
             <GroupBox x:Name="ConnectionInfoBox" Header="Connection Information" HorizontalAlignment="Right" Margin="0,10,10,0" Width="260" Grid.Column="1" Height="128" VerticalAlignment="Top" Grid.Row="1">
                 <Grid HorizontalAlignment="Right" Margin="0,10,1,0" Width="237" Grid.Column="1" Grid.Row="1" Height="95" VerticalAlignment="Top">
                     <Label x:Name="Label5" Content="Connection:" Height="28" VerticalAlignment="Top" HorizontalAlignment="Left" Width="105" Margin="5,0,0,0"/>
@@ -97,6 +97,9 @@
                     <Button x:Name="FueledButton" Content="Fueled" Height="19" Margin="0,190,10,0" VerticalAlignment="Top" Background="Red" Click="fueledButton_Click" HorizontalAlignment="Right" Width="44"/>
                 </Grid>
             </GroupBox>
+            <StatusBar Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="30" Margin="0,18,0,0" Grid.Row="2" VerticalAlignment="Top" Width="924">
+                <TextBlock x:Name="connectionStatus" Height="20" TextWrapping="Wrap" Text="TextBlock" Width="213"/>
+            </StatusBar>
         </Grid>
         <Grid x:Name="rat2Grid" HorizontalAlignment="Left" Height="61" Margin="676,109,0,0" VerticalAlignment="Top" Width="187" Visibility="Visible">
             <Button x:Name="FrButton_Copy" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="{Binding MyClient.Rat2.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="frButton_Click"/>

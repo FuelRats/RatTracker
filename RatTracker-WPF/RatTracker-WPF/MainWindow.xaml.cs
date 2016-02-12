@@ -62,6 +62,7 @@ namespace RatTracker_WPF
 		public bool stopNetLog;
 		private Thread threadLogWatcher;
 		private FileSystemWatcher watcher;
+        ConnectionInfo conninfo = new ConnectionInfo();
 
 		public MainWindow()
 		{
@@ -331,35 +332,30 @@ namespace RatTracker_WPF
 						count++;
 						string line = sr.ReadLine();
 						// TODO: Populate WAN, STUN and Turn server labels. Make cleaner TURN detection.
-						if (line.Contains("WAN:"))
-						{
-							AppendStatus("E:D is configured to listen on " + line);
-						}
-
+                        if(line.Contains("Local machine is"))
+                        {
+                            AppendStatus("My RunID: " + line.Substring(line.IndexOf("is ")));
+                            conninfo.runID = line.Substring(line.IndexOf("is "));
+                        }
+                        if (line.Contains("RxRoute")) // Yes, this early in the netlog, I figure we can just parse the RxRoute without checking for ID. Don't do this later though.
+                        {
+                            string rxpattern = "IP4NAT:(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d),(\\d),(\\d),(\\d{1,4})";
+                            Match match = Regex.Match(line, rxpattern, RegexOptions.IgnoreCase);
+                            if (match.Success)
+                            {
+                                AppendStatus("Route info: WAN:" + match.Groups[1].Value + " port " + match.Groups[2].Value + ", LAN:" + match.Groups[3].Value + " port " + match.Groups[4].Value + ", STUN: " + match.Groups[5].Value + ":" + match.Groups[6].Value + ", TURN: " + match.Groups[7].Value + ":" + match.Groups[8].Value +
+                                    " MTU: " + match.Groups[12].Value + " NAT type: " + match.Groups[9].Value);
+                                conninfo.WANAddress = match.Groups[1].Value + ":" + match.Groups[2].Value;
+                                conninfo.MTU = Int32.Parse(match.Groups[12].Value);
+                                conninfo.NATType = (NATType)Enum.Parse(typeof(NATType),match.Groups[9].Value);
+                                conninfo.TURNServer = match.Groups[7].Value + ":" + match.Groups[8].Value;
+                            }
+                        }
 						if (line.Contains("failed to initialise upnp"))
 						{
 							AppendStatus(
-								"CRITICAL: E:D has failed to establish a upnp port mapping, but E:D is configured to use upnp. Disable upnp in netlog if you have manually mapped ports.");
+								"CRITICAL: E:D has failed to establish a upnp port mapping, but E:D is configured to use upnp. Disable upnp in netlog if you have a router that can't do UPnP, and forward ports manually.");
 						}
-
-						if (line.Contains("Turn State: Ready"))
-						{
-							AppendStatus("Client has a valid TURN connection established.");
-							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => ConnTypeLabel.Content = "TURN routed"));
-							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => TurnButton.Background = Brushes.Green));
-						}
-
-						if (line.Contains("this machine after STUN reply"))
-						{
-							AppendStatus("STUN has mapped us to address.");
-							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => ConnTypeLabel.Content = "STUN enabled NAT"));
-							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => StunButton.Background = Brushes.Green));
-						}
-
 						if (line.Contains("Sync Established"))
 						{
 							AppendStatus("Sync Established.");
@@ -372,16 +368,6 @@ namespace RatTracker_WPF
 							AppendStatus(
 								"E:D has established a connection and client is in main menu. Ending early netlog parse.");
 							stopSnooping = true;
-						}
-
-						if (line.Contains("Symmetrical"))
-						{
-							AppendStatus(
-								"CRITICAL: E:D has detected symmetrical NAT on this connection. This may make it difficult for you to instance with clients!");
-							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => ConnTypeLabel.Content = "Symmetrical NAT"));
-							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => DirectButton.Background = Brushes.Red));
 						}
 					}
 
@@ -463,8 +449,20 @@ namespace RatTracker_WPF
 			{
 				AppendStatus("Successful identity match! ID: " + frmatch.Groups[1] + " IP:" + frmatch.Groups[3]);
 			}
-
-			if (line.Contains("FriendsRequest"))
+            string reMatchStats = "machines=(\\d+)&numturnlinks=(\\d+)&backlogtotal=(\\d+)&backlogmax=(\\d+)&avgsrtt=(\\d+)&loss=([0-9]*(?:\\.[0-9]*)+)&&jit=([0-9]*(?:\\.[0-9]*)+)&act1=([0-9]*(?:\\.[0-9]*)+)&act2=([0-9]*(?:\\.[0-9]*)+)"; //FDev, stahp! Why you make me do this shit?!
+            Match statmatch = Regex.Match(line, reMatchStats, RegexOptions.IgnoreCase);
+            if (statmatch.Success)
+            {
+                AppendStatus("Updating connection statistics.");
+                conninfo.Srtt = Int32.Parse(statmatch.Groups[5].Value);
+                conninfo.Loss = float.Parse(statmatch.Groups[6].Value);
+                conninfo.Jitter = float.Parse(statmatch.Groups[7].Value);
+                conninfo.Act1 = float.Parse(statmatch.Groups[8].Value);
+                conninfo.Act2 = float.Parse(statmatch.Groups[9].Value);
+                Dispatcher disp = Dispatcher;
+                disp.BeginInvoke(DispatcherPriority.Normal, (Action) (()=> connectionStatus.Text = "SRTT: " + conninfo.Srtt.ToString() + " Jitter: " + conninfo.Jitter.ToString() + " Loss: " + conninfo.Loss.ToString() + " In: " + conninfo.Act1 + " Out: " + conninfo.Act2));
+            }
+            if (line.Contains("FriendsRequest"))
 			{
 				parserState = "xml";
 				AppendStatus("Enter XML parse state. Full line: " + line);
