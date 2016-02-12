@@ -707,6 +707,7 @@ namespace RatTracker_WPF
 				AppendStatus("Got a COL from Rescues query!");
 				RootObject rescues = JsonConvert.DeserializeObject<RootObject>(col);
 				await GetMissingRats(rescues);
+				AppendStatus($"Got {rescues.Data.Count} open rescues.");
 
 				RescueGrid.ItemsSource = rescues.Data;
 				RescueGrid.AutoGenerateColumns = false;
@@ -924,6 +925,7 @@ namespace RatTracker_WPF
 		private void OverlayMenu_Click(object sender, RoutedEventArgs e)
 		{
 			overlay = new Overlay();
+			overlay.SetCurrentClient(MyClient);
 			overlay.Show();
 			IEnumerable<Monitor> monitors = Monitor.AllMonitors;
 			foreach (Monitor mymonitor in monitors)

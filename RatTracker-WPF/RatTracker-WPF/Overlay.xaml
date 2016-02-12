@@ -3,42 +3,152 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:RatTracker_WPF"
+        xmlns:converter="clr-namespace:RatTracker_WPF.Converter"
         mc:Ignorable="d"
-        Title="Overlay" Height="162.712" Width="289.322" AllowsTransparency="True" WindowStyle="None" ResizeMode="NoResize" Background="{DynamicResource brushTransparent}">
+        Title="Overlay" Height="186.54" Width="325.238" AllowsTransparency="True" WindowStyle="None"
+        ResizeMode="NoResize" Background="{DynamicResource brushTransparent}"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <Window.Resources>
+        <converter:RequestStateToColourConverter x:Key="RequestStateToColourConverter" RatStatusColourNegative="#00000000" RatStatusColourPending="#FF00B3F7" RatStatusColourPositive="#FF029E4C" />
+        <converter:BooleanToColourConverter x:Key="BooleanToColourConverter" RatStatusColourNegative="#00000000" RatStatusColourPositive="#FF029E4C"/>
+    </Window.Resources>
     <Grid>
-        <Label x:Name="activeClientLabelHeader" Content="Client:" HorizontalAlignment="Left" Height="26" Margin="10,10,0,0" VerticalAlignment="Top" Width="54" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Label x:Name="activeClientLabel" Content="CMDR FakeClient" HorizontalAlignment="Left" Height="26" Margin="104,10,0,0" VerticalAlignment="Top" Width="105" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Label x:Name="activeSystemLabelHeader" Content="System:" HorizontalAlignment="Left" Height="26" Margin="10,36,0,0" VerticalAlignment="Top" Width="54" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Label x:Name="activeSystemLabel" Content="Leesti" HorizontalAlignment="Left" Height="26" Margin="104,36,0,0" VerticalAlignment="Top" Width="54" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat1FRButton" Content="FR" HorizontalAlignment="Left" Height="25" Margin="104,67,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushEliteBlue}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat1WRButton" Content="WR" HorizontalAlignment="Left" Height="25" Margin="139,67,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushEliteBlue}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat1SYSButton" Content="SYS" HorizontalAlignment="Left" Height="25" Margin="174,67,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat1BCNButton" Content="BCN" HorizontalAlignment="Left" Height="25" Margin="209,67,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat1INSTButton" Content="INST" HorizontalAlignment="Left" Height="25" Margin="244,67,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden" />
-        <Label x:Name="rat1NameLabel" Content="Absolver" HorizontalAlignment="Left" Height="26" Margin="10,66,0,0" VerticalAlignment="Top" Width="89" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat2FRButton" Content="FR" HorizontalAlignment="Left" Height="25" Margin="104,93,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushEliteBlue}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden" />
-        <Button x:Name="rat2WRButton" Content="WR" HorizontalAlignment="Left" Height="25" Margin="139,93,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat2SYSButton" Content="SYS" HorizontalAlignment="Left" Height="25" Margin="174,93,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat2BCNButton" Content="BCN" HorizontalAlignment="Left" Height="25" Margin="209,93,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat2INSTButton" Content="INST" HorizontalAlignment="Left" Height="25" Margin="244,93,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Label x:Name="rat2NameLabel" Content="Ravenov" HorizontalAlignment="Left" Height="26" Margin="10,92,0,0" VerticalAlignment="Top" Width="89" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat3FRButton" Content="FR" HorizontalAlignment="Left" Height="25" Margin="104,119,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat3WRButton" Content="WR" HorizontalAlignment="Left" Height="25" Margin="139,119,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat3SYSButton" Content="SYS" HorizontalAlignment="Left" Height="25" Margin="174,119,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat3BCNButton" Content="BCN" HorizontalAlignment="Left" Height="25" Margin="209,119,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Button x:Name="rat3INSTButton" Content="INST" HorizontalAlignment="Left" Height="25" Margin="244,119,0,0" VerticalAlignment="Top" Width="35" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Label x:Name="rat3NameLabel" Content="Amolin" HorizontalAlignment="Left" Height="26" Margin="10,118,0,0" VerticalAlignment="Top" Width="89" Foreground="{DynamicResource brushEliteOrange}" Visibility="Hidden"/>
-        <Label x:Name="InfoLine1Header" Content="InfoLine1:" HorizontalAlignment="Left" Height="26" Margin="10,10,0,0" VerticalAlignment="Top" Width="89" Foreground="{DynamicResource brushEliteOrange}" />
-        <Label x:Name="InfoLine2Header" Content="InfoLine2:" HorizontalAlignment="Left" Height="26" Margin="10,36,0,0" VerticalAlignment="Top" Width="76" Foreground="{DynamicResource brushEliteOrange}" />
-        <Label x:Name="InfoLine3Header" Content="InfoLine3:" HorizontalAlignment="Left" Height="26" Margin="10,66,0,0" VerticalAlignment="Top" Width="89" Foreground="{DynamicResource brushEliteOrange}" />
-        <Label x:Name="InfoLine4Header" Content="InfoLine4:" HorizontalAlignment="Left" Height="26" Margin="10,92,0,0" VerticalAlignment="Top" Width="89" Foreground="{DynamicResource brushEliteOrange}"/>
-        <Label x:Name="InfoLine5Header" Content="InfoLine5:" HorizontalAlignment="Left" Height="26" Margin="10,118,0,0" VerticalAlignment="Top" Width="89" Foreground="{DynamicResource brushEliteOrange}"/>
-        <Label x:Name="InfoLine1Body" Content="InfoLine1 Content" HorizontalAlignment="Left" Height="26" Margin="104,10,0,0" VerticalAlignment="Top" Width="175" Foreground="{DynamicResource brushEliteOrange}"/>
-        <Label x:Name="InfoLine2Body" Content="InfoLine2 Content" HorizontalAlignment="Left" Height="26" Margin="104,36,0,0" VerticalAlignment="Top" Width="175" Foreground="{DynamicResource brushEliteOrange}"/>
-        <Label x:Name="InfoLine3Body" Content="InfoLine3 Content" HorizontalAlignment="Left" Height="26" Margin="104,66,0,0" VerticalAlignment="Top" Width="175" Foreground="{DynamicResource brushEliteOrange}"/>
-        <Label x:Name="InfoLine4Body" Content="InfoLine4 Content" HorizontalAlignment="Left" Height="26" Margin="104,92,0,0" VerticalAlignment="Top" Width="175" Foreground="{DynamicResource brushEliteOrange}"/>
-        <Label x:Name="InfoLine5Body" Content="InfoLine5 Content" HorizontalAlignment="Left" Height="26" Margin="104,118,0,0" VerticalAlignment="Top" Width="175" Foreground="{DynamicResource brushEliteOrange}"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="{Binding IsRescueActive, Converter={converter:BooleanGridHeightConverter TrueValue=1*}}" />
+            <RowDefinition Height="1*" />
+        </Grid.RowDefinitions>
 
+        <!-- Rescue & stuff -->
+        <Grid Name="Rescue">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="7*" />
+                <ColumnDefinition Width="5*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*" />
+                <RowDefinition Height="1*" />
+            </Grid.RowDefinitions>
+
+            <!-- Current client information -->
+            <StackPanel Grid.Column="0" Grid.Row="0" Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <Label x:Name="ActiveClientLabelHeader" Content="Client:"
+                           Foreground="{DynamicResource brushEliteOrange}" />
+                    <Label x:Name="ActiveClientLabel" Content="{Binding ClientInfo.ClientName}"
+                           Foreground="{DynamicResource brushEliteOrange}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label x:Name="ActiveSystemLabelHeader" Content="System:"
+                           Foreground="{DynamicResource brushEliteOrange}" />
+                    <Label x:Name="ActiveSystemLabel" Content="{Binding ClientInfo.ClientSystem}" Foreground="{DynamicResource brushEliteOrange}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- My state for current client -->
+            <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,0,-2" Orientation="Horizontal"
+                        VerticalAlignment="Bottom">
+                <Label Content="My state:" Foreground="{DynamicResource brushEliteOrange}" />
+                <StackPanel Orientation="Horizontal" Height="20">
+                    <Button x:Name="Rat1FrButton" Content="FR" Background="{Binding ClientInfo.Self.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" 
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat1WrButton" Content="WR" Background="{Binding ClientInfo.Self.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" 
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat1SysButton" Content="SYS" Background="{Binding ClientInfo.Self.InSystem, Converter={StaticResource BooleanToColourConverter}}" 
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat1BcnButton" Content="BCN" Background="{Binding ClientInfo.Self.Beacon, Converter={StaticResource BooleanToColourConverter}}" 
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat1InstButton" Content="INST" Background="{Binding ClientInfo.Self.InInstance, Converter={StaticResource BooleanToColourConverter}}" 
+                            BorderBrush="{DynamicResource brushEliteOrange}"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- State for rats #2 & #3 -->
+            <StackPanel Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Orientation="Vertical">
+                <!-- Rat #2 -->
+                <StackPanel Orientation="Horizontal">
+                    <Label x:Name="Rat2Label" Content="Rat 2:" Foreground="{DynamicResource brushEliteOrange}" />
+                    <Label x:Name="Rat2NameLabel" Content="Ravenov" Foreground="{DynamicResource brushEliteOrange}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="Rat2FrButton" Content="FR" Background="{Binding ClientInfo.Rat2.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" 
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat2WrButton" Content="WR" Background="{Binding ClientInfo.Rat2.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" 
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat2SysButton" Content="SYS" Background="{Binding ClientInfo.Rat2.InSystem, Converter={StaticResource BooleanToColourConverter}}" 
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat2BcnButton" Content="BCN" Background="{Binding ClientInfo.Rat2.Beacon, Converter={StaticResource BooleanToColourConverter}}"
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat2InstButton" Content="INST"  Background="{Binding ClientInfo.Rat2.InInstance, Converter={StaticResource BooleanToColourConverter}}"
+                            BorderBrush="{DynamicResource brushEliteOrange}"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                </StackPanel>
+
+                <!-- Rat #3 -->
+                <StackPanel Orientation="Horizontal">
+                    <Label x:Name="Rat3Label" Content="Rat 3:" Foreground="{DynamicResource brushEliteOrange}" />
+                    <Label x:Name="Rat3NameLabel" Content="Amolin" Foreground="{DynamicResource brushEliteOrange}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="Rat3FrButton" Content="FR" Background="{Binding ClientInfo.Rat3.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}"
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat3WrButton" Content="WR"  Background="{Binding ClientInfo.Rat3.WingRequest, Converter={StaticResource RequestStateToColourConverter}}"
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat3SysButton" Content="SYS"  Background="{Binding ClientInfo.Rat3.InSystem, Converter={StaticResource BooleanToColourConverter}}"
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat3BcnButton" Content="BCN"  Background="{Binding ClientInfo.Rat3.Beacon, Converter={StaticResource BooleanToColourConverter}}"
+                            BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                    <Button x:Name="Rat3InstButton" Content="INST"  Background="{Binding ClientInfo.Rat3.InInstance, Converter={StaticResource BooleanToColourConverter}}"
+                            BorderBrush="{DynamicResource brushEliteOrange}"
+                            Foreground="{DynamicResource brushEliteOrange}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <!-- Infolines -->
+        <Grid Grid.Row="1">
+            <Label x:Name="InfoLine1Header" Content="InfoLine1:" HorizontalAlignment="Left" Height="26"
+                   Margin="10,10,0,0" VerticalAlignment="Top" Width="89"
+                   Foreground="{DynamicResource brushEliteOrange}" />
+            <Label x:Name="InfoLine2Header" Content="InfoLine2:" HorizontalAlignment="Left" Height="26"
+                   Margin="10,36,0,0" VerticalAlignment="Top" Width="76"
+                   Foreground="{DynamicResource brushEliteOrange}" />
+            <Label x:Name="InfoLine3Header" Content="InfoLine3:" HorizontalAlignment="Left" Height="26"
+                   Margin="10,66,0,0" VerticalAlignment="Top" Width="89"
+                   Foreground="{DynamicResource brushEliteOrange}" />
+            <Label x:Name="InfoLine4Header" Content="InfoLine4:" HorizontalAlignment="Left" Height="26"
+                   Margin="10,92,0,0" VerticalAlignment="Top" Width="89"
+                   Foreground="{DynamicResource brushEliteOrange}" />
+            <Label x:Name="InfoLine5Header" Content="InfoLine5:" HorizontalAlignment="Left" Height="26"
+                   Margin="10,118,0,0" VerticalAlignment="Top" Width="89"
+                   Foreground="{DynamicResource brushEliteOrange}" />
+            <Label x:Name="InfoLine1Body" Content="InfoLine1 Content" HorizontalAlignment="Left" Height="26"
+                   Margin="104,10,0,0" VerticalAlignment="Top" Width="175"
+                   Foreground="{DynamicResource brushEliteOrange}" />
+            <Label x:Name="InfoLine2Body" Content="InfoLine2 Content" HorizontalAlignment="Left" Height="26"
+                   Margin="104,36,0,0" VerticalAlignment="Top" Width="175"
+                   Foreground="{DynamicResource brushEliteOrange}" />
+            <Label x:Name="InfoLine3Body" Content="InfoLine3 Content" HorizontalAlignment="Left" Height="26"
+                   Margin="104,66,0,0" VerticalAlignment="Top" Width="175"
+                   Foreground="{DynamicResource brushEliteOrange}" />
+            <Label x:Name="InfoLine4Body" Content="InfoLine4 Content" HorizontalAlignment="Left" Height="26"
+                   Margin="104,92,0,0" VerticalAlignment="Top" Width="175"
+                   Foreground="{DynamicResource brushEliteOrange}" />
+            <Label x:Name="InfoLine5Body" Content="InfoLine5 Content" HorizontalAlignment="Left" Height="26"
+                   Margin="104,118,0,0" VerticalAlignment="Top" Width="175"
+                   Foreground="{DynamicResource brushEliteOrange}" />
+        </Grid>
     </Grid>
 </Window>
