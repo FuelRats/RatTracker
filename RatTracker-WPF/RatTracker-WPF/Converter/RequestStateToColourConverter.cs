@@ -2,13 +2,18 @@ using System;
 using System.Windows.Media;
 using System.Globalization;
 using System.Windows.Data;
+using System.Windows.Markup;
 using RatTracker_WPF.Models;
 using RatTracker_WPF.Models.App;
 
 namespace RatTracker_WPF.Converter
 {
-	public class RequestStateToColourConverter : IValueConverter
+	public class RequestStateToColourConverter : MarkupExtension, IValueConverter
 	{
+		public Brush RatStatusColourNegative { get; set; } = MainWindow.RatStatusColourNegative;
+		public Brush RatStatusColourPending { get; set; } = MainWindow.RatStatusColourPending;
+		public Brush RatStatusColourPositive { get; set; } = MainWindow.RatStatusColourPositive;
+
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
 			RequestState? requestState = value as RequestState?;
@@ -18,16 +23,16 @@ namespace RatTracker_WPF.Converter
 			switch (requestState)
 			{
 				case RequestState.NotRecieved:
-					result = MainWindow.RatStatusColourNegative;
+					result = RatStatusColourNegative;
 					break;
 				case RequestState.Recieved:
-					result = MainWindow.RatStatusColourPending;
+					result = RatStatusColourPending;
 					break;
 				case RequestState.Accepted:
-					result = MainWindow.RatStatusColourPositive;
+					result = RatStatusColourPositive;
 					break;
 				case null:
-					result=MainWindow.RatStatusColourNegative;
+					result=RatStatusColourNegative;
 					break;
 				default:
 					throw new ArgumentOutOfRangeException();
@@ -39,6 +44,11 @@ namespace RatTracker_WPF.Converter
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
 		{
 			return null;
+		}
+
+		public override object ProvideValue(IServiceProvider serviceProvider)
+		{
+			return this;
 		}
 	}
 }

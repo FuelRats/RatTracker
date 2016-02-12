@@ -112,6 +112,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="APIWorker.cs" />
+    <Compile Include="Converter\BooleanGridHeightConverter.cs" />
     <Compile Include="Converter\BooleanToColourConverter.cs" />
     <Compile Include="Converter\RequestStateToColourConverter.cs" />
     <Compile Include="DispatchInterface\DispatchMain.xaml.cs">
