@@ -55,3 +55,4 @@ using System.Windows;
 [assembly: AssemblyFileVersion("1.0.0.0")]
 [assembly: NeutralResourcesLanguage("en-001")]
 
+[assembly: log4net.Config.XmlConfigurator(Watch = true)]

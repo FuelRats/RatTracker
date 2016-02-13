@@ -8,7 +8,7 @@ using WebSocket4Net;
 using Newtonsoft.Json;
 using ErrorEventArgs = SuperSocket.ClientEngine.ErrorEventArgs;
 using System.Net;
-
+using log4net;
 namespace RatTracker_WPF
 {
 
@@ -23,6 +23,8 @@ namespace RatTracker_WPF
     class APIWorker
     {
         static string apiURL = Properties.Settings.Default.APIURL; /* To be replaced with Settings property. */
+        private static readonly ILog logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private bool stopping = false;
         public WebSocket ws;
         /*
          * queryAPI sends a GET request to the API. Kindasorta deprecated behavior.
@@ -32,7 +34,7 @@ namespace RatTracker_WPF
             try
             {
                 string wsurl = "ws://10.0.0.71:8888/"; //TODO: Remove this hardcoding!
-                Console.WriteLine("Connecting to WS at " + wsurl);
+                logger.Info("Connecting to WS at " + wsurl);
                 ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455);
                 ws.AllowUnstrustedCertificate = true;
                 ws.Error += websocketClient_Error;
@@ -43,16 +45,22 @@ namespace RatTracker_WPF
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Well, that went tits up real fast: " + ex.Message);
+                logger.Fatal("Well, that went tits up real fast: " + ex.Message);
             }
         }
         public async void OpenWs()
         {
             ws.Open();
 
-            Console.WriteLine("WS client is " + ws.State);
+            logger.Debug("WS client is " + ws.State);
         }
 
+        public void DisconnectWs()
+        {
+            stopping = true;
+            ws.Close();
+            return;
+        }
         public void SendWs(string action, IDictionary<string, string> data)
         {
             switch (action)
@@ -66,14 +74,18 @@ namespace RatTracker_WPF
             data.Add("action", action);
             data.Add("applicationid", "0xDEADBEEF");
             string json = JsonConvert.SerializeObject(data);
-            Console.WriteLine("sendWS Serialized to: " + json);
+            logger.Debug("sendWS Serialized to: " + json);
             ws.Send(json);
         }
 
         private void websocket_Client_Closed(object sender, EventArgs e)
         {
-            Console.WriteLine("API WS Connection closed. Reconnecting...");
-            OpenWs();
+            if (stopping == true)
+                logger.Info("Disconnected from API WS server, stopping...");
+            else {
+                logger.Info("API WS Connection closed unexpectedly. Reconnecting...");
+                OpenWs();
+            }
         }
 
         private void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
@@ -85,25 +97,25 @@ namespace RatTracker_WPF
             //TODO: Implement error handling.
             if(data.errors!= null)
             {
-                Console.WriteLine("API error! " + data.data);
+                logger.Fatal("API error! " + data.data);
                 return;
             }
             //TODO: Implement actual pass to our 3PA logic.
             if(data.application != null)
             {
-                Console.WriteLine("Got an application message, pass to own parser.");
+                logger.Debug("Got an application message, pass to own parser.");
                 return;
             }
             switch ((string)data.action)
             {
                 case "welcome":
-                    Console.WriteLine("API MOTD: " + data.data);
+                    logger.Info("API MOTD: " + data.data);
                     break;
                 case "assignment":
-                    Console.WriteLine("Got a new assignment datafield: " + data.data);
+                    logger.Debug("Got a new assignment datafield: " + data.data);
                     break;
                 default:
-                    Console.WriteLine("Unknown API type field: " + data.type + ": " + data.data);
+                    logger.Debug("Unknown API type field: " + data.type + ": " + data.data);
                     break;
             }
 
@@ -112,12 +124,12 @@ namespace RatTracker_WPF
 
         public void websocketClient_Error(object sender, ErrorEventArgs e)
         {
-            Console.WriteLine("Websocket: Exception thrown: " + e.Exception.Message);
+            logger.Fatal("Websocket: Exception thrown: ",e.Exception);
         }
 
         public void websocketClient_Opened(object sender, EventArgs e)
         {
-            Console.WriteLine("Websocket: Connection to API established.");
+            logger.Info("Websocket: Connection to API established.");
             string message = JsonConvert.SerializeObject(new { cmd = "message", msg = "Fukken message" },
                 new JsonSerializerSettings { Formatting = Formatting.None });
             ws.Send(message);
@@ -142,18 +154,18 @@ namespace RatTracker_WPF
                         query[entry.Key] = entry.Value;
                     }
                     content.Query = query.ToString();
-                    Console.WriteLine("Built query string:" + content.ToString());
+                    logger.Debug("Built query string:" + content.ToString());
                     var response = await client.GetAsync(content.ToString());
                     //appendStatus("AsyncPost sent.");
                     if (response.IsSuccessStatusCode)
                     {
                         var responseString = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine("Starting response string parse task.");
+                        logger.Debug("Starting response string parse task.");
                         return apiGetResponse(responseString);
                     }
                     else
                     {
-                        Console.WriteLine("HTTP request returned an error:" + response.StatusCode);
+                        logger.Debug("HTTP request returned an error:" + response.StatusCode);
                         return "";
                     }
                     
@@ -161,7 +173,7 @@ namespace RatTracker_WPF
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception in QueryAPI: " + ex.Message);
+                logger.Fatal("Exception in QueryAPI: ", ex);
                 return "";
             }
         }
@@ -195,23 +207,23 @@ namespace RatTracker_WPF
          */
         public async Task<string> sendAPI(string action, List<KeyValuePair<string, string>> data)
         {
-            Console.WriteLine("SendAPI was called with action" + action);
+            logger.Debug("SendAPI was called with action" + action);
             try
             {
                 using (var client = new HttpClient())
                 {
                     var content = new FormUrlEncodedContent(data);
                     var response = await client.PostAsync(apiURL + action, content);
-                    Console.WriteLine("AsyncPost sent.");
+                    logger.Debug("AsyncPost sent.");
                     if (response.IsSuccessStatusCode)
                     {
                         var responseString = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine("Starting response string parse task.");
+                        logger.Debug("Starting response string parse task.");
                         return apiResponse(responseString);
                     }
                     else
                     {
-                        Console.WriteLine("HTTP request returned an error:" + response.StatusCode);
+                        logger.Info("HTTP request returned an error:" + response.StatusCode);
                         return "";
                     }
                     //connectWS();
@@ -219,7 +231,7 @@ namespace RatTracker_WPF
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Well, that didn't go well. SendAPI exception: " + ex.Message);
+                logger.Fatal("Well, that didn't go well. SendAPI exception: ", ex);
                 return "";
             }
         }
