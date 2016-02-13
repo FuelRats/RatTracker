@@ -52,8 +52,8 @@
                     <Label x:Name="Label5" Content="Connection:" Height="28" VerticalAlignment="Top" HorizontalAlignment="Left" Width="105" Margin="5,0,0,0"/>
                     <Label x:Name="Label6" Content="STUN address:" Height="23" Margin="5,43,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="89"/>
                     <Label x:Name="ConnTypeLabel" Content="Portmapped direct" Height="25" Margin="110,0,10,0" VerticalAlignment="Top"/>
-                    <Label x:Name="StunAddrLabel" Content="0.0.0.0:5555" Margin="119,43,10,27"/>
-                    <Label x:Name="TurnAddrLabel" Content="123.234.123.234:58102" Height="23" Margin="110,0,5,52" VerticalAlignment="Bottom"/>
+                    <Label x:Name="StunAddrLabel" Content="{Binding ConnInfo.WANAddress}" Margin="119,43,10,27"/>
+                    <Label x:Name="TurnAddrLabel" Content="{Binding ConnInfo.TURNServer}" Height="23" Margin="110,0,5,52" VerticalAlignment="Bottom"/>
                     <Label x:Name="Label7" Content="TURN server:" HorizontalAlignment="Right" Height="23" Margin="0,0,141,52" VerticalAlignment="Bottom" Width="91"/>
                     <Button x:Name="StunButton" Content="STUN" Margin="0,68,188,0" Background="Red" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="39"/>
                     <Button x:Name="TurnButton" Content="TURN" Margin="0,68,145,0" Background="Red" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="38"/>

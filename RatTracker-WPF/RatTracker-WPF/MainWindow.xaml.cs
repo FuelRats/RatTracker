@@ -62,7 +62,7 @@ namespace RatTracker_WPF
 		public bool stopNetLog;
 		private Thread threadLogWatcher;
 		private FileSystemWatcher watcher;
-        ConnectionInfo conninfo = new ConnectionInfo();
+        public ConnectionInfo conninfo = new ConnectionInfo();
 
 		public MainWindow()
 		{
@@ -73,6 +73,15 @@ namespace RatTracker_WPF
 
 		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
 
+        public ConnectionInfo ConnInfo
+        {
+            get { return conninfo;  }
+            set
+            {
+                conninfo = value;
+                NotifyPropertyChanged();
+            }
+        }
 		public ClientInfo MyClient
 		{
 			get { return myClient; }
@@ -335,7 +344,7 @@ namespace RatTracker_WPF
                         if(line.Contains("Local machine is"))
                         {
                             AppendStatus("My RunID: " + line.Substring(line.IndexOf("is ")));
-                            conninfo.runID = line.Substring(line.IndexOf("is "));
+                            ConnInfo.runID = line.Substring(line.IndexOf("is "));
                         }
                         if (line.Contains("RxRoute")) // Yes, this early in the netlog, I figure we can just parse the RxRoute without checking for ID. Don't do this later though.
                         {
@@ -345,10 +354,10 @@ namespace RatTracker_WPF
                             {
                                 AppendStatus("Route info: WAN:" + match.Groups[1].Value + " port " + match.Groups[2].Value + ", LAN:" + match.Groups[3].Value + " port " + match.Groups[4].Value + ", STUN: " + match.Groups[5].Value + ":" + match.Groups[6].Value + ", TURN: " + match.Groups[7].Value + ":" + match.Groups[8].Value +
                                     " MTU: " + match.Groups[12].Value + " NAT type: " + match.Groups[9].Value);
-                                conninfo.WANAddress = match.Groups[1].Value + ":" + match.Groups[2].Value;
-                                conninfo.MTU = Int32.Parse(match.Groups[12].Value);
-                                conninfo.NATType = (NATType)Enum.Parse(typeof(NATType),match.Groups[9].Value);
-                                conninfo.TURNServer = match.Groups[7].Value + ":" + match.Groups[8].Value;
+                                ConnInfo.WANAddress = match.Groups[1].Value + ":" + match.Groups[2].Value;
+                                ConnInfo.MTU = Int32.Parse(match.Groups[12].Value);
+                                ConnInfo.NATType = (NATType)Enum.Parse(typeof(NATType),match.Groups[9].Value);
+                                ConnInfo.TURNServer = match.Groups[7].Value + ":" + match.Groups[8].Value;
                             }
                         }
 						if (line.Contains("failed to initialise upnp"))
@@ -454,13 +463,13 @@ namespace RatTracker_WPF
             if (statmatch.Success)
             {
                 AppendStatus("Updating connection statistics.");
-                conninfo.Srtt = Int32.Parse(statmatch.Groups[5].Value);
-                conninfo.Loss = float.Parse(statmatch.Groups[6].Value);
-                conninfo.Jitter = float.Parse(statmatch.Groups[7].Value);
-                conninfo.Act1 = float.Parse(statmatch.Groups[8].Value);
-                conninfo.Act2 = float.Parse(statmatch.Groups[9].Value);
+                ConnInfo.Srtt = Int32.Parse(statmatch.Groups[5].Value);
+                ConnInfo.Loss = float.Parse(statmatch.Groups[6].Value);
+                ConnInfo.Jitter = float.Parse(statmatch.Groups[7].Value);
+                ConnInfo.Act1 = float.Parse(statmatch.Groups[8].Value);
+                ConnInfo.Act2 = float.Parse(statmatch.Groups[9].Value);
                 Dispatcher disp = Dispatcher;
-                disp.BeginInvoke(DispatcherPriority.Normal, (Action) (()=> connectionStatus.Text = "SRTT: " + conninfo.Srtt.ToString() + " Jitter: " + conninfo.Jitter.ToString() + " Loss: " + conninfo.Loss.ToString() + " In: " + conninfo.Act1 + " Out: " + conninfo.Act2));
+                disp.BeginInvoke(DispatcherPriority.Normal, (Action) (()=> connectionStatus.Text = "SRTT: " + conninfo.Srtt.ToString() + " Jitter: " + conninfo.Jitter.ToString() + " Loss: " + conninfo.Loss.ToString() + " In: " + conninfo.Act1.ToString() + " Out: " + conninfo.Act2.ToString()));
             }
             if (line.Contains("FriendsRequest"))
 			{
