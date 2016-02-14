@@ -56,7 +56,6 @@ namespace RatTracker_WPF
 		private APIWorker apworker;
 		private string assignedRats;
 		public ConnectionInfo conninfo = new ConnectionInfo();
-		private string currentSystem;
 		private double distanceToClient;
 		private string distanceToClientString;
 		private long fileOffset;
@@ -67,7 +66,6 @@ namespace RatTracker_WPF
 		private ClientInfo myClient = new ClientInfo();
 		public PlayerInfo myplayer = new PlayerInfo();
 		private ICollection<TravelLog> myTravelLog;
-		private bool onDuty;
 		private Overlay overlay;
 		private string scState;
 		public bool stopNetLog;

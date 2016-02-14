@@ -64,7 +64,8 @@ namespace RatTracker_WPF
         public void DisconnectWs()
         {
             stopping = true;
-            ws.Close();
+            if(ws!=null)
+                ws.Close();
             return;
         }
         public void SendWs(string action, IDictionary<string, string> data)
