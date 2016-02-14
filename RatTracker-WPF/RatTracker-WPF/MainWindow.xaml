@@ -35,7 +35,7 @@
                 <ColumnDefinition Width="163*"/>
                 <ColumnDefinition Width="299*"/>
             </Grid.ColumnDefinitions>
-            <Button x:Name="Button" Content="Go On-Duty" Margin="0,0,10,41" Background="{Binding myplayer.OnDuty, Converter={StaticResource BooleanToColourConverter}}" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2"/>
+            <Button x:Name="Button" Content="Go On-Duty" Margin="0,0,10,41" Background="{Binding MyPlayer.OnDuty, Converter={StaticResource BooleanToColourConverter}}" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2"/>
             <TextBox x:Name="StatusDisplay" Margin="10,10,279,40" TextWrapping="Wrap" Text="Status display" IsReadOnlyCaretVisible="True" VerticalScrollBarVisibility="Visible" Grid.Row="1" Grid.ColumnSpan="2"/>
             <Menu x:Name="MenuCopy" Height="19" VerticalAlignment="Top" Grid.ColumnSpan="2">
                 <MenuItem x:Name="MainMenu1" Header="Main Menu" Click="Main_Menu_Click">
