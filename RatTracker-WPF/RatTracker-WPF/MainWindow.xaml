@@ -71,7 +71,7 @@
                     <Button x:Name="UpdateButton" Content="Upd" HorizontalAlignment="Right" Height="17" Margin="0,73,8,0" VerticalAlignment="Top" Width="37" Click="updateButton_Click"/>
                     <Button x:Name="CurrentButton" Content="CUR" HorizontalAlignment="Right" Height="18" Margin="0,90,8,0" VerticalAlignment="Top" Width="37" Click="currentButton_Click"/>
                     <Label x:Name="Label3_Copy" Content="Assigned Rats" Height="26" Margin="0,108,161,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="103"/>
-                    <TextBlock x:Name="textBlock" HorizontalAlignment="Left" Height="17" Margin="12,134,0,0" TextWrapping="Wrap" Text="Assigned Rats Go Here" VerticalAlignment="Top" Width="212"/>
+                    <TextBlock x:Name="AssignedRatsLabel" HorizontalAlignment="Left" Height="17" Margin="12,134,0,0" TextWrapping="Wrap" Text="{Binding AssignedRats}" VerticalAlignment="Top" Width="212"/>
                     <Label x:Name="label" Content="Distance to client" HorizontalAlignment="Left" Height="23" Margin="12,151,0,0" VerticalAlignment="Top" Width="129"/>
                     <Label x:Name="label_Copy" Content="Jumps (Approx)" HorizontalAlignment="Left" Height="23" Margin="130,151,0,0" VerticalAlignment="Top" Width="129"/>
                     <Button x:Name="button1" Content="Call jumps" HorizontalAlignment="Left" Height="24" Margin="130,201,0,0" VerticalAlignment="Top" Width="74"/>
