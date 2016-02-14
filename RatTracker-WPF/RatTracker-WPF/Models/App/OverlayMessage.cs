@@ -1,22 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace RatTracker_WPF.Models.App
+﻿namespace RatTracker_WPF.Models.App
 {
-    public class OverlayMessage
-    {
-        public string line1header { get; set; }
-        public string line1content { get; set; }
-        public string line2header { get; set; }
-        public string line2content { get; set; }
-        public string line3header { get; set; }
-        public string line3content { get; set; }
-        public string line4header { get; set; }
-        public string line4content { get; set; }
-        public string line5header { get; set; }
-        public string line5content { get; set; }
-    }
+	public class OverlayMessage
+	{
+		public string Line1Header { get; set; }
+		public string Line1Content { get; set; }
+		public string Line2Header { get; set; }
+		public string Line2Content { get; set; }
+		public string Line3Header { get; set; }
+		public string Line3Content { get; set; }
+		public string Line4Header { get; set; }
+		public string Line4Content { get; set; }
+		public string Line5Header { get; set; }
+		public string Line5Content { get; set; }
+	}
 }

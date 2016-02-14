@@ -64,7 +64,7 @@ namespace RatTracker_WPF
 		private string logDirectory = Settings.Default.NetLogPath;
 		private FileInfo logFile;
 		private ClientInfo myClient = new ClientInfo();
-		public PlayerInfo myplayer = new PlayerInfo();
+		private PlayerInfo myplayer = new PlayerInfo();
 		private ICollection<TravelLog> myTravelLog;
 		private Overlay overlay;
 		private string scState;
@@ -145,6 +145,16 @@ namespace RatTracker_WPF
 			set
 			{
 				assignedRats = value;
+				NotifyPropertyChanged();
+			}
+		}
+
+		public PlayerInfo MyPlayer
+		{
+			get { return myplayer; }
+			set
+			{
+				myplayer = value;
 				NotifyPropertyChanged();
 			}
 		}
@@ -659,7 +669,7 @@ namespace RatTracker_WPF
 		private async void TriggerSystemChange(string value)
 		{
 			Dispatcher disp = Dispatcher;
-			if (value == myplayer.CurrentSystem)
+			if (value == MyPlayer.CurrentSystem)
 			{
 				return;
 			}
@@ -691,7 +701,7 @@ namespace RatTracker_WPF
 						myTravelLog.Add(new TravelLog() {system = firstsys, lastvisited = DateTime.Now});
 						// Should we add systems even if they don't exist in EDSM? Maybe submit them?
 					}
-					myplayer.CurrentSystem = value;
+					MyPlayer.CurrentSystem = value;
 					await disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => SystemNameLabel.Content = value));
 					if (responseString.Contains("-1"))
 					{
@@ -731,10 +741,10 @@ namespace RatTracker_WPF
 
 		private void button_Click(object sender, RoutedEventArgs e)
 		{
-			if (myplayer.OnDuty == false)
+			if (MyPlayer.OnDuty == false)
 			{
 				Button.Content = "On Duty";
-				myplayer.OnDuty = true;
+				MyPlayer.OnDuty = true;
 				watcher.EnableRaisingEvents = true;
 				AppendStatus("Started watching for events in netlog.");
 				Button.Background = Brushes.Green;
@@ -746,7 +756,7 @@ namespace RatTracker_WPF
 			else
 			{
 				Button.Content = "Off Duty";
-				myplayer.OnDuty = false;
+				MyPlayer.OnDuty = false;
 				watcher.EnableRaisingEvents = false;
 				AppendStatus("\nStopped watching for events in netlog.");
 				Button.Background = Brushes.Red;
@@ -838,9 +848,9 @@ namespace RatTracker_WPF
 				? string.Join(", ", Rats.Where(r => myrow.Rats.Contains(r.Key)).Select(r => r.Value.CmdrName))
 				: string.Empty;
 			SystemName.Text = myrow.System;
-			double distance = await CalculateEDSMDistance(myplayer.CurrentSystem, myrow.System);
+			double distance = await CalculateEDSMDistance(MyPlayer.CurrentSystem, myrow.System);
 			DistanceToClient = distance;
-			JumpsToClient = myplayer.JumpRange > 0 ? Math.Ceiling(distance/myplayer.JumpRange).ToString() : string.Empty;
+			JumpsToClient = MyPlayer.JumpRange > 0 ? Math.Ceiling(distance/MyPlayer.JumpRange).ToString() : string.Empty;
 		}
 
 		private async Task GetMissingRats(RootObject rescues)
@@ -1040,12 +1050,12 @@ namespace RatTracker_WPF
 			//AppendStatus("Travellog now contains " + myTravelLog.Count() + " systems. Timestamp of first is " + myTravelLog.First().lastvisited +" name "+myTravelLog.First().system.name);
 			//CalculateEDSMDistance("Sol", SystemName.Text);
 			OverlayMessage mymessage = new OverlayMessage();
-			mymessage.line1header = "Nearest station:";
-			mymessage.line1content = "Wollheim Vision, Fuelum (0LY)";
-			mymessage.line2header = "Pad size:";
-			mymessage.line2content = "Large";
-			mymessage.line3header = "Capabilities:";
-			mymessage.line3content = "Refuel, Rearm, Repair";
+			mymessage.Line1Header = "Nearest station:";
+			mymessage.Line1Content = "Wollheim Vision, Fuelum (0LY)";
+			mymessage.Line2Header = "Pad size:";
+			mymessage.Line2Content = "Large";
+			mymessage.Line3Header = "Capabilities:";
+			mymessage.Line3Content = "Refuel, Rearm, Repair";
 			if (overlay != null)
 				overlay.Queue_Message(mymessage, 30);
 			EDDBData edworker = new EDDBData();
@@ -1056,7 +1066,7 @@ namespace RatTracker_WPF
 			var station = edworker.GetClosestStation(new EdsmCoords {X = eddbSystem.x, Y = eddbSystem.y, Z = eddbSystem.z});
 			AppendStatus("Closest system to 'Fuelum' is '" + eddbSystem.name +
 						"', closest station to star with known coordinates (should be 'Wollheim Vision') is '" + station.name + "'.");
-			myplayer.CurrentSystem = "Fuelum";
+			MyPlayer.CurrentSystem = "Fuelum";
 		}
 
 		private void MenuItem_Click_1(object sender, RoutedEventArgs e)
