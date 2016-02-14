@@ -54,6 +54,7 @@ namespace RatTracker_WPF
 		private readonly SpVoice voice = new SpVoice();
 		private RootObject activeRescues = new RootObject();
 		private APIWorker apworker;
+		private string assignedRats;
 		public ConnectionInfo conninfo = new ConnectionInfo();
 		private string currentSystem;
 		private double distanceToClient;
@@ -136,6 +137,16 @@ namespace RatTracker_WPF
 			set
 			{
 				distanceToClientString = value;
+				NotifyPropertyChanged();
+			}
+		}
+
+		public string AssignedRats
+		{
+			get { return assignedRats; }
+			set
+			{
+				assignedRats = value;
 				NotifyPropertyChanged();
 			}
 		}
@@ -825,6 +836,9 @@ namespace RatTracker_WPF
 			DistanceToClientString = "Calculating...";
 			JumpsToClient = string.Empty;
 			ClientName.Text = myrow.Client.CmdrName;
+			AssignedRats = myrow.Rats.Any()
+				? string.Join(", ", Rats.Where(r => myrow.Rats.Contains(r.Key)).Select(r => r.Value.CmdrName))
+				: string.Empty;
 			SystemName.Text = myrow.System;
 			double distance = await CalculateEDSMDistance(myplayer.CurrentSystem, myrow.System);
 			DistanceToClient = distance;
