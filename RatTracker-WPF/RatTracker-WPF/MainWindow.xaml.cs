@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -19,8 +18,9 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using System.Xml.Linq;
 using System.Xml;
+using System.Xml.Linq;
+using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RatTracker_WPF.Models.Api;
@@ -31,10 +31,6 @@ using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
 using SpeechLib;
 using WebSocket4Net;
-using System.Data;
-using log4net;
-using log4net.Config;
-
 
 namespace RatTracker_WPF
 {
@@ -43,23 +39,32 @@ namespace RatTracker_WPF
 	/// </summary>
 	public partial class MainWindow : Window, INotifyPropertyChanged
 	{
+		private const string Unknown = "unknown";
 		public static readonly Brush RatStatusColourPositive = Brushes.LightGreen;
 		public static readonly Brush RatStatusColourPending = Brushes.Orange;
 		public static readonly Brush RatStatusColourNegative = Brushes.Red;
 
 		private static readonly string edsmURL = "http://www.edsm.net/api-v1/";
-        private static readonly ILog logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private static EdsmCoords fuelumCoords = new EdsmCoords() {X = 42, Y = -711.09375, Z = 39.8125};
+
+		private static readonly ILog logger =
+			LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+		private static EdsmCoords fuelumCoords = new EdsmCoords() {X = 42, Y = -711.09375, Z = 39.8125};
 
 		private readonly SpVoice voice = new SpVoice();
 		private RootObject activeRescues = new RootObject();
 		private APIWorker apworker;
+		public ConnectionInfo conninfo = new ConnectionInfo();
 		private string currentSystem;
+		private double distanceToClient;
+		private string distanceToClientString;
 		private long fileOffset;
 		private long fileSize;
+		private string jumpsToClient;
 		private string logDirectory = Settings.Default.NetLogPath;
 		private FileInfo logFile;
 		private ClientInfo myClient = new ClientInfo();
+		public PlayerInfo myplayer = new PlayerInfo();
 		private ICollection<TravelLog> myTravelLog;
 		private bool onDuty;
 		private Overlay overlay;
@@ -67,35 +72,70 @@ namespace RatTracker_WPF
 		public bool stopNetLog;
 		private Thread threadLogWatcher;
 		private FileSystemWatcher watcher;
-        public ConnectionInfo conninfo = new ConnectionInfo();
-        public PlayerInfo myplayer = new PlayerInfo();
 
-        public MainWindow()
+		public MainWindow()
 		{
-            logger.Info("---Starting RatTracker---");
-            InitializeComponent();
+			logger.Info("---Starting RatTracker---");
+			InitializeComponent();
 			CheckLogDirectory();
 			DataContext = this;
-            ParseEDAppConfig();
-        }
+			ParseEDAppConfig();
+		}
 
 		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
 
-        public ConnectionInfo ConnInfo
-        {
-            get { return conninfo;  }
-            set
-            {
-                conninfo = value;
-                NotifyPropertyChanged();
-            }
-        }
+		public ConnectionInfo ConnInfo
+		{
+			get { return conninfo; }
+			set
+			{
+				conninfo = value;
+				NotifyPropertyChanged();
+			}
+		}
+
 		public ClientInfo MyClient
 		{
 			get { return myClient; }
 			set
 			{
 				myClient = value;
+				NotifyPropertyChanged();
+			}
+		}
+
+		public string JumpsToClient
+		{
+			get { return string.IsNullOrWhiteSpace(jumpsToClient) ? Unknown : "~" + jumpsToClient; }
+			set
+			{
+				jumpsToClient = value;
+				NotifyPropertyChanged();
+			}
+		}
+
+		public double DistanceToClient
+		{
+			get { return distanceToClient; }
+			set
+			{
+				distanceToClient = value;
+				NotifyPropertyChanged();
+				DistanceToClientString = string.Empty;
+			}
+		}
+
+		public string DistanceToClientString
+		{
+			get
+			{
+				return DistanceToClient >= 0
+					? DistanceToClient.ToString()
+					: !string.IsNullOrWhiteSpace(distanceToClientString) ? distanceToClientString : Unknown;
+			}
+			set
+			{
+				distanceToClientString = value;
 				NotifyPropertyChanged();
 			}
 		}
@@ -139,60 +179,67 @@ namespace RatTracker_WPF
 			/* Stop watching the renamed file, look for new onChanged. */
 		}
 
-        private void ParseEDAppConfig()
-        {
-            string edProductDir;
-            edProductDir = Properties.Settings.Default.EDPath + @"\Products";
-            if (!Directory.Exists(edProductDir))
-            {
-                logger.Fatal("Couldn't find E:D product directory, aborting AppConfig parse.");
-                return;
-            }
-            foreach (string dir in Directory.GetDirectories(edProductDir))
-            {
-                logger.Info("Checking AppConfig in Product directory " + dir);
-                try {
-                    logger.Debug("Loading " + dir + @"\AppConfig.xml");
-                    XDocument appconf = XDocument.Load(dir + @"\AppConfig.xml");
-                    XElement networknode = appconf.Element("AppConfig").Element("Network");
-                    logger.Debug("Verbose logging is: "+ networknode.Attribute("VerboseLogging").Value);
-                    //logger.Debug("LogSentLetters is:" + networknode.Attribute("ReportSentLetters").Value);
-                    //logger.Debug("LogReceivedLetters is:" + networknode.Attribute("ReportReceivedLetters").Value);
-                    logger.Debug("Port is:" + networknode.Attribute("Port").Value);
-                    if(networknode.Attribute("VerboseLogging").Value != "1" || networknode.Attribute("ReportSentLetters") == null || networknode.Attribute("ReportReceivedLetters") == null)
-                    {
-                        AppendStatus("WARNING: Verbose logging is not set to 1! RatTracker will be unable to track anything about you!");
-                        MessageBoxResult result = MessageBox.Show("Warning: Your AppConfig in " + dir + " is not configured correctly to allow RatTracker to perform its function. Would you like to alter the configuration to enable Verbose Logging?","Incorrect AppConfig",MessageBoxButton.YesNo,MessageBoxImage.Exclamation);
-                        switch (result)
-                        {
-                            case MessageBoxResult.Yes:
-                                // TODO: Alter the XML
-                                File.Copy(dir + @"\AppConfig.xml", dir + @"\AppConfig-BeforeRatTracker.xml",true);
+		private void ParseEDAppConfig()
+		{
+			string edProductDir;
+			edProductDir = Settings.Default.EDPath + @"\Products";
+			if (!Directory.Exists(edProductDir))
+			{
+				logger.Fatal("Couldn't find E:D product directory, aborting AppConfig parse.");
+				return;
+			}
+			foreach (string dir in Directory.GetDirectories(edProductDir))
+			{
+				logger.Info("Checking AppConfig in Product directory " + dir);
+				try
+				{
+					logger.Debug("Loading " + dir + @"\AppConfig.xml");
+					XDocument appconf = XDocument.Load(dir + @"\AppConfig.xml");
+					XElement networknode = appconf.Element("AppConfig").Element("Network");
+					logger.Debug("Verbose logging is: " + networknode.Attribute("VerboseLogging").Value);
+					//logger.Debug("LogSentLetters is:" + networknode.Attribute("ReportSentLetters").Value);
+					//logger.Debug("LogReceivedLetters is:" + networknode.Attribute("ReportReceivedLetters").Value);
+					logger.Debug("Port is:" + networknode.Attribute("Port").Value);
+					if (networknode.Attribute("VerboseLogging").Value != "1" || networknode.Attribute("ReportSentLetters") == null ||
+						networknode.Attribute("ReportReceivedLetters") == null)
+					{
+						AppendStatus("WARNING: Verbose logging is not set to 1! RatTracker will be unable to track anything about you!");
+						MessageBoxResult result =
+							MessageBox.Show(
+								"Warning: Your AppConfig in " + dir +
+								" is not configured correctly to allow RatTracker to perform its function. Would you like to alter the configuration to enable Verbose Logging?",
+								"Incorrect AppConfig", MessageBoxButton.YesNo, MessageBoxImage.Exclamation);
+						switch (result)
+						{
+							case MessageBoxResult.Yes:
+								// TODO: Alter the XML
+								File.Copy(dir + @"\AppConfig.xml", dir + @"\AppConfig-BeforeRatTracker.xml", true);
 
-                                networknode.SetAttributeValue("VerboseLogging","1");
-                                networknode.SetAttributeValue("ReportSentLetters",1);
-                                networknode.SetAttributeValue("ReportReceivedLetters",1);
-                                XmlWriterSettings settings = new XmlWriterSettings();
-                                settings.OmitXmlDeclaration = true;
-                                settings.Indent = true;
-                                settings.NewLineOnAttributes = true;
-                                StringWriter sw = new StringWriter();
-                                using (XmlWriter xw = XmlWriter.Create(dir + @"\AppConfig.xml", settings))
-                                    appconf.Save(xw);
-                                logger.Info("Wrote new configuration to " + dir + @"\AppConfig.xml");
-                                break;
-                            case MessageBoxResult.No:
-                                AppendStatus("No alterations performed.");
-                                break;
-                        }
-                    }
-                }
-                catch(Exception ex)
-                {
-                    logger.Fatal("Exception in AppConfigReader!", ex);
-                }
-            }
-        }
+								networknode.SetAttributeValue("VerboseLogging", "1");
+								networknode.SetAttributeValue("ReportSentLetters", 1);
+								networknode.SetAttributeValue("ReportReceivedLetters", 1);
+								XmlWriterSettings settings = new XmlWriterSettings();
+								settings.OmitXmlDeclaration = true;
+								settings.Indent = true;
+								settings.NewLineOnAttributes = true;
+								StringWriter sw = new StringWriter();
+								using (XmlWriter xw = XmlWriter.Create(dir + @"\AppConfig.xml", settings))
+									appconf.Save(xw);
+								logger.Info("Wrote new configuration to " + dir + @"\AppConfig.xml");
+								break;
+							case MessageBoxResult.No:
+								AppendStatus("No alterations performed.");
+								break;
+						}
+					}
+				}
+				catch (Exception ex)
+				{
+					logger.Fatal("Exception in AppConfigReader!", ex);
+				}
+			}
+		}
+
 		private void ParseFriendsList(string friendsList)
 		{
 			/* Sanitize the XML, it can break if over 40 friends long or so. */
@@ -303,19 +350,19 @@ namespace RatTracker_WPF
 
 		private void MainWindow_Closing(object sender, CancelEventArgs e)
 		{
-            stopNetLog = true;
-            apworker.DisconnectWs();
-            Application.Current.Shutdown();
+			stopNetLog = true;
+			apworker.DisconnectWs();
+			Application.Current.Shutdown();
 		}
 
 		private async void CheckLogDirectory()
 		{
-            if (Thread.CurrentThread.Name == null)
-            {
-                Thread.CurrentThread.Name = "MainThread";
-            }
+			if (Thread.CurrentThread.Name == null)
+			{
+				Thread.CurrentThread.Name = "MainThread";
+			}
 
-            if (logDirectory == null | logDirectory == "")
+			if (logDirectory == null | logDirectory == "")
 			{
 				MessageBox.Show("Error: No log directory is specified, please do so before attempting to go on duty.");
 				return;
@@ -410,25 +457,29 @@ namespace RatTracker_WPF
 						count++;
 						string line = sr.ReadLine();
 						// TODO: Populate WAN, STUN and Turn server labels. Make cleaner TURN detection.
-                        if(line.Contains("Local machine is"))
-                        {
-                            logger.Info("My RunID: " + line.Substring(line.IndexOf("is ")));
-                            ConnInfo.runID = line.Substring(line.IndexOf("is "));
-                        }
-                        if (line.Contains("RxRoute")) // Yes, this early in the netlog, I figure we can just parse the RxRoute without checking for ID. Don't do this later though.
-                        {
-                            string rxpattern = "IP4NAT:(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d),(\\d),(\\d),(\\d{1,4})";
-                            Match match = Regex.Match(line, rxpattern, RegexOptions.IgnoreCase);
-                            if (match.Success)
-                            {
-                                logger.Info("Route info: WAN:" + match.Groups[1].Value + " port " + match.Groups[2].Value + ", LAN:" + match.Groups[3].Value + " port " + match.Groups[4].Value + ", STUN: " + match.Groups[5].Value + ":" + match.Groups[6].Value + ", TURN: " + match.Groups[7].Value + ":" + match.Groups[8].Value +
-                                    " MTU: " + match.Groups[12].Value + " NAT type: " + match.Groups[9].Value);
-                                ConnInfo.WANAddress = match.Groups[1].Value + ":" + match.Groups[2].Value;
-                                ConnInfo.MTU = Int32.Parse(match.Groups[12].Value);
-                                ConnInfo.NATType = (NATType)Enum.Parse(typeof(NATType),match.Groups[9].Value);
-                                ConnInfo.TURNServer = match.Groups[7].Value + ":" + match.Groups[8].Value;
-                            }
-                        }
+						if (line.Contains("Local machine is"))
+						{
+							logger.Info("My RunID: " + line.Substring(line.IndexOf("is ")));
+							ConnInfo.runID = line.Substring(line.IndexOf("is "));
+						}
+						if (line.Contains("RxRoute"))
+							// Yes, this early in the netlog, I figure we can just parse the RxRoute without checking for ID. Don't do this later though.
+						{
+							string rxpattern =
+								"IP4NAT:(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d),(\\d),(\\d),(\\d{1,4})";
+							Match match = Regex.Match(line, rxpattern, RegexOptions.IgnoreCase);
+							if (match.Success)
+							{
+								logger.Info("Route info: WAN:" + match.Groups[1].Value + " port " + match.Groups[2].Value + ", LAN:" +
+											match.Groups[3].Value + " port " + match.Groups[4].Value + ", STUN: " + match.Groups[5].Value + ":" +
+											match.Groups[6].Value + ", TURN: " + match.Groups[7].Value + ":" + match.Groups[8].Value +
+											" MTU: " + match.Groups[12].Value + " NAT type: " + match.Groups[9].Value);
+								ConnInfo.WANAddress = match.Groups[1].Value + ":" + match.Groups[2].Value;
+								ConnInfo.MTU = Int32.Parse(match.Groups[12].Value);
+								ConnInfo.NATType = (NATType) Enum.Parse(typeof (NATType), match.Groups[9].Value);
+								ConnInfo.TURNServer = match.Groups[7].Value + ":" + match.Groups[8].Value;
+							}
+						}
 						if (line.Contains("failed to initialise upnp"))
 						{
 							AppendStatus(
@@ -527,19 +578,26 @@ namespace RatTracker_WPF
 			{
 				AppendStatus("Successful identity match! ID: " + frmatch.Groups[1] + " IP:" + frmatch.Groups[3]);
 			}
-            string reMatchStats = "machines=(\\d+)&numturnlinks=(\\d+)&backlogtotal=(\\d+)&backlogmax=(\\d+)&avgsrtt=(\\d+)&loss=([0-9]*(?:\\.[0-9]*)+)&&jit=([0-9]*(?:\\.[0-9]*)+)&act1=([0-9]*(?:\\.[0-9]*)+)&act2=([0-9]*(?:\\.[0-9]*)+)"; //FDev, stahp! Why you make me do this shit?!
-            Match statmatch = Regex.Match(line, reMatchStats, RegexOptions.IgnoreCase);
-            if (statmatch.Success)
-            {
-                AppendStatus("Updating connection statistics.");
-                ConnInfo.Srtt = Int32.Parse(statmatch.Groups[5].Value);
-                ConnInfo.Loss = float.Parse(statmatch.Groups[6].Value);
-                ConnInfo.Jitter = float.Parse(statmatch.Groups[7].Value);
-                ConnInfo.Act1 = float.Parse(statmatch.Groups[8].Value);
-                ConnInfo.Act2 = float.Parse(statmatch.Groups[9].Value);
-                Dispatcher disp = Dispatcher;
-                disp.BeginInvoke(DispatcherPriority.Normal, (Action) (()=> connectionStatus.Text = "SRTT: " + conninfo.Srtt.ToString() + " Jitter: " + conninfo.Jitter.ToString() + " Loss: " + conninfo.Loss.ToString() + " In: " + conninfo.Act1.ToString() + " Out: " + conninfo.Act2.ToString()));
-            }
+			string reMatchStats =
+				"machines=(\\d+)&numturnlinks=(\\d+)&backlogtotal=(\\d+)&backlogmax=(\\d+)&avgsrtt=(\\d+)&loss=([0-9]*(?:\\.[0-9]*)+)&&jit=([0-9]*(?:\\.[0-9]*)+)&act1=([0-9]*(?:\\.[0-9]*)+)&act2=([0-9]*(?:\\.[0-9]*)+)";
+			//FDev, stahp! Why you make me do this shit?!
+			Match statmatch = Regex.Match(line, reMatchStats, RegexOptions.IgnoreCase);
+			if (statmatch.Success)
+			{
+				AppendStatus("Updating connection statistics.");
+				ConnInfo.Srtt = Int32.Parse(statmatch.Groups[5].Value);
+				ConnInfo.Loss = float.Parse(statmatch.Groups[6].Value);
+				ConnInfo.Jitter = float.Parse(statmatch.Groups[7].Value);
+				ConnInfo.Act1 = float.Parse(statmatch.Groups[8].Value);
+				ConnInfo.Act2 = float.Parse(statmatch.Groups[9].Value);
+				Dispatcher disp = Dispatcher;
+				disp.BeginInvoke(DispatcherPriority.Normal,
+					(Action)
+						(() =>
+							connectionStatus.Text =
+								"SRTT: " + conninfo.Srtt.ToString() + " Jitter: " + conninfo.Jitter.ToString() + " Loss: " +
+								conninfo.Loss.ToString() + " In: " + conninfo.Act1.ToString() + " Out: " + conninfo.Act2.ToString()));
+			}
 			if (line.Contains("<data>"))
 			{
 				AppendStatus("Line sent to XML parser");
@@ -667,7 +725,7 @@ namespace RatTracker_WPF
 			if (myplayer.OnDuty == false)
 			{
 				Button.Content = "On Duty";
-                myplayer.OnDuty = true;
+				myplayer.OnDuty = true;
 				watcher.EnableRaisingEvents = true;
 				AppendStatus("Started watching for events in netlog.");
 				Button.Background = Brushes.Green;
@@ -720,7 +778,6 @@ namespace RatTracker_WPF
 			/* Fleh? */
 		}
 
-
 		private void currentButton_Click(object sender, RoutedEventArgs e)
 		{
 			AppendStatus("Setting client location to current system: Fuelum");
@@ -759,15 +816,20 @@ namespace RatTracker_WPF
 				}
 			}
 		}
-        private async void RescueGrid_SelectionChanged(object sender, EventArgs e)
-        {
-            Datum myrow = (Datum)RescueGrid.SelectedItem;
-            logger.Debug("Client is " + myrow.Client.CmdrName);
-            clientDistanceLabel.Content = "Calculating...";
-            ClientName.Text = myrow.Client.CmdrName;
-            SystemName.Text = myrow.System;
-            clientDistanceLabel.Content = await CalculateEDSMDistance(myplayer.CurrentSystem, myrow.System);
-        }
+
+		private async void RescueGrid_SelectionChanged(object sender, EventArgs e)
+		{
+			Datum myrow = (Datum) RescueGrid.SelectedItem;
+			logger.Debug("Client is " + myrow.Client.CmdrName);
+			DistanceToClient = -1;
+			DistanceToClientString = "Calculating...";
+			JumpsToClient = string.Empty;
+			ClientName.Text = myrow.Client.CmdrName;
+			SystemName.Text = myrow.System;
+			double distance = await CalculateEDSMDistance(myplayer.CurrentSystem, myrow.System);
+			DistanceToClient = distance;
+			JumpsToClient = myplayer.JumpRange > 0 ? Math.Ceiling(distance/myplayer.JumpRange).ToString() : string.Empty;
+		}
 
 		private async Task GetMissingRats(RootObject rescues)
 		{
@@ -809,12 +871,12 @@ namespace RatTracker_WPF
 
 		public async Task<IEnumerable<EdsmSystem>> QueryEDSMSystem(string system)
 		{
-            if (system.Length < 3)
-            {
-                //This would pretty much download the entire EDSM database. Refuse to do it.
-                logger.Fatal("Too short EDSM query passed to QueryEDSMSystem: " + system);
-                return new List<EdsmSystem>();
-            }
+			if (system.Length < 3)
+			{
+				//This would pretty much download the entire EDSM database. Refuse to do it.
+				logger.Fatal("Too short EDSM query passed to QueryEDSMSystem: " + system);
+				return new List<EdsmSystem>();
+			}
 			try
 			{
 				using (HttpClient client = new HttpClient())
@@ -882,36 +944,35 @@ namespace RatTracker_WPF
 			IEnumerable<EdsmSystem> candidates;
 			if (source == target)
 				return 0; /* Well, it COULD happen? People have been known to do stupid things. */
-            if (source == null)
-            {
-                /* Dafuq? */
-                logger.Fatal("Null value passed as source to CalculateEDSMDistance!");
-                source = "Fuelum";
-            }
-            if (source.Length < 3)
-            {
-                AppendStatus("Source system name '"+source+"' too short, searching from Fuelum.");
-                source = "Fuelum";
-            }
-            candidates = await QueryEDSMSystem(source);
-            if(candidates==null || candidates.Count() < 1)
-            {
-                logger.Debug("Unknown source system. Checking travel loc.");
-                foreach (TravelLog mysource in myTravelLog.Reverse())
-                          {
-                              if (mysource.system.Coords == null)
-                              {
-                                  logger.Debug("System in travellog has no coords:" + mysource.system.Name);
-                              }
-                              else
-                              {
-                                  logger.Debug("Found coord'ed system " + mysource.system.Name + ", using as source.");
-                                  sourcecoords = mysource.system.Coords;
-                              }
-                          }
-
-            }
-            if (sourcecoords == null || source == "Fuelum")
+			if (source == null)
+			{
+				/* Dafuq? */
+				logger.Fatal("Null value passed as source to CalculateEDSMDistance!");
+				source = "Fuelum";
+			}
+			if (source.Length < 3)
+			{
+				AppendStatus("Source system name '" + source + "' too short, searching from Fuelum.");
+				source = "Fuelum";
+			}
+			candidates = await QueryEDSMSystem(source);
+			if (candidates == null || candidates.Count() < 1)
+			{
+				logger.Debug("Unknown source system. Checking travel loc.");
+				foreach (TravelLog mysource in myTravelLog.Reverse())
+				{
+					if (mysource.system.Coords == null)
+					{
+						logger.Debug("System in travellog has no coords:" + mysource.system.Name);
+					}
+					else
+					{
+						logger.Debug("Found coord'ed system " + mysource.system.Name + ", using as source.");
+						sourcecoords = mysource.system.Coords;
+					}
+				}
+			}
+			if (sourcecoords == null || source == "Fuelum")
 			{
 				AppendStatus("Search for travellog coordinated system failed, using Fuelum coords");
 				// Add a static Fuelum system reference so we don't have to query EDSM for it.
@@ -973,8 +1034,8 @@ namespace RatTracker_WPF
 			mymessage.line2content = "Large";
 			mymessage.line3header = "Capabilities:";
 			mymessage.line3content = "Refuel, Rearm, Repair";
-            if(overlay != null)
-    			overlay.Queue_Message(mymessage, 30);
+			if (overlay != null)
+				overlay.Queue_Message(mymessage, 30);
 			EDDBData edworker = new EDDBData();
 			string status = await edworker.UpdateEDDBData();
 			AppendStatus("EDDB: " + status);
@@ -983,7 +1044,7 @@ namespace RatTracker_WPF
 			var station = edworker.GetClosestStation(new EdsmCoords {X = eddbSystem.x, Y = eddbSystem.y, Z = eddbSystem.z});
 			AppendStatus("Closest system to 'Fuelum' is '" + eddbSystem.name +
 						"', closest station to star with known coordinates (should be 'Wollheim Vision') is '" + station.name + "'.");
-            myplayer.CurrentSystem = "Fuelum";
+			myplayer.CurrentSystem = "Fuelum";
 		}
 
 		private void MenuItem_Click_1(object sender, RoutedEventArgs e)
@@ -995,27 +1056,27 @@ namespace RatTracker_WPF
 
 		private void OverlayMenu_Click(object sender, RoutedEventArgs e)
 		{
-            if (overlay == null)
-            {
-                overlay = new Overlay();
-                overlay.SetCurrentClient(MyClient);
-                overlay.Show();
-                IEnumerable<Monitor> monitors = Monitor.AllMonitors;
-                foreach (Monitor mymonitor in monitors)
-                {
-                    if (mymonitor.IsPrimary == true)
-                    {
-                        overlay.Left = mymonitor.Bounds.Right - overlay.Width;
-                        overlay.Top = mymonitor.Bounds.Top;
-                    }
-                }
-                overlay.Topmost = true;
-                HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)PresentationSource.FromVisual(Application.Current.MainWindow));
-                hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
-                hotKeyHost.HotKeyPressed += handleHotkeyPress;
-            }
-            else
-                overlay.Close();
+			if (overlay == null)
+			{
+				overlay = new Overlay();
+				overlay.SetCurrentClient(MyClient);
+				overlay.Show();
+				IEnumerable<Monitor> monitors = Monitor.AllMonitors;
+				foreach (Monitor mymonitor in monitors)
+				{
+					if (mymonitor.IsPrimary == true)
+					{
+						overlay.Left = mymonitor.Bounds.Right - overlay.Width;
+						overlay.Top = mymonitor.Bounds.Top;
+					}
+				}
+				overlay.Topmost = true;
+				HotKeyHost hotKeyHost = new HotKeyHost((HwndSource) PresentationSource.FromVisual(Application.Current.MainWindow));
+				hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
+				hotKeyHost.HotKeyPressed += handleHotkeyPress;
+			}
+			else
+				overlay.Close();
 		}
 
 		private void handleHotkeyPress(object sender, HotKeyEventArgs e)
