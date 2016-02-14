@@ -3,21 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Threading;
 using Newtonsoft.Json;
 using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.EDDB;
+using log4net;
 
 namespace RatTracker_WPF
 {
 	class EDDBData
 	{
 		private readonly string EDDBUrl = "http://eddb.io/archive/v4/";
-		public IEnumerable<EDDBStation> stations;
+        private static readonly ILog logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        public IEnumerable<EDDBStation> stations;
 		public IEnumerable<EDDBSystem> systems;
 
 		public async Task<string> UpdateEDDBData()
 		{
-			try
+            if (Thread.CurrentThread.Name == null)
+            {
+                Thread.CurrentThread.Name = "EDDBWorker";
+            }
+            try
 			{
 				using (
 					HttpClient client =
@@ -27,13 +34,13 @@ namespace RatTracker_WPF
 						}))
 				{
 					UriBuilder content = new UriBuilder(EDDBUrl + "stations.json") {Port = -1};
-					Console.WriteLine("Downloading " + content.ToString());
+					logger.Info("Downloading " + content.ToString());
 					HttpResponseMessage response = await client.GetAsync(content.ToString());
 					response.EnsureSuccessStatusCode();
 					string responseString = await response.Content.ReadAsStringAsync();
 					//AppendStatus("Got response: " + responseString);
 					stations = JsonConvert.DeserializeObject<IEnumerable<EDDBStation>>(responseString);
-					Console.WriteLine("Deserialized stations: " + stations.Count());
+					logger.Debug("Deserialized stations: " + stations.Count());
 				}
 				using (
 					HttpClient client =
@@ -43,19 +50,19 @@ namespace RatTracker_WPF
 						}))
 				{
 					UriBuilder content = new UriBuilder(EDDBUrl + "systems.json") {Port = -1};
-					Console.WriteLine("Downloading " + content.ToString());
+					logger.Debug("Downloading " + content.ToString());
 					HttpResponseMessage response = await client.GetAsync(content.ToString());
 					response.EnsureSuccessStatusCode();
 					string responseString = await response.Content.ReadAsStringAsync();
 					//AppendStatus("Got response: " + responseString);
 					systems = JsonConvert.DeserializeObject<IEnumerable<EDDBSystem>>(responseString);
-					Console.WriteLine("Deserialized systems: " + systems.Count());
+					logger.Info("Deserialized systems: " + systems.Count());
 					return "EDDB data downloaded. " + systems.Count() + " systems and " + stations.Count() + " stations added.";
 				}
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine("Exception in UpdateEDDBData: " + ex.Message);
+				logger.Fatal("Exception in UpdateEDDBData: ",ex);
 				return "EDDB data download failed!";
 			}
 		}

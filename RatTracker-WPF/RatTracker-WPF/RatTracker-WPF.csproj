@@ -132,6 +132,7 @@
     <Compile Include="Models\App\NATType.cs" />
     <Compile Include="Models\App\NetworkError.cs" />
     <Compile Include="Models\App\OverlayMessage.cs" />
+    <Compile Include="Models\App\PlayerInfo.cs" />
     <Compile Include="Models\EDDB\EDDBStation.cs" />
     <Compile Include="Models\EDDB\EDDBSystem.cs" />
     <Compile Include="Models\Edsm\EDSMCoords.cs" />

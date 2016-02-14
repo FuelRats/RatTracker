@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Web;
 using System.Net.Http;
 using System.Diagnostics;
@@ -29,8 +30,13 @@ namespace RatTracker_WPF
         /*
          * queryAPI sends a GET request to the API. Kindasorta deprecated behavior.
          */
-        public async void InitWs()
+        public void InitWs()
         {
+            if (Thread.CurrentThread.Name == null)
+            {
+                Thread.CurrentThread.Name = "APIWorker";
+            }
+
             try
             {
                 string wsurl = "ws://10.0.0.71:8888/"; //TODO: Remove this hardcoding!
@@ -48,7 +54,7 @@ namespace RatTracker_WPF
                 logger.Fatal("Well, that went tits up real fast: " + ex.Message);
             }
         }
-        public async void OpenWs()
+        public void OpenWs()
         {
             ws.Open();
 

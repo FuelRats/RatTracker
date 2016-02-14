@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace RatTracker_WPF.Models.App
 {
-    class PlayerInfo
+    public class PlayerInfo
     {
         public string CurrentSystem { get; set; }
         public bool OnDuty { get; set; }
         public float JumpRange { get; set; }
-        public float SuperCruise { get; set; }
+        public bool SuperCruise { get; set; }
+        public PlayerInfo myPlayerInfo { get; set; }
     }
 }

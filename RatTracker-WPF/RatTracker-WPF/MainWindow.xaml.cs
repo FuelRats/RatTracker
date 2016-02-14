@@ -20,6 +20,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Xml.Linq;
+using System.Xml;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RatTracker_WPF.Models.Api;
@@ -62,20 +63,21 @@ namespace RatTracker_WPF
 		private ICollection<TravelLog> myTravelLog;
 		private bool onDuty;
 		private Overlay overlay;
-		private string parserState = "normal";
 		private string scState;
 		public bool stopNetLog;
 		private Thread threadLogWatcher;
 		private FileSystemWatcher watcher;
         public ConnectionInfo conninfo = new ConnectionInfo();
+        public PlayerInfo myplayer = new PlayerInfo();
 
-		public MainWindow()
+        public MainWindow()
 		{
-			InitializeComponent();
+            logger.Info("---Starting RatTracker---");
+            InitializeComponent();
 			CheckLogDirectory();
 			DataContext = this;
-            logger.Info("---Starting RatTracker---");
-		}
+            ParseEDAppConfig();
+        }
 
 		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
 
@@ -137,6 +139,54 @@ namespace RatTracker_WPF
 			/* Stop watching the renamed file, look for new onChanged. */
 		}
 
+        private void ParseEDAppConfig()
+        {
+            string edProductDir;
+            edProductDir = Properties.Settings.Default.EDPath + @"\Products";
+            foreach(string dir in Directory.GetDirectories(edProductDir))
+            {
+                logger.Info("Checking AppConfig in Product directory " + dir);
+                try {
+                    logger.Debug("Loading " + dir + @"\AppConfig.xml");
+                    XDocument appconf = XDocument.Load(dir + @"\AppConfig.xml");
+                    XElement networknode = appconf.Element("AppConfig").Element("Network");
+                    logger.Debug("Verbose logging is: "+networknode.Attribute("VerboseLogging").Value);
+                    logger.Debug("LogSentLetters is:" + networknode.Attribute("ReportSentLetters").Value);
+                    logger.Debug("LogReceivedLetters is:" + networknode.Attribute("ReportReceivedLetters").Value);
+                    logger.Debug("Port is:" + networknode.Attribute("Port").Value);
+                    if(networknode.Attribute("VerboseLogging").Value != "1" || networknode.Attribute("ReportSentLetters").Value != "1" || networknode.Attribute("ReportReceivedLetters").Value != "1")
+                    {
+                        AppendStatus("WARNING: Verbose logging is not set to 1! RatTracker will be unable to track anything about you!");
+                        MessageBoxResult result = MessageBox.Show("Warning: Your AppConfig in " + dir + " is not configured correctly to allow RatTracker to perform its function. Would you like to alter the configuration to enable Verbose Logging?","Incorrect AppConfig",MessageBoxButton.YesNo,MessageBoxImage.Exclamation);
+                        switch (result)
+                        {
+                            case MessageBoxResult.Yes:
+                                // TODO: Alter the XML
+                                File.Copy(dir + @"\AppConfig.xml", dir + @"\AppConfig-BeforeRatTracker.xml");
+                                networknode.Attribute("VerboseLogging").Value = "1";
+                                networknode.Attribute("ReportSentLetters").Value = "1";
+                                networknode.Attribute("ReportReceivedLetters").Value = "1";
+                                XmlWriterSettings settings = new XmlWriterSettings();
+                                settings.OmitXmlDeclaration = true;
+                                settings.Indent = true;
+                                settings.NewLineOnAttributes = true;
+                                StringWriter sw = new StringWriter();
+                                using (XmlWriter xw = XmlWriter.Create(dir + @"\AppConfigTest.xml", settings))
+                                    appconf.Save(xw);
+                                logger.Info("Wrote new configuration to " + dir + @"\AppConfig.xml");
+                                break;
+                            case MessageBoxResult.No:
+                                AppendStatus("No alterations performed.");
+                                break;
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    logger.Fatal("Exception in AppConfigReader!", ex);
+                }
+            }
+        }
 		private void ParseFriendsList(string friendsList)
 		{
 			/* Sanitize the XML, it can break if over 40 friends long or so. */
@@ -249,12 +299,17 @@ namespace RatTracker_WPF
 		{
             stopNetLog = true;
             apworker.DisconnectWs();
-			// Clean up our threads and exit.
+            Application.Current.Shutdown();
 		}
 
 		private async void CheckLogDirectory()
 		{
-			if (logDirectory == null | logDirectory == "")
+            if (Thread.CurrentThread.Name == null)
+            {
+                Thread.CurrentThread.Name = "MainThread";
+            }
+
+            if (logDirectory == null | logDirectory == "")
 			{
 				MessageBox.Show("Error: No log directory is specified, please do so before attempting to go on duty.");
 				return;
@@ -436,7 +491,7 @@ namespace RatTracker_WPF
 			}
 			catch (Exception ex)
 			{
-				logger.Fatal("Exception in readLogFile: " + ex.Message);
+				logger.Fatal("Exception in readLogFile: ", ex);
 			}
 		}
 
