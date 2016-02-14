@@ -143,18 +143,23 @@ namespace RatTracker_WPF
         {
             string edProductDir;
             edProductDir = Properties.Settings.Default.EDPath + @"\Products";
-            foreach(string dir in Directory.GetDirectories(edProductDir))
+            if (!Directory.Exists(edProductDir))
+            {
+                logger.Fatal("Couldn't find E:D product directory, aborting AppConfig parse.");
+                return;
+            }
+            foreach (string dir in Directory.GetDirectories(edProductDir))
             {
                 logger.Info("Checking AppConfig in Product directory " + dir);
                 try {
                     logger.Debug("Loading " + dir + @"\AppConfig.xml");
                     XDocument appconf = XDocument.Load(dir + @"\AppConfig.xml");
                     XElement networknode = appconf.Element("AppConfig").Element("Network");
-                    logger.Debug("Verbose logging is: "+networknode.Attribute("VerboseLogging").Value);
-                    logger.Debug("LogSentLetters is:" + networknode.Attribute("ReportSentLetters").Value);
-                    logger.Debug("LogReceivedLetters is:" + networknode.Attribute("ReportReceivedLetters").Value);
+                    logger.Debug("Verbose logging is: "+ networknode.Attribute("VerboseLogging").Value);
+                    //logger.Debug("LogSentLetters is:" + networknode.Attribute("ReportSentLetters").Value);
+                    //logger.Debug("LogReceivedLetters is:" + networknode.Attribute("ReportReceivedLetters").Value);
                     logger.Debug("Port is:" + networknode.Attribute("Port").Value);
-                    if(networknode.Attribute("VerboseLogging").Value != "1" || networknode.Attribute("ReportSentLetters").Value != "1" || networknode.Attribute("ReportReceivedLetters").Value != "1")
+                    if(networknode.Attribute("VerboseLogging").Value != "1" || networknode.Attribute("ReportSentLetters") == null || networknode.Attribute("ReportReceivedLetters") == null)
                     {
                         AppendStatus("WARNING: Verbose logging is not set to 1! RatTracker will be unable to track anything about you!");
                         MessageBoxResult result = MessageBox.Show("Warning: Your AppConfig in " + dir + " is not configured correctly to allow RatTracker to perform its function. Would you like to alter the configuration to enable Verbose Logging?","Incorrect AppConfig",MessageBoxButton.YesNo,MessageBoxImage.Exclamation);
@@ -162,16 +167,17 @@ namespace RatTracker_WPF
                         {
                             case MessageBoxResult.Yes:
                                 // TODO: Alter the XML
-                                File.Copy(dir + @"\AppConfig.xml", dir + @"\AppConfig-BeforeRatTracker.xml");
-                                networknode.Attribute("VerboseLogging").Value = "1";
-                                networknode.Attribute("ReportSentLetters").Value = "1";
-                                networknode.Attribute("ReportReceivedLetters").Value = "1";
+                                File.Copy(dir + @"\AppConfig.xml", dir + @"\AppConfig-BeforeRatTracker.xml",true);
+
+                                networknode.SetAttributeValue("VerboseLogging","1");
+                                networknode.SetAttributeValue("ReportSentLetters",1);
+                                networknode.SetAttributeValue("ReportReceivedLetters",1);
                                 XmlWriterSettings settings = new XmlWriterSettings();
                                 settings.OmitXmlDeclaration = true;
                                 settings.Indent = true;
                                 settings.NewLineOnAttributes = true;
                                 StringWriter sw = new StringWriter();
-                                using (XmlWriter xw = XmlWriter.Create(dir + @"\AppConfigTest.xml", settings))
+                                using (XmlWriter xw = XmlWriter.Create(dir + @"\AppConfig.xml", settings))
                                     appconf.Save(xw);
                                 logger.Info("Wrote new configuration to " + dir + @"\AppConfig.xml");
                                 break;
@@ -586,7 +592,7 @@ namespace RatTracker_WPF
 		private async void TriggerSystemChange(string value)
 		{
 			Dispatcher disp = Dispatcher;
-			if (value == currentSystem)
+			if (value == myplayer.CurrentSystem)
 			{
 				return;
 			}
@@ -618,7 +624,7 @@ namespace RatTracker_WPF
 						myTravelLog.Add(new TravelLog() {system = firstsys, lastvisited = DateTime.Now});
 						// Should we add systems even if they don't exist in EDSM? Maybe submit them?
 					}
-					currentSystem = value;
+					myplayer.CurrentSystem = value;
 					await disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => SystemNameLabel.Content = value));
 					if (responseString.Contains("-1"))
 					{
@@ -630,7 +636,7 @@ namespace RatTracker_WPF
 					{
 						await
 							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => SystemNameLabel.Foreground = Brushes.Yellow));
+								(Action) (() => SystemNameLabel.Foreground = Brushes.Orange));
 					}
 					if (responseString.Contains("coords"))
 					{
@@ -658,10 +664,10 @@ namespace RatTracker_WPF
 
 		private void button_Click(object sender, RoutedEventArgs e)
 		{
-			if (onDuty == false)
+			if (myplayer.OnDuty == false)
 			{
 				Button.Content = "On Duty";
-				onDuty = true;
+                myplayer.OnDuty = true;
 				watcher.EnableRaisingEvents = true;
 				AppendStatus("Started watching for events in netlog.");
 				Button.Background = Brushes.Green;
@@ -673,7 +679,7 @@ namespace RatTracker_WPF
 			else
 			{
 				Button.Content = "Off Duty";
-				onDuty = false;
+				myplayer.OnDuty = false;
 				watcher.EnableRaisingEvents = false;
 				AppendStatus("\nStopped watching for events in netlog.");
 				Button.Background = Brushes.Red;
@@ -753,12 +759,14 @@ namespace RatTracker_WPF
 				}
 			}
 		}
-        private void RescueGrid_SelectionChanged(object sender, EventArgs e)
+        private async void RescueGrid_SelectionChanged(object sender, EventArgs e)
         {
             Datum myrow = (Datum)RescueGrid.SelectedItem;
             logger.Debug("Client is " + myrow.Client.CmdrName);
+            clientDistanceLabel.Content = "Calculating...";
             ClientName.Text = myrow.Client.CmdrName;
             SystemName.Text = myrow.System;
+            clientDistanceLabel.Content = await CalculateEDSMDistance(myplayer.CurrentSystem, myrow.System);
         }
 
 		private async Task GetMissingRats(RootObject rescues)
@@ -799,8 +807,14 @@ namespace RatTracker_WPF
 			swindow.Show();
 		}
 
-		public IEnumerable<EdsmSystem> QueryEDSMSystem(string system)
+		public async Task<IEnumerable<EdsmSystem>> QueryEDSMSystem(string system)
 		{
+            if (system.Length < 3)
+            {
+                //This would pretty much download the entire EDSM database. Refuse to do it.
+                logger.Fatal("Too short EDSM query passed to QueryEDSMSystem: " + system);
+                return new List<EdsmSystem>();
+            }
 			try
 			{
 				using (HttpClient client = new HttpClient())
@@ -809,7 +823,7 @@ namespace RatTracker_WPF
 					AppendStatus("Querying EDSM for " + system);
 					NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
 					content.Query = query.ToString();
-					HttpResponseMessage response = client.GetAsync(content.ToString()).Result;
+					HttpResponseMessage response = await client.GetAsync(content.ToString());
 					response.EnsureSuccessStatusCode();
 					string responseString = response.Content.ReadAsStringAsync().Result;
 					//AppendStatus("Got response: " + responseString);
@@ -827,25 +841,25 @@ namespace RatTracker_WPF
 			}
 		}
 
-		public IEnumerable<EdsmSystem> GetCandidateSystems(string target)
+		public async Task<IEnumerable<EdsmSystem>> GetCandidateSystems(string target)
 		{
 			IEnumerable<EdsmSystem> candidates;
 			IEnumerable<EdsmSystem> finalcandidates = new List<EdsmSystem>();
 			string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-zA-Z])+(\\d+(?:-\\d+)+?)";
 			Match mymatch = Regex.Match(target, sysmatch, RegexOptions.IgnoreCase);
-			candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
+			candidates = await QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
 			logger.Debug("Candidate count is " + candidates.Count().ToString() + " from a subgroup of " + mymatch.Groups[3].Value);
 			finalcandidates = candidates.Where(x => x.Coords != null);
 			logger.Debug("FinalCandidates with coords only is size " + finalcandidates.Count());
 			if (finalcandidates.Count() < 1)
 			{
 				logger.Debug("No final candidates, widening search further...");
-				candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[2].Value)));
+				candidates = await QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[2].Value)));
 				finalcandidates = candidates.Where(x => x.Coords != null);
 				if (finalcandidates.Count() < 1)
 				{
 					logger.Debug("Still nothing! Querying whole sector.");
-					candidates = QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[1].Value)));
+					candidates = await QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[1].Value)));
 					finalcandidates = candidates.Where(x => x.Coords != null);
 				}
 			}
@@ -861,41 +875,58 @@ namespace RatTracker_WPF
         * coord - maybe even require source to be type EDSMCoords.
         */
 
-		public double CalculateEDSMDistance(string source, string target)
+		public async Task<double> CalculateEDSMDistance(string source, string target)
 		{
 			EdsmCoords sourcecoords = new EdsmCoords();
 			EdsmCoords targetcoords = new EdsmCoords();
 			IEnumerable<EdsmSystem> candidates;
 			if (source == target)
 				return 0; /* Well, it COULD happen? People have been known to do stupid things. */
-			foreach (TravelLog mysource in myTravelLog.Reverse())
-			{
-				if (mysource.system.Coords == null)
-				{
-					logger.Debug("System in travellog has no coords:" + mysource.system.Name);
-				}
-				else
-				{
-					logger.Debug("Found coord'ed system " + mysource.system.Name + ", using as source.");
-					sourcecoords = mysource.system.Coords;
-				}
-			}
-			if (sourcecoords == null || source == "Fuelum")
+            if (source == null)
+            {
+                /* Dafuq? */
+                logger.Fatal("Null value passed as source to CalculateEDSMDistance!");
+                source = "Fuelum";
+            }
+            if (source.Length < 3)
+            {
+                AppendStatus("Source system name '"+source+"' too short, searching from Fuelum.");
+                source = "Fuelum";
+            }
+            candidates = await QueryEDSMSystem(source);
+            if(candidates==null || candidates.Count() < 1)
+            {
+                logger.Debug("Unknown source system. Checking travel loc.");
+                foreach (TravelLog mysource in myTravelLog.Reverse())
+                          {
+                              if (mysource.system.Coords == null)
+                              {
+                                  logger.Debug("System in travellog has no coords:" + mysource.system.Name);
+                              }
+                              else
+                              {
+                                  logger.Debug("Found coord'ed system " + mysource.system.Name + ", using as source.");
+                                  sourcecoords = mysource.system.Coords;
+                              }
+                          }
+
+            }
+            if (sourcecoords == null || source == "Fuelum")
 			{
 				AppendStatus("Search for travellog coordinated system failed, using Fuelum coords");
 				// Add a static Fuelum system reference so we don't have to query EDSM for it.
 				sourcecoords = fuelumCoords;
 			}
-			candidates = QueryEDSMSystem(target);
+			candidates = await QueryEDSMSystem(target);
 			if (candidates == null || candidates.Count() < 1)
 			{
 				logger.Debug("EDSM does not know that system. Widening search...");
-				candidates = GetCandidateSystems(target);
+				candidates = await GetCandidateSystems(target);
 			}
 			if (candidates.FirstOrDefault().Coords == null)
 			{
 				logger.Debug("Known system, but no coords. Widening search...");
-				candidates = GetCandidateSystems(target);
+				candidates = await GetCandidateSystems(target);
 			}
 			if (candidates == null || candidates.Count() < 1)
 			{
@@ -952,6 +983,7 @@ namespace RatTracker_WPF
 			var station = edworker.GetClosestStation(new EdsmCoords {X = eddbSystem.x, Y = eddbSystem.y, Z = eddbSystem.z});
 			AppendStatus("Closest system to 'Fuelum' is '" + eddbSystem.name +
 						"', closest station to star with known coordinates (should be 'Wollheim Vision') is '" + station.name + "'.");
+            myplayer.CurrentSystem = "Fuelum";
 		}
 
 		private void MenuItem_Click_1(object sender, RoutedEventArgs e)

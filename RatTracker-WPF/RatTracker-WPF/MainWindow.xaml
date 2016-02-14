@@ -35,7 +35,7 @@
                 <ColumnDefinition Width="163*"/>
                 <ColumnDefinition Width="299*"/>
             </Grid.ColumnDefinitions>
-            <Button x:Name="Button" Content="Go On-Duty" Margin="0,0,10,41" Background="#FFEE1313" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2"/>
+            <Button x:Name="Button" Content="Go On-Duty" Margin="0,0,10,41" Background="{Binding myplayer.OnDuty, Converter={StaticResource BooleanToColourConverter}}" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2"/>
             <TextBox x:Name="StatusDisplay" Margin="10,10,279,40" TextWrapping="Wrap" Text="Status display" IsReadOnlyCaretVisible="True" VerticalScrollBarVisibility="Visible" Grid.Row="1" Grid.ColumnSpan="2"/>
             <Menu x:Name="MenuCopy" Height="19" VerticalAlignment="Top" Grid.ColumnSpan="2">
                 <MenuItem x:Name="MainMenu1" Header="Main Menu" Click="Main_Menu_Click">
@@ -56,7 +56,7 @@
                     <Label x:Name="TurnAddrLabel" Content="{Binding ConnInfo.TURNServer}" Height="23" Margin="110,0,5,52" VerticalAlignment="Bottom"/>
                     <Label x:Name="Label7" Content="TURN server:" HorizontalAlignment="Right" Height="23" Margin="0,0,141,52" VerticalAlignment="Bottom" Width="91"/>
                     <Button x:Name="StunButton" Content="STUN" Margin="0,68,188,0" Background="Red" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="39"/>
-                    <Button x:Name="TurnButton" Content="TURN" Margin="0,68,145,0" Background="{Binding MyClient.TURNActive, Converter={StaticResource BooleanToColourConverter}}" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="38"/>
+                    <Button x:Name="TurnButton" Content="TURN" Margin="0,68,145,0" Background="{Binding ConnInfo.TURNActive, Converter={StaticResource BooleanToColourConverter}}" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="38"/>
                     <Button x:Name="DirectButton" Content="DIRECT" Margin="0,68,90,0" Background="#FF2EFF00" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="50"/>
                     <Button x:Name="SyncButton" Content="SYNC" Margin="0,68,49,0" Background="Lime" Height="17" VerticalAlignment="Top" HorizontalAlignment="Right" Width="36"/>
                 </Grid>
@@ -75,7 +75,7 @@
                     <Label x:Name="label" Content="Distance to client" HorizontalAlignment="Left" Height="23" Margin="12,151,0,0" VerticalAlignment="Top" Width="129"/>
                     <Label x:Name="label_Copy" Content="Jumps (Approx)" HorizontalAlignment="Left" Height="23" Margin="130,151,0,0" VerticalAlignment="Top" Width="129"/>
                     <Button x:Name="button1" Content="Call jumps" HorizontalAlignment="Left" Height="24" Margin="130,201,0,0" VerticalAlignment="Top" Width="74"/>
-                    <Label x:Name="label_Copy1" Content="100.30LY" HorizontalAlignment="Left" Height="23" Margin="12,173,0,0" VerticalAlignment="Top" Width="129"/>
+                    <Label x:Name="clientDistanceLabel" Content="100.30LY" HorizontalAlignment="Left" Height="23" Margin="12,173,0,0" VerticalAlignment="Top" Width="129"/>
                     <Label x:Name="label_Copy2" Content="~10" HorizontalAlignment="Left" Height="23" Margin="130,173,0,0" VerticalAlignment="Top" Width="129"/>
                 </Grid>
             </GroupBox>
