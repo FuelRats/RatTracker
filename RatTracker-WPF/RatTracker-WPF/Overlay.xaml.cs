@@ -44,14 +44,14 @@ namespace RatTracker_WPF
 
 		public void Queue_Message(OverlayMessage message, int time)
 		{
-			InfoLine1Header.Content = message.line1header;
-			InfoLine1Body.Content = message.line1content;
-			InfoLine2Header.Content = message.line2header;
-			InfoLine2Body.Content = message.line2content;
-			InfoLine3Header.Content = message.line3header;
-			InfoLine3Body.Content = message.line3content;
-			InfoLine4Header.Content = message.line4header;
-			InfoLine4Body.Content = message.line4content;
+			InfoLine1Header.Content = message.Line1Header;
+			InfoLine1Body.Content = message.Line1Content;
+			InfoLine2Header.Content = message.Line2Header;
+			InfoLine2Body.Content = message.Line2Content;
+			InfoLine3Header.Content = message.Line3Header;
+			InfoLine3Body.Content = message.Line3Content;
+			InfoLine4Header.Content = message.Line4Header;
+			InfoLine4Body.Content = message.Line4Content;
 		}
 
 		protected virtual void NotifyPropertyChanged([CallerMemberName] string propertyName = null)
