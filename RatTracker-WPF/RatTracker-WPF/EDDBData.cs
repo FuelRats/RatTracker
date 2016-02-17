@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.EDDB;
 using log4net;
+using System.IO;
 
 namespace RatTracker_WPF
 {
@@ -20,51 +21,90 @@ namespace RatTracker_WPF
 
 		public async Task<string> UpdateEDDBData()
 		{
+            DateTime filedate;
+            string RTPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
             if (Thread.CurrentThread.Name == null)
             {
                 Thread.CurrentThread.Name = "EDDBWorker";
             }
-            try
-			{
-				using (
-					HttpClient client =
-						new HttpClient(new HttpClientHandler
-						{
-							AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
-						}))
-				{
-					UriBuilder content = new UriBuilder(EDDBUrl + "stations.json") {Port = -1};
-					logger.Info("Downloading " + content.ToString());
-					HttpResponseMessage response = await client.GetAsync(content.ToString());
-					response.EnsureSuccessStatusCode();
-					string responseString = await response.Content.ReadAsStringAsync();
-					//AppendStatus("Got response: " + responseString);
-					stations = JsonConvert.DeserializeObject<IEnumerable<EDDBStation>>(responseString);
-					logger.Debug("Deserialized stations: " + stations.Count());
-				}
-				using (
-					HttpClient client =
-						new HttpClient(new HttpClientHandler
-						{
-							AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
-						}))
-				{
-					UriBuilder content = new UriBuilder(EDDBUrl + "systems.json") {Port = -1};
-					logger.Debug("Downloading " + content.ToString());
-					HttpResponseMessage response = await client.GetAsync(content.ToString());
-					response.EnsureSuccessStatusCode();
-					string responseString = await response.Content.ReadAsStringAsync();
-					//AppendStatus("Got response: " + responseString);
-					systems = JsonConvert.DeserializeObject<IEnumerable<EDDBSystem>>(responseString);
-					logger.Info("Deserialized systems: " + systems.Count());
-					return "EDDB data downloaded. " + systems.Count() + " systems and " + stations.Count() + " stations added.";
-				}
-			}
-			catch (Exception ex)
-			{
-				logger.Fatal("Exception in UpdateEDDBData: ",ex);
-				return "EDDB data download failed!";
-			}
+            if (File.Exists(RTPath + @"\RatTracker\stations.json")) 
+                filedate = File.GetLastWriteTime(RTPath + @"\RatTracker\stations.json");
+            else
+            {
+                filedate=new DateTime(1985,4,1);
+            }
+            if (filedate.AddDays(1) < DateTime.Now)
+            {
+                logger.Info("EDDB cache is older than 7 days, updating...");
+                try
+                {
+                    using (
+                        HttpClient client =
+                            new HttpClient(new HttpClientHandler
+                            {
+                                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+                            }))
+                    {
+                        UriBuilder content = new UriBuilder(EDDBUrl + "stations.json") { Port = -1 };
+                        logger.Info("Downloading " + content.ToString());
+                        HttpResponseMessage response = await client.GetAsync(content.ToString());
+                        response.EnsureSuccessStatusCode();
+                        string responseString = await response.Content.ReadAsStringAsync();
+                        //AppendStatus("Got response: " + responseString);
+                        using (StreamWriter sw = new StreamWriter(RTPath + @"\RatTracker\stations.json"))
+                        {
+                            await sw.WriteLineAsync(responseString);
+                            logger.Info("Saved stations.json");
+                        }
+                        stations = JsonConvert.DeserializeObject<IEnumerable<EDDBStation>>(responseString);
+                        logger.Debug("Deserialized stations: " + stations.Count());
+                    }
+                    
+                    using (
+                        HttpClient client =
+                            new HttpClient(new HttpClientHandler
+                            {
+                                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+                            }))
+                    {
+                        UriBuilder content = new UriBuilder(EDDBUrl + "systems.json") { Port = -1 };
+                        logger.Debug("Downloading " + content.ToString());
+                        HttpResponseMessage response = await client.GetAsync(content.ToString());
+                        response.EnsureSuccessStatusCode();
+                        string responseString = await response.Content.ReadAsStringAsync();
+                        //AppendStatus("Got response: " + responseString);
+                        using (StreamWriter sw = new StreamWriter(RTPath + @"\RatTracker\systems.json"))
+                        {
+                            await sw.WriteLineAsync(responseString);
+                            logger.Info("Saved systems.json");
+                        }
+
+                        systems = JsonConvert.DeserializeObject<IEnumerable<EDDBSystem>>(responseString);
+                        logger.Info("Deserialized systems: " + systems.Count());
+                        return "EDDB data downloaded. " + systems.Count() + " systems and " + stations.Count() + " stations added.";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.Fatal("Exception in UpdateEDDBData: ", ex);
+                    return "EDDB data download failed!";
+                }
+            }
+            else
+            {
+                string loadedfile;
+                using(StreamReader sr = new StreamReader(RTPath + @"\RatTracker\stations.json"))
+                {
+                    loadedfile= sr.ReadLine();
+                }
+                stations = JsonConvert.DeserializeObject<IEnumerable<EDDBStation>>(loadedfile);
+                using (StreamReader sr = new StreamReader(RTPath + @"\RatTracker\systems.json"))
+                {
+                    loadedfile = sr.ReadLine();
+                }
+                systems = JsonConvert.DeserializeObject<IEnumerable<EDDBSystem>>(loadedfile);
+                return "Loaded cached EDDB data. " + systems.Count() + " systems and " + stations.Count() + " stations added.";
+            }
 		}
 
 		public EDDBStation GetClosestStation(EdsmCoords coords)

@@ -118,5 +118,17 @@ namespace RatTracker_WPF.Properties {
                 this["APIPort"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0xDEADBEEF")]
+        public string AppID {
+            get {
+                return ((string)(this["AppID"]));
+            }
+            set {
+                this["AppID"] = value;
+            }
+        }
     }
 }

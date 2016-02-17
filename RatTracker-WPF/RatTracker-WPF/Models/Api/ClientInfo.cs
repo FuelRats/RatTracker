@@ -4,7 +4,7 @@ namespace RatTracker_WPF.Models.Api
 {
     public class ClientInfo
     {
-	    public string ClientName => Rescue.Client.CmdrName;
+	    public string ClientName { get; set; }
         public string ClientId { get; set; }
         public string ClientState { get; set; }
         public string ClientIp { get; set; }

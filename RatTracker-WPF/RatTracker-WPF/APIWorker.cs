@@ -10,6 +10,9 @@ using Newtonsoft.Json;
 using ErrorEventArgs = SuperSocket.ClientEngine.ErrorEventArgs;
 using System.Net;
 using log4net;
+using RatTracker_WPF.Models;
+using RatTracker_WPF.Models.Api;
+
 namespace RatTracker_WPF
 {
 
@@ -40,6 +43,7 @@ namespace RatTracker_WPF
             try
             {
                 string wsurl = "ws://10.0.0.71:8888/"; //TODO: Remove this hardcoding!
+                //string wsurl = "ws://dev.api.fuelrats.com/";
                 logger.Info("Connecting to WS at " + wsurl);
                 ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455);
                 ws.AllowUnstrustedCertificate = true;
@@ -56,8 +60,12 @@ namespace RatTracker_WPF
         }
         public void OpenWs()
         {
+            if (ws == null)
+            {
+                logger.Debug("Attempted to open uninitialized WS connection.");
+                return;
+            }
             ws.Open();
-
             logger.Debug("WS client is " + ws.State);
         }
 
@@ -70,6 +78,11 @@ namespace RatTracker_WPF
         }
         public void SendWs(string action, IDictionary<string, string> data)
         {
+            if (ws == null)
+            {
+                logger.Debug("Attempt to send data over uninitialized WS connection!");
+                return;
+            }
             switch (action)
             {
                 case "rescue:update":
@@ -84,7 +97,18 @@ namespace RatTracker_WPF
             logger.Debug("sendWS Serialized to: " + json);
             ws.Send(json);
         }
-
+        public void SendTPAMessage(TPAMessage message)
+        {
+            if (ws == null)
+            {
+                logger.Debug("Attempt to send TPA message over uninitialized WS connection!");
+                return;
+            }
+            message.applicationid = Properties.Settings.Default.AppID;
+            string json = JsonConvert.SerializeObject(message);
+            logger.Debug("Serialized data: " + json);
+            ws.Send(json);
+        }
         private void websocket_Client_Closed(object sender, EventArgs e)
         {
             if (stopping == true)

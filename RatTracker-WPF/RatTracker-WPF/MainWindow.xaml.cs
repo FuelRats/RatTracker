@@ -31,6 +31,7 @@ using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
 using SpeechLib;
 using WebSocket4Net;
+using Microsoft.ApplicationInsights;
 
 namespace RatTracker_WPF
 {
@@ -43,13 +44,13 @@ namespace RatTracker_WPF
 		public static readonly Brush RatStatusColourPositive = Brushes.LightGreen;
 		public static readonly Brush RatStatusColourPending = Brushes.Orange;
 		public static readonly Brush RatStatusColourNegative = Brushes.Red;
-
+        private TelemetryClient tc = new TelemetryClient();
 		private static readonly string edsmURL = "http://www.edsm.net/api-v1/";
 
 		private static readonly ILog logger =
 			LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-		private static EdsmCoords fuelumCoords = new EdsmCoords() {X = 42, Y = -711.09375, Z = 39.8125};
+		private static EdsmCoords fuelumCoords = new EdsmCoords() {X = 52, Y = -52.65625, Z = 49.8125};
 
 		private readonly SpVoice voice = new SpVoice();
 		private RootObject activeRescues = new RootObject();
@@ -75,13 +76,31 @@ namespace RatTracker_WPF
 		public MainWindow()
 		{
 			logger.Info("---Starting RatTracker---");
-			InitializeComponent();
+            tc.Context.Session.Id = Guid.NewGuid().ToString();
+            tc.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
+            tc.Context.User.Id = Environment.UserName.ToString();
+            tc.Context.Component.Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            tc.TrackPageView("MainWindow");
+            InitializeComponent();
 			CheckLogDirectory();
 			DataContext = this;
 			ParseEDAppConfig();
-		}
-
-		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
+        }
+        public void TrackFatalException(Exception ex)
+        {
+            var exceptionTelemetry = new Microsoft.ApplicationInsights.DataContracts.ExceptionTelemetry(new
+                Exception());
+            exceptionTelemetry.HandledAt =
+               Microsoft.ApplicationInsights.DataContracts.ExceptionHandledAt.
+               Unhandled;
+            tc.TrackException(exceptionTelemetry);
+        }
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            TrackFatalException(e.ExceptionObject as Exception);
+            tc.Flush();
+        }
+        public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
 
 		public ConnectionInfo ConnInfo
 		{
@@ -228,10 +247,10 @@ namespace RatTracker_WPF
 								"Warning: Your AppConfig in " + dir +
 								" is not configured correctly to allow RatTracker to perform its function. Would you like to alter the configuration to enable Verbose Logging?",
 								"Incorrect AppConfig", MessageBoxButton.YesNo, MessageBoxImage.Exclamation);
+                        tc.TrackEvent("AppConfigNotCorrectlySetUp");
 						switch (result)
 						{
 							case MessageBoxResult.Yes:
-								// TODO: Alter the XML
 								File.Copy(dir + @"\AppConfig.xml", dir + @"\AppConfig-BeforeRatTracker.xml", true);
 
 								networknode.SetAttributeValue("VerboseLogging", "1");
@@ -245,9 +264,11 @@ namespace RatTracker_WPF
 								using (XmlWriter xw = XmlWriter.Create(dir + @"\AppConfig.xml", settings))
 									appconf.Save(xw);
 								logger.Info("Wrote new configuration to " + dir + @"\AppConfig.xml");
+                                tc.TrackEvent("AppConfigAutofixed");
 								break;
 							case MessageBoxResult.No:
 								AppendStatus("No alterations performed.");
+                                tc.TrackEvent("AppConfigDenied");
 								break;
 						}
 					}
@@ -371,6 +392,8 @@ namespace RatTracker_WPF
 		{
 			stopNetLog = true;
 			apworker.DisconnectWs();
+            tc.Flush();
+            Thread.Sleep(1000);
 			Application.Current.Shutdown();
 		}
 
@@ -410,7 +433,7 @@ namespace RatTracker_WPF
 			}
 
 			DirectoryInfo tempDir = new DirectoryInfo(logDirectory);
-			logFile = (from f in tempDir.GetFiles("*.log") orderby f.LastWriteTime descending select f).First();
+			logFile = (from f in tempDir.GetFiles("netLog*.log") orderby f.LastWriteTime descending select f).First();
 			AppendStatus("Started watching file " + logFile.FullName);
 			CheckClientConn(logFile.FullName);
 			List<KeyValuePair<string, string>> logindata = new List<KeyValuePair<string, string>>();
@@ -420,10 +443,11 @@ namespace RatTracker_WPF
 			logger.Debug("Call to APIworker returning :" + apworker.connectAPI());
 			object col = await apworker.sendAPI("login", logindata);
 			AppendStatus("Login returned: " + col);
-			apworker.InitWs();
-			apworker.OpenWs();
-			ReadLogfile(logFile.FullName);
-			apworker.ws.MessageReceived += websocketClient_MessageReceieved;
+            //TODO: Reenable WS when we have a working implementation.
+            //apworker.InitWs();
+            //apworker.OpenWs();
+            //apworker.ws.MessageReceived += websocketClient_MessageReceieved;
+            ReadLogfile(logFile.FullName);
 			myTravelLog = new List<TravelLog>();
 		}
 
@@ -520,16 +544,68 @@ namespace RatTracker_WPF
 					}
 
 					AppendStatus("Parsed " + count + " lines to derive client info.");
-					if (stopSnooping == false)
+                    switch (ConnInfo.NATType)
+                    {
+                        case NATType.Blocked:
+                            AppendStatus("WARNING: E:D reports that your network port appears to be blocked! This will prevent you from instancing with other players!");
+                            ConnTypeLabel.Content = "Blocked!";
+                            ConnTypeLabel.Foreground = Brushes.Red;
+                            DirectButton.Background = Brushes.Red;
+                            tc.TrackMetric("NATBlocked",1);
+                            break;
+                        case NATType.Unknown:
+                            AppendStatus("WARNING: E:D is unable to determine the status of your network port. This may be indicative of a condition that may cause instancing problems!");
+                            ConnTypeLabel.Content = "Unknown";
+                            tc.TrackMetric("NATUnknown",1);
+                            break;
+                        case NATType.Open:
+                            ConnTypeLabel.Content = "Open";
+                            ConnTypeLabel.Foreground = Brushes.Green;
+                            tc.TrackMetric("NATOpen",1);
+                            break;
+                        case NATType.FullCone:
+                            ConnTypeLabel.Content = "Full cone NAT";
+                            ConnTypeLabel.Foreground = Brushes.Green;
+                            tc.TrackMetric("NATFullCone",1);
+                            break;
+                        case NATType.Failed:
+                            AppendStatus("WARNING: E:D failed to detect your NAT type. This might be problematic for instancing.");
+                            ConnTypeLabel.Content = "Failed to detect!";
+                            tc.TrackMetric("NATFailed",1);
+                            break;
+                        case NATType.SymmetricUDP:
+                            AppendStatus("WARNING: Symmetric NAT detected! Although your NAT allows UDP, this may cause SEVERE problems when instancing!");
+                            ConnTypeLabel.Content = "Symmetric UDP";
+                            ConnTypeLabel.Foreground = Brushes.Red;
+                            DirectButton.Background = Brushes.Red;
+                            tc.TrackMetric("NATSymmetricUDP",1);
+                            break;
+                        case NATType.Restricted:
+                            AppendStatus("WARNING: Port restricted NAT detected. This may cause instancing problems during initial communication with clients!");
+                            ConnTypeLabel.Content = "Port restricted NAT";
+                            ConnTypeLabel.Foreground = Brushes.Red;
+                            DirectButton.Background = Brushes.Red;
+                            tc.TrackMetric("NATRestricted",1);
+                            break;
+                        case NATType.Symmetric:
+                            AppendStatus("WARNING: Symmetric NAT detected. This is usually VERY BAD for instancing. If you do not have a manual port mapping set up, you should consider changing your network configuration.");
+                            ConnTypeLabel.Foreground = Brushes.Red;
+                            DirectButton.Background = Brushes.Red;
+                            tc.TrackMetric("NATSymmetric",1);
+                            break;
+                    }
+                    if (stopSnooping == false)
 					{
 						AppendStatus(
 							"Client connectivity detection complete. You have a direct port mapped address that E:D can use, and should be connectable.");
 					}
+                    tc.Flush();
 				}
 			}
 			catch (Exception ex)
 			{
 				logger.Fatal("Exception in checkClientConn:" + ex.Message);
+                tc.TrackTrace("CheckClientConnException");
 			}
 		}
 
@@ -559,7 +635,10 @@ namespace RatTracker_WPF
 					while (sr.Peek() != -1)
 					{
 						string line = sr.ReadLine();
-						ParseLine(line);
+                        if (line == "" || line == null)
+                            logger.Error("Empty line while attempting to read a log line!");
+                        else
+    						ParseLine(line);
 					}
 
 					//appendStatus("Parsed " + count + " new lines. Old fileOffset was "+fileOffset+" and length was "+logFile.Length);
@@ -568,12 +647,13 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Fatal("Exception in readLogFile: ", ex);
+                tc.TrackTrace("readLogFile exception!");
 			}
 		}
 
 		private void ParseLine(string line)
 		{
-			/* if (parserState == "ISLAND")
+            /* if (parserState == "ISLAND")
 			{
 				if (line.Contains(myClient.sessionID.ToString()) && scState=="Normalspace")
 				{
@@ -583,11 +663,16 @@ namespace RatTracker_WPF
 					//voice.Speak("Successful normal space instance with client.");
 				}
 			} */
+            if (line == "" || line == null)
+            {
+                logger.Error("ParseLine was passed a null or empty line. This should not happen!");
+                return;
+            }
 			string reMatchSystem = ".*?(System:).*?\\(((?:[^)]+)).*?\\)";
 			Match match = Regex.Match(line, reMatchSystem, RegexOptions.IgnoreCase);
 			if (match.Success)
 			{
-				AppendStatus("System change: " + match.Groups[2].Value + ".");
+				//AppendStatus("System change: " + match.Groups[2].Value + ".");
 				TriggerSystemChange(match.Groups[2].Value);
 			}
 
@@ -597,13 +682,49 @@ namespace RatTracker_WPF
 			{
 				AppendStatus("Successful identity match! ID: " + frmatch.Groups[1] + " IP:" + frmatch.Groups[3]);
 			}
-			string reMatchStats =
+            string reMatchNAT = @"RxRoute:(\d+)+ Comp:(\d)\[IP4NAT:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})+:(\d{1,5}),(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})+:(\d{1,5}),(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})+:(\d{1,5}),(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})+:(\d{1,5}),(\d),(\d),(\d),(\d{1,4})\]\[Relay:";
+            Match natmatch = Regex.Match(line, reMatchNAT, RegexOptions.IgnoreCase);
+            if (natmatch.Success)
+            {
+                AppendStatus("Found NAT datapoint for runID " + natmatch.Groups[1] + ": " + natmatch.Groups[11]);
+                NATType clientnat = new NATType();
+                clientnat = (NATType)Enum.Parse(typeof(NATType), match.Groups[9].Value); 
+                switch (clientnat)
+                {
+                    case NATType.Blocked:
+                        tc.TrackMetric("ClientNATBlocked", 1);
+                        break;
+                    case NATType.Unknown:
+                        tc.TrackMetric("ClientNATUnknown", 1);
+                        break;
+                    case NATType.Open:
+                        tc.TrackMetric("ClientNATOpen", 1);
+                        break;
+                    case NATType.FullCone:
+                        tc.TrackMetric("ClientNATFullCone", 1);
+                        break;
+                    case NATType.Failed:
+                        tc.TrackMetric("ClientNATFailed", 1);
+                        break;
+                    case NATType.SymmetricUDP:
+                        tc.TrackMetric("ClientNATSymmetricUDP", 1);
+                        break;
+                    case NATType.Restricted:
+                        tc.TrackMetric("ClientNATRestricted", 1);
+                        break;
+                    case NATType.Symmetric:
+                        tc.TrackMetric("ClientNATSymmetric", 1);
+                        break;
+                }
+                tc.Flush();
+            }
+            string reMatchStats =
 				"machines=(\\d+)&numturnlinks=(\\d+)&backlogtotal=(\\d+)&backlogmax=(\\d+)&avgsrtt=(\\d+)&loss=([0-9]*(?:\\.[0-9]*)+)&&jit=([0-9]*(?:\\.[0-9]*)+)&act1=([0-9]*(?:\\.[0-9]*)+)&act2=([0-9]*(?:\\.[0-9]*)+)";
 			//FDev, stahp! Why you make me do this shit?!
 			Match statmatch = Regex.Match(line, reMatchStats, RegexOptions.IgnoreCase);
 			if (statmatch.Success)
 			{
-				AppendStatus("Updating connection statistics.");
+				logger.Info("Updating connection statistics.");
 				ConnInfo.Srtt = Int32.Parse(statmatch.Groups[5].Value);
 				ConnInfo.Loss = float.Parse(statmatch.Groups[6].Value);
 				ConnInfo.Jitter = float.Parse(statmatch.Groups[7].Value);
@@ -619,7 +740,7 @@ namespace RatTracker_WPF
 			}
 			if (line.Contains("<data>"))
 			{
-				AppendStatus("Line sent to XML parser");
+				logger.Debug("Line sent to XML parser");
 				ParseFriendsList(line);
 			}
 			if (line.Contains("<FriendWingInvite>"))
@@ -671,10 +792,11 @@ namespace RatTracker_WPF
 			Dispatcher disp = Dispatcher;
 			if (value == MyPlayer.CurrentSystem)
 			{
-				return;
+				return; // Already 
 			}
 			try
 			{
+                tc.TrackEvent("SystemChange");
 				using (HttpClient client = new HttpClient())
 				{
 					UriBuilder content = new UriBuilder(edsmURL + "systems?sysname=" + value + "&coords=1") {Port = -1};
@@ -699,6 +821,7 @@ namespace RatTracker_WPF
 										firstsys.Coords.X + " Y:" + firstsys.Coords.Y + " Z:" + firstsys.Coords.Z);
 						//AppendStatus("Got M:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
 						myTravelLog.Add(new TravelLog() {system = firstsys, lastvisited = DateTime.Now});
+                        logger.Debug("Added system to TravelLog.");
 						// Should we add systems even if they don't exist in EDSM? Maybe submit them?
 					}
 					MyPlayer.CurrentSystem = value;
@@ -721,9 +844,10 @@ namespace RatTracker_WPF
 							disp.BeginInvoke(DispatcherPriority.Normal,
 								(Action) (() => SystemNameLabel.Foreground = Brushes.Green));
 						logger.Debug("Getting distance from fuelum to " + firstsys.Name);
-						string distance = CalculateEDSMDistance("Fuelum", firstsys.Name).ToString();
+						double distance = await CalculateEDSMDistance("Fuelum", firstsys.Name);
+                        distance = Math.Round(distance, 2);
 						await
-							disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => distanceLabel.Content = distance + "LY from Fuelum"));
+							disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => distanceLabel.Content = distance.ToString() + "LY from Fuelum"));
 					}
 				}
 			}
@@ -849,7 +973,7 @@ namespace RatTracker_WPF
 				: string.Empty;
 			SystemName.Text = myrow.System;
 			double distance = await CalculateEDSMDistance(MyPlayer.CurrentSystem, myrow.System);
-			DistanceToClient = distance;
+			DistanceToClient = Math.Round(distance,2);
 			JumpsToClient = MyPlayer.JumpRange > 0 ? Math.Ceiling(distance/MyPlayer.JumpRange).ToString() : string.Empty;
 		}
 
@@ -876,13 +1000,12 @@ namespace RatTracker_WPF
 
 		private void startButton_Click(object sender, RoutedEventArgs e)
 		{
-			AppendStatus("Started tracking new client " + ClientName.Text);
-			// TODO myClient.ClientName = ClientName.Text;
-			FrButton.Background = Brushes.Red;
-			WrButton.Background = Brushes.Red;
-			InstButton.Background = Brushes.Red;
-			BcnButton.Background = Brushes.Red;
-			FueledButton.Background = Brushes.Red;
+			AppendStatus("Starting new fake case for: " + ClientName.Text);
+            // TODO myClient.ClientName = ClientName.Text;
+            myClient = new ClientInfo();
+            myClient.ClientName = ClientName.Text;
+            myClient.ClientSystem = "Fuelum";
+            //myClient.Rescue = activeRescues.Data.First();
 		}
 
 		private void MenuItem_Click(object sender, RoutedEventArgs e)
@@ -901,6 +1024,7 @@ namespace RatTracker_WPF
 			}
 			try
 			{
+                tc.TrackEvent("EDSMQuery");
 				using (HttpClient client = new HttpClient())
 				{
 					UriBuilder content = new UriBuilder(edsmURL + "systems?sysname=" + system + "&coords=1") {Port = -1};
@@ -933,6 +1057,7 @@ namespace RatTracker_WPF
 			Match mymatch = Regex.Match(target, sysmatch, RegexOptions.IgnoreCase);
 			candidates = await QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
 			logger.Debug("Candidate count is " + candidates.Count().ToString() + " from a subgroup of " + mymatch.Groups[3].Value);
+            tc.TrackMetric("CandidateCount", candidates.Count());
 			finalcandidates = candidates.Where(x => x.Coords != null);
 			logger.Debug("FinalCandidates with coords only is size " + finalcandidates.Count());
 			if (finalcandidates.Count() < 1)
@@ -1037,36 +1162,6 @@ namespace RatTracker_WPF
 				AppendStatus("Failed to find target coords. Giving up.");
 				return -1;
 			}
-		}
-
-		private async void button_Click_1(object sender, RoutedEventArgs e)
-		{
-			//TriggerSystemChange("Lave");
-			//TriggerSystemChange("Blaa Hypai AI-I b26-1");
-			//DateTime testdate = DateTime.Now;
-/*            myTravelLog.Add(new TravelLog{ system=new EDSMSystem(){ name = "Sol" }, lastvisited=testdate});
-			myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name = "Fuelum" }, lastvisited = testdate});
-			myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name= "Leesti" }, lastvisited = testdate}); */
-			//AppendStatus("Travellog now contains " + myTravelLog.Count() + " systems. Timestamp of first is " + myTravelLog.First().lastvisited +" name "+myTravelLog.First().system.name);
-			//CalculateEDSMDistance("Sol", SystemName.Text);
-			OverlayMessage mymessage = new OverlayMessage();
-			mymessage.Line1Header = "Nearest station:";
-			mymessage.Line1Content = "Wollheim Vision, Fuelum (0LY)";
-			mymessage.Line2Header = "Pad size:";
-			mymessage.Line2Content = "Large";
-			mymessage.Line3Header = "Capabilities:";
-			mymessage.Line3Content = "Refuel, Rearm, Repair";
-			if (overlay != null)
-				overlay.Queue_Message(mymessage, 30);
-			EDDBData edworker = new EDDBData();
-			string status = await edworker.UpdateEDDBData();
-			AppendStatus("EDDB: " + status);
-
-			EDDBSystem eddbSystem = edworker.systems.First(s => s.name == "Fuelum");
-			var station = edworker.GetClosestStation(new EdsmCoords {X = eddbSystem.x, Y = eddbSystem.y, Z = eddbSystem.z});
-			AppendStatus("Closest system to 'Fuelum' is '" + eddbSystem.name +
-						"', closest station to star with known coordinates (should be 'Wollheim Vision') is '" + station.name + "'.");
-			MyPlayer.CurrentSystem = "Fuelum";
 		}
 
 		private void MenuItem_Click_1(object sender, RoutedEventArgs e)
@@ -1297,5 +1392,45 @@ namespace RatTracker_WPF
 				}
 			}
 		}
-	}
+        private async void button_Click_1(object sender, RoutedEventArgs e)
+        {
+            //TriggerSystemChange("Lave");
+            //TriggerSystemChange("Blaa Hypai AI-I b26-1");
+            //DateTime testdate = DateTime.Now;
+            /*            myTravelLog.Add(new TravelLog{ system=new EDSMSystem(){ name = "Sol" }, lastvisited=testdate});
+                        myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name = "Fuelum" }, lastvisited = testdate});
+                        myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name= "Leesti" }, lastvisited = testdate}); */
+            //AppendStatus("Travellog now contains " + myTravelLog.Count() + " systems. Timestamp of first is " + myTravelLog.First().lastvisited +" name "+myTravelLog.First().system.name);
+            //CalculateEDSMDistance("Sol", SystemName.Text);
+            OverlayMessage mymessage = new OverlayMessage();
+            mymessage.Line1Header = "Nearest station:";
+            mymessage.Line1Content = "Wollheim Vision, Fuelum (0LY)";
+            mymessage.Line2Header = "Pad size:";
+            mymessage.Line2Content = "Large";
+            mymessage.Line3Header = "Capabilities:";
+            mymessage.Line3Content = "Refuel, Rearm, Repair";
+            if (overlay != null)
+                overlay.Queue_Message(mymessage, 30);
+            EDDBData edworker = new EDDBData();
+            string status = await edworker.UpdateEDDBData();
+            AppendStatus("EDDB: " + status);
+
+            EDDBSystem eddbSystem = edworker.systems.First(s => s.name == "Fuelum");
+            var station = edworker.GetClosestStation(fuelumCoords);
+            AppendStatus("Closest system to 'Fuelum' is '" + eddbSystem.name +
+                        "', closest station to star with known coordinates (should be 'Wollheim Vision') is '" + station.name + "'.");
+            MyPlayer.CurrentSystem = "Fuelum";
+            MyPlayer.JumpRange = float.Parse("31.24");
+            TPAMessage testmessage = new TPAMessage();
+            testmessage.action = "Message";
+            testmessage.meta = new Meta();
+            testmessage.data = new Dictionary<string, string>();
+            testmessage.data.Add("WingRequest", "true");
+            testmessage.data.Add("RescueID", "abc1234567890test");
+            testmessage.data.Add("RatID", "bcd1234567890test");
+            apworker.SendTPAMessage(testmessage);
+        }
+
+    }
+
 }

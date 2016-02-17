@@ -26,5 +26,8 @@
     <Setting Name="APIPort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">80</Value>
     </Setting>
+    <Setting Name="AppID" Type="System.String" Scope="User">
+      <Value Profile="(Default)">0xDEADBEEF</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
