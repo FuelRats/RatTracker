@@ -26,7 +26,6 @@ namespace RatTracker_WPF
 
     class APIWorker
     {
-        static string apiURL = Properties.Settings.Default.APIURL; /* To be replaced with Settings property. */
         private static readonly ILog logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private bool stopping = false;
         public WebSocket ws;
@@ -42,7 +41,7 @@ namespace RatTracker_WPF
 
             try
             {
-                string wsurl = "ws://10.0.0.71:8888/"; //TODO: Remove this hardcoding!
+                string wsurl = "ws://orthanc.localecho.net:7070/"; //TODO: Remove this hardcoding!
                 //string wsurl = "ws://dev.api.fuelrats.com/";
                 logger.Info("Connecting to WS at " + wsurl);
                 ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455);
@@ -85,16 +84,24 @@ namespace RatTracker_WPF
             }
             switch (action)
             {
-                case "rescue:update":
+                case "rescues:read":
+                    logger.Debug("SendWS is requesting a rescues update.");
                     break;
                 default:
                     break;
 
             }
-            data.Add("action", action);
-            data.Add("applicationid", "0xDEADBEEF");
-            string json = JsonConvert.SerializeObject(data);
+            APIQuery myquery = new APIQuery();
+            myquery.action = action;
+            myquery.data = data;
+            string json = JsonConvert.SerializeObject(myquery);
             logger.Debug("sendWS Serialized to: " + json);
+            ws.Send(json);
+        }
+        public void SendQuery(APIQuery myquery)
+        {
+            string json = JsonConvert.SerializeObject(myquery);
+            logger.Debug("Sent an APIQuery serialized as: " + json);
             ws.Send(json);
         }
         public void SendTPAMessage(TPAMessage message)
@@ -104,9 +111,9 @@ namespace RatTracker_WPF
                 logger.Debug("Attempt to send TPA message over uninitialized WS connection!");
                 return;
             }
-            message.applicationid = Properties.Settings.Default.AppID;
+            message.applicationId = Properties.Settings.Default.AppID;
             string json = JsonConvert.SerializeObject(message);
-            logger.Debug("Serialized data: " + json);
+            logger.Debug("Serialized TPA data: " + json);
             ws.Send(json);
         }
         private void websocket_Client_Closed(object sender, EventArgs e)
@@ -142,12 +149,6 @@ namespace RatTracker_WPF
                 case "welcome":
                     logger.Info("API MOTD: " + data.data);
                     break;
-                case "assignment":
-                    logger.Debug("Got a new assignment datafield: " + data.data);
-                    break;
-                default:
-                    logger.Debug("Unknown API type field: " + data.type + ": " + data.data);
-                    break;
             }
 
             //appendStatus("Direct parse. Type:" + data.type + " Data:" + data.data);
@@ -175,7 +176,7 @@ namespace RatTracker_WPF
             {
                 using (var client = new HttpClient())
                 {
-                    var content = new UriBuilder(apiURL + action+"/");
+                    var content = new UriBuilder(Properties.Settings.Default.APIURL + action+"/");
                     content.Port = Properties.Settings.Default.APIPort;
                     var query = HttpUtility.ParseQueryString(content.Query);
                     if (query==null)
@@ -244,7 +245,7 @@ namespace RatTracker_WPF
                 using (var client = new HttpClient())
                 {
                     var content = new FormUrlEncodedContent(data);
-                    var response = await client.PostAsync(apiURL + action, content);
+                    var response = await client.PostAsync(Properties.Settings.Default.APIURL + action, content); //TODO: This does not pull port number!
                     logger.Debug("AsyncPost sent.");
                     if (response.IsSuccessStatusCode)
                     {

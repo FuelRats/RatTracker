@@ -12,6 +12,7 @@
         <converter:RequestStateToColourConverter x:Key="RequestStateToColourConverter" RatStatusColourNegative="#00000000" RatStatusColourPending="#FF00B3F7" RatStatusColourPositive="#FF029E4C" />
         <converter:BooleanToColourConverter x:Key="BooleanToColourConverter" RatStatusColourNegative="#00000000" RatStatusColourPositive="#FF029E4C"/>
     </Window.Resources>
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="{Binding IsRescueActive, Converter={converter:BooleanGridHeightConverter TrueValue=1*}}" />
@@ -68,13 +69,13 @@
             </StackPanel>
 
             <!-- State for rats #2 & #3 -->
-            <StackPanel Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Orientation="Vertical">
+            <StackPanel x:Name="Rat2Panel" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Orientation="Vertical">
                 <!-- Rat #2 -->
                 <StackPanel Orientation="Horizontal">
                     <Label x:Name="Rat2Label" Content="Rat 2:" Foreground="{DynamicResource brushEliteOrange}" />
                     <Label x:Name="Rat2NameLabel" Content="Ravenov" Foreground="{DynamicResource brushEliteOrange}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal">
+                <StackPanel x:Name="Rat2Buttons" Orientation="Horizontal">
                     <Button x:Name="Rat2FrButton" Content="FR" Background="{Binding ClientInfo.Rat2.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" 
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
@@ -93,11 +94,11 @@
                 </StackPanel>
 
                 <!-- Rat #3 -->
-                <StackPanel Orientation="Horizontal">
+                <StackPanel x:Name="Rat3Panel" Orientation="Horizontal">
                     <Label x:Name="Rat3Label" Content="Rat 3:" Foreground="{DynamicResource brushEliteOrange}" />
                     <Label x:Name="Rat3NameLabel" Content="Amolin" Foreground="{DynamicResource brushEliteOrange}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal">
+                <StackPanel x:Name="Rat3Buttons" Orientation="Horizontal">
                     <Button x:Name="Rat3FrButton" Content="FR" Background="{Binding ClientInfo.Rat3.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}"
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
@@ -118,7 +119,7 @@
         </Grid>
 
         <!-- Infolines -->
-        <Grid Grid.Row="1">
+        <Grid x:Name="MessageGrid" Grid.Row="1">
             <Label x:Name="InfoLine1Header" Content="InfoLine1:" HorizontalAlignment="Left" Height="26"
                    Margin="10,10,0,0" VerticalAlignment="Top" Width="89"
                    Foreground="{DynamicResource brushEliteOrange}" />

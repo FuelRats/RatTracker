@@ -74,7 +74,7 @@
                     <TextBlock x:Name="AssignedRatsLabel" HorizontalAlignment="Left" Height="17" Margin="12,134,0,0" TextWrapping="Wrap" Text="{Binding AssignedRats}" VerticalAlignment="Top" Width="212"/>
                     <Label x:Name="label" Content="Distance to client" HorizontalAlignment="Left" Height="23" Margin="12,151,0,0" VerticalAlignment="Top" Width="129"/>
                     <Label x:Name="label_Copy" Content="Jumps (Approx)" HorizontalAlignment="Left" Height="23" Margin="130,151,0,0" VerticalAlignment="Top" Width="129"/>
-                    <Button x:Name="button1" Content="Call jumps" HorizontalAlignment="Left" Height="24" Margin="130,201,0,0" VerticalAlignment="Top" Width="74"/>
+                    <Button x:Name="button1" Content="Call jumps" HorizontalAlignment="Left" Height="24" Margin="130,201,0,0" VerticalAlignment="Top" Width="74" Click="button1_Click"/>
                     <Label x:Name="clientDistanceLabel" Content="{Binding DistanceToClientString}" HorizontalAlignment="Left" Height="23" Margin="12,173,0,0" VerticalAlignment="Top" Width="129"/>
                     <Label x:Name="label_Copy2" Content="{Binding JumpsToClient}" HorizontalAlignment="Left" Height="23" Margin="130,173,0,0" VerticalAlignment="Top" Width="129"/>
                 </Grid>

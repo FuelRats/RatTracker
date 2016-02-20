@@ -31,7 +31,10 @@ namespace RatTracker_WPF
             vfbd.Description = "Please select your Elite:Dangerous folder (Containing the launcher executable)";
             vfbd.UseDescriptionForTitle = true;
             if ((bool)vfbd.ShowDialog(this))
+            {
                 Properties.Settings.Default.EDPath = vfbd.SelectedPath;
+                Properties.Settings.Default.NetLogPath = vfbd.SelectedPath + @"\Products\elite-dangerous-64\Logs";
+            }
 
         }
 

@@ -16,7 +16,16 @@
 		public bool turnactive;
 		public string turnServer;
 		public string wanAddress;
-
+        public bool portmapped;
+        public bool PortMapped
+        {
+            get { return portmapped; }
+            set
+            {
+                portmapped = value;
+                NotifyPropertyChanged();
+            }
+        }
 		public string WANAddress
 		{
 			get { return wanAddress; }

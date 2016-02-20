@@ -17,7 +17,7 @@ namespace RatTracker_WPF.Models.Api
         public List<string> Quotes { get; set; }
         public List<string> Rats { get; set; }
         public List<string> unidentifiedRats { get; set; }
-        public bool Successful { get; set; }
+        public bool? Successful { get; set; }
         public string System { get; set; }
         // ReSharper disable once InconsistentNaming
         public string _id { get; set; }

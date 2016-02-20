@@ -6,5 +6,6 @@ namespace RatTracker_WPF.Models.Api
         public int Limit { get; set; }
         public int Offset { get; set; }
         public int Total { get; set; }
+        public string Action { get; set; }
     }
 }

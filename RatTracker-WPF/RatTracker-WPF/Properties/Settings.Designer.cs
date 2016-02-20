@@ -25,7 +25,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("G:\\Frontier\\EDLaunch\\")]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Program Files (x86)\\Frontier\\Products\\elite-dangerous-64\\")]
         public string EDPath {
             get {
                 return ((string)(this["EDPath"]));
@@ -37,7 +37,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("G:\\Frontier\\EDLaunch\\Products\\elite-dangerous-64\\Logs")]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Program Files (x86)\\Frontier\\Products\\elite-dangerous-64\\Logs")]
         public string NetLogPath {
             get {
                 return ((string)(this["NetLogPath"]));
@@ -85,7 +85,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://dev.api.fuelrats.com/")]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://orthanc.localecho.net/")]
         public string APIURL {
             get {
                 return ((string)(this["APIURL"]));
@@ -109,7 +109,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("80")]
+        [global::System.Configuration.DefaultSettingValueAttribute("7070")]
         public int APIPort {
             get {
                 return ((int)(this["APIPort"]));
