@@ -407,7 +407,7 @@ namespace RatTracker_WPF
 			Application.Current.Shutdown();
 		}
 
-		private async void CheckLogDirectory()
+		private void CheckLogDirectory()
 		{
 			if (Thread.CurrentThread.Name == null)
 			{

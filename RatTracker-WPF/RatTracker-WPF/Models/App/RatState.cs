@@ -8,6 +8,17 @@ namespace RatTracker_WPF.Models.App
 		private bool inInstance;
 		private bool inSystem;
 		private RequestState wingRequest;
+        private string ratname;
+
+        public string RatName
+        {
+            get { return ratname; }
+            set
+            {
+                ratname = value;
+                NotifyPropertyChanged();
+            }
+        }
 
 		public RequestState FriendRequest
 		{

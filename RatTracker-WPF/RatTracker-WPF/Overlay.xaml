@@ -119,7 +119,7 @@
         </Grid>
 
         <!-- Infolines -->
-        <Grid x:Name="MessageGrid" Grid.Row="1">
+        <Grid x:Name="MessageGrid" Grid.Row="1" Opacity="0">
             <Label x:Name="InfoLine1Header" Content="InfoLine1:" HorizontalAlignment="Left" Height="26"
                    Margin="10,10,0,0" VerticalAlignment="Top" Width="89"
                    Foreground="{DynamicResource brushEliteOrange}" />

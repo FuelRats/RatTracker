@@ -1,11 +1,10 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using RatTracker_WPF.Models.Api;
 using RatTracker_WPF.Models.App;
-using System.Timers;
+using System.Windows.Media.Animation;
 
 namespace RatTracker_WPF
 {
@@ -43,7 +42,10 @@ namespace RatTracker_WPF
 			window.Topmost = true;
 		}
 
-		public async void Queue_Message(OverlayMessage message, int time)
+        //TODO: Actually make a queue facility that allows more than one message to
+        // be added asynchronously. Pop messages off the stack when one message has
+        // finished displaying.
+		public void Queue_Message(OverlayMessage message, int time)
 		{
 			InfoLine1Header.Content = message.Line1Header;
 			InfoLine1Body.Content = message.Line1Content;
@@ -53,14 +55,34 @@ namespace RatTracker_WPF
 			InfoLine3Body.Content = message.Line3Content;
 			InfoLine4Header.Content = message.Line4Header;
 			InfoLine4Body.Content = message.Line4Content;
-            Timer _resetMessageTimer = new Timer(time);
-            MessageGrid.Visibility = Visibility.Visible;
+            // Fairly certain this is 3 lines in XAML, but I can't get the fucker to work, damnit.
+            Storyboard sb = new Storyboard();
+            sb.Duration = TimeSpan.FromSeconds(time);
+            DoubleAnimation fadein = new DoubleAnimation
+            {
+                To = 1,
+                BeginTime = TimeSpan.FromSeconds(0),
+                Duration = TimeSpan.FromSeconds(2),
+                FillBehavior = FillBehavior.HoldEnd,
+            };
+            DoubleAnimation fadeout = new DoubleAnimation
+            {
+                To = 0,
+                BeginTime = TimeSpan.FromSeconds(time-2),
+                Duration = TimeSpan.FromSeconds(2),
+                FillBehavior = FillBehavior.HoldEnd,
+            };
+            sb.Children.Add(fadein);
+            sb.Children.Add(fadeout);
+            Storyboard.SetTarget(fadein, MessageGrid);
+            Storyboard.SetTarget(fadeout, MessageGrid);
+            Storyboard.SetTargetProperty(fadein, new PropertyPath(UIElement.OpacityProperty));
+            Storyboard.SetTargetProperty(fadeout, new PropertyPath(UIElement.OpacityProperty));
+            sb.Begin();
 		}
-        void _resetMessageTimer_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            MessageGrid.Visibility = Visibility.Hidden;
-        }
-		protected virtual void NotifyPropertyChanged([CallerMemberName] string propertyName = null)
+
+
+        protected virtual void NotifyPropertyChanged([CallerMemberName] string propertyName = null)
 		{
 			PropertyChangedEventHandler onPropertyChanged = PropertyChanged;
 			onPropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -69,12 +91,13 @@ namespace RatTracker_WPF
 		public void SetCurrentClient(ClientInfo client)
 		{
 			this.ClientInfo = client;
-            if (client.Rat2 == null)
+            // TODO: Link the panels and button visibility properties in WPF instead.
+            if (client.Rat2.RatName == null || client.Rat2.RatName=="")
             {
                 Rat2Panel.Visibility = Visibility.Hidden;
                 Rat2Buttons.Visibility = Visibility.Hidden;
             }
-            if (client.Rat3 == null)
+            if (client.Rat3.RatName == null || client.Rat3.RatName=="")
             {
                 Rat3Panel.Visibility = Visibility.Hidden;
                 Rat3Buttons.Visibility = Visibility.Hidden;
