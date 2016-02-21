@@ -111,6 +111,7 @@ namespace RatTracker_WPF
                 logger.Debug("Attempt to send TPA message over uninitialized WS connection!");
                 return;
             }
+            message.data.Add("platform", "PC");
             message.applicationId = Properties.Settings.Default.AppID;
             string json = JsonConvert.SerializeObject(message);
             logger.Debug("Serialized TPA data: " + json);

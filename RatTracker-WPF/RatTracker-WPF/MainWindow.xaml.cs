@@ -1271,12 +1271,12 @@ namespace RatTracker_WPF
 			candidates = await QueryEDSMSystem(target);
 			if (candidates == null || candidates.Count() < 1)
 			{
-				logger.Debug("EDSM does not know that system. Widening search...");
+				logger.Debug("EDSM does not know system '"+target+"'. Widening search...");
 				candidates = await GetCandidateSystems(target);
 			}
 			if (candidates.FirstOrDefault().Coords == null)
 			{
-				logger.Debug("Known system, but no coords. Widening search...");
+				logger.Debug("Known system '"+target+"', but no coords. Widening search...");
 				candidates = await GetCandidateSystems(target);
 			}
 			if (candidates == null || candidates.Count() < 1)
@@ -1287,7 +1287,7 @@ namespace RatTracker_WPF
 			}
 			else
 			{
-				AppendStatus("I got " + candidates.Count() + " systems with coordinates. Picking the first.");
+				logger.Debug("I got " + candidates.Count() + " systems with coordinates. Picking the first.");
 				targetcoords = candidates.FirstOrDefault().Coords;
 			}
 			if (sourcecoords != null && targetcoords != null)
@@ -1297,12 +1297,12 @@ namespace RatTracker_WPF
 				double deltaY = sourcecoords.Y - targetcoords.Y;
 				double deltaZ = sourcecoords.Z - targetcoords.Z;
 				double distance = (double) Math.Sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
-				AppendStatus("Distance should be " + distance.ToString());
+				logger.Debug("Distance should be " + distance.ToString());
 				return distance;
 			}
 			else
 			{
-				AppendStatus("Failed to find target coords. Giving up.");
+				AppendStatus("EDSM failed to find coords for system '"+target+"'.");
 				return -1;
 			}
 		}
