@@ -166,7 +166,7 @@ namespace RatTracker_WPF
             Dictionary<string, string> rtsub = new Dictionary<string, string>();
             rtsub.Add("action", "stream:subscribe");
             rtsub.Add("applicationId", "0xDEADBEEF");
-            queryAPI(rtsub);
+            //queryAPI(rtsub);
             //TODO: Put stream subscription messages here when Mecha goes live. Do we want to listen to ourselves?
         }
 

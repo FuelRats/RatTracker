@@ -156,6 +156,7 @@
     <Compile Include="ConfigChecker.cs" />
     <Compile Include="Converter\BooleanGridHeightConverter.cs" />
     <Compile Include="Converter\BooleanToColourConverter.cs" />
+    <Compile Include="Converter\EmptyStringToVisibilityConverter.cs" />
     <Compile Include="Converter\RequestStateToColourConverter.cs" />
     <Compile Include="DispatchInterface\DispatchMain.xaml.cs">
       <DependentUpon>DispatchMain.xaml</DependentUpon>
