@@ -1245,10 +1245,15 @@ namespace RatTracker_WPF
 				AppendStatus("Source system name '" + source + "' too short, searching from Fuelum.");
 				source = "Fuelum";
 			}
+            if (target.Length < 3)
+            {
+                AppendStatus("Target system name '" + target + "' is too short. Can't perform distance search.");
+                return -1;
+            }
 			candidates = await QueryEDSMSystem(source);
 			if (candidates == null || candidates.Count() < 1)
 			{
-				logger.Debug("Unknown source system. Checking travel log. ("+myTravelLog.Count()+" entries");
+				logger.Debug("Unknown source system. Checking travel log. ("+myTravelLog.Count()+" entries)");
 				foreach (TravelLog mysource in myTravelLog.Reverse())
 				{
 					if (mysource.system.Coords == null)
@@ -1584,19 +1589,8 @@ namespace RatTracker_WPF
             logger.Debug("CompleteRescueUpdate was called.");
         }
 
-        private void button1_Click(object sender, RoutedEventArgs e)
+        private async void button1_Click(object sender, RoutedEventArgs e)
         {
-            AppendStatus("Sending jumps to IRC...");
-            TPAMessage jumpmessage = new TPAMessage();
-            jumpmessage.action = "message:send";
-            jumpmessage.data = new Dictionary<string, string>();
-            jumpmessage.data.Add("CallJumps", "5");
-            jumpmessage.data.Add("RescueID", "abcdef1234567890");
-            jumpmessage.data.Add("RatID", "bcdef1234567890a");
-            jumpmessage.data.Add("Lightyears", "115.20");
-            jumpmessage.data.Add("SourceCertainty", "Exact");
-            jumpmessage.data.Add("DestinationCertainty", "Exact");
-            apworker.SendTPAMessage(jumpmessage);
             myrescue = (Datum)RescueGrid.SelectedItem;
             if (myrescue == null)
                 AppendStatus("Null myrescue!");
@@ -1613,6 +1607,18 @@ namespace RatTracker_WPF
             {
                 overlay.SetCurrentClient(MyClient);
             }
+            double distance = await CalculateEDSMDistance(myplayer.CurrentSystem, MyClient.ClientSystem);
+            AppendStatus("Sending jumps to IRC...");
+            TPAMessage jumpmessage = new TPAMessage();
+            jumpmessage.action = "message:send";
+            jumpmessage.data = new Dictionary<string, string>();
+            jumpmessage.data.Add("CallJumps", "5");
+            jumpmessage.data.Add("RescueID", "abcdef1234567890");
+            jumpmessage.data.Add("RatID", "bcdef1234567890a");
+            jumpmessage.data.Add("Lightyears", "115.20");
+            jumpmessage.data.Add("SourceCertainty", "Exact");
+            jumpmessage.data.Add("DestinationCertainty", "Exact");
+            apworker.SendTPAMessage(jumpmessage);
         }
     }
 
