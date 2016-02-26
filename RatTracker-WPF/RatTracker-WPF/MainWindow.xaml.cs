@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
@@ -100,6 +101,7 @@ namespace RatTracker_WPF
 
 		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
 
+		public ObservableCollection<Datum> ItemsSource { get; } = new ObservableCollection<Datum>();
 
 		public ConnectionInfo ConnInfo
 		{
@@ -531,9 +533,8 @@ namespace RatTracker_WPF
 					case "rescues:read":
 						logger.Debug("Got a list of rescues: " + realdata);
 						rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
-
-						await disp.BeginInvoke(DispatcherPriority.Normal,
-							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
+						ItemsSource.Clear();
+						rescues.Data.ForEach(datum => ItemsSource.Add(datum));
 						await GetMissingRats(rescues);
 						break;
 					case "message:send":
@@ -559,8 +560,7 @@ namespace RatTracker_WPF
 						Datum newrescue = realdata.ToObject<Datum>();
 						AppendStatus("New rescue client name: " + newrescue.Client.NickName);
 						rescues.Data.Add(newrescue);
-						await disp.BeginInvoke(DispatcherPriority.Normal, 
-							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
+						ItemsSource.Add(newrescue);
 						await GetMissingRats(rescues);
 						break;
 					default:
@@ -1129,7 +1129,8 @@ namespace RatTracker_WPF
 					await GetMissingRats(rescues);
 					logger.Debug($"Got {rescues.Data.Count} open rescues.");
 
-					RescueGrid.ItemsSource = rescues.Data;
+					ItemsSource.Clear();
+					rescues.Data.ForEach(datum => ItemsSource.Add(datum));
 					RescueGrid.AutoGenerateColumns = false;
 					foreach (DataGridColumn column in RescueGrid.Columns)
 					{
@@ -1176,7 +1177,8 @@ namespace RatTracker_WPF
 					rescuequery.data.Add("open", "true");
 					apworker.SendQuery(rescuequery);
 				}
-				RescueGrid.ItemsSource = rescues.Data;
+				ItemsSource.Clear();
+				rescues.Data.ForEach(datum => ItemsSource.Add(datum));
 				RescueGrid.AutoGenerateColumns = false;
 				await GetMissingRats(rescues);
 			}
