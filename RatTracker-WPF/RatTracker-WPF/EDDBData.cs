@@ -109,21 +109,29 @@ namespace RatTracker_WPF
 
 		public EDDBStation GetClosestStation(EdsmCoords coords)
 		{
-			var closestSystemId = systems.Select(
-				system =>
-					new
-					{
-						system.id,
-						distance =
-							Math.Sqrt(Math.Pow(coords.X - system.x, 2) + Math.Pow(coords.Y - system.y, 2) + Math.Pow(coords.Z - system.z, 2))
-					}).OrderBy(x => x.distance).First().id;
-
-			EDDBStation station =
-				stations.Where(st => st.system_id == closestSystemId && st.distance_to_star != null)
-					.OrderBy(st => st.distance_to_star)
-					.FirstOrDefault();
-
-			return station;
+			try {
+				logger.Debug("Calculating closest station to X:" + coords.X + " Y:" + coords.Y + " Z:" + coords.Z);
+				var closestSystemId = systems.Select(
+					system =>
+						new
+						{
+							system.id,
+							distance =
+								Math.Sqrt(Math.Pow(coords.X - system.x, 2) + Math.Pow(coords.Y - system.y, 2) + Math.Pow(coords.Z - system.z, 2))
+						}).OrderBy(x => x.distance).First().id;
+				logger.Debug("Got system " + closestSystemId);
+				EDDBStation station =
+					stations.Where(st => st.system_id == closestSystemId && st.distance_to_star != null)
+						.OrderBy(st => st.distance_to_star)
+						.FirstOrDefault();
+				logger.Debug("Got station " + station.name);
+				return station;
+			}
+			catch (Exception ex)
+			{
+				logger.Fatal("Exception in GetClosestStation: " + ex.Message);
+				return new EDDBStation();
+			}
 		}
 	}
 }
