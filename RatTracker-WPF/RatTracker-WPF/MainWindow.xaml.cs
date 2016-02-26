@@ -30,6 +30,7 @@ using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
 using WebSocket4Net;
+using RatTracker_WPF.Models.EDDB;
 
 namespace RatTracker_WPF
 {
@@ -38,42 +39,46 @@ namespace RatTracker_WPF
 	/// </summary>
 	public partial class MainWindow : Window, INotifyPropertyChanged
 	{
-		private const bool TestingMode = true;
+		private const bool TestingMode = true; // Use the TestingMode bool to point RT to test API endpoints and non-live queries. Set to false when deployed.
 		private const string Unknown = "unknown";
-		public static readonly Brush RatStatusColourPositive = Brushes.LightGreen;
-		public static readonly Brush RatStatusColourPending = Brushes.Orange;
-		public static readonly Brush RatStatusColourNegative = Brushes.Red;
+		/* These can not be static readonly. They may be changed by the UI XML pulled from E:D. */
+		public static Brush RatStatusColourPositive = Brushes.LightGreen;
+		public static Brush RatStatusColourPending = Brushes.Orange;
+		public static Brush RatStatusColourNegative = Brushes.Red;
 		private static readonly string edsmURL = "http://www.edsm.net/api-v1/";
-
 		private static readonly ILog logger =
 			LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
-		private static EdsmCoords fuelumCoords = new EdsmCoords() {X = 52, Y = -52.65625, Z = 49.8125};
+		private static EdsmCoords fuelumCoords = new EdsmCoords() {X = 52, Y = -52.65625, Z = 49.8125}; // Static coords to Fuelum, saves a EDSM query
 
 		//private readonly SpVoice voice = new SpVoice();
-		private RootObject activeRescues = new RootObject();
-		private APIWorker apworker;
-		private string assignedRats;
-		public ConnectionInfo conninfo = new ConnectionInfo();
-		private double distanceToClient;
-		private string distanceToClientString;
-		private long fileOffset;
-		private long fileSize;
-		private string jumpsToClient;
-		private string logDirectory = Settings.Default.NetLogPath;
-		private FileInfo logFile;
-		private ClientInfo myClient = new ClientInfo();
-		private PlayerInfo myplayer = new PlayerInfo();
-		Datum myrescue;
-		private ICollection<TravelLog> myTravelLog;
-		private Overlay overlay;
-		RootObject rescues;
-		private string scState;
-		public bool stopNetLog;
-		private TelemetryClient tc = new TelemetryClient();
-		private Thread threadLogWatcher;
-		private FileSystemWatcher watcher;
+		private RootObject activeRescues = new RootObject(); // TODO: Rename to a better model name than RootObject
+		private APIWorker apworker; // Provides connection to the API
+		private string assignedRats; // String representation of assigned rats to current case, bound to the UI 
+		public ConnectionInfo conninfo = new ConnectionInfo(); // The rat's connection information
+		private double distanceToClient; // Bound to UI element
+		private string distanceToClientString; // Bound to UI element
+		private long fileOffset; // Current offset in NetLog file
+		private long fileSize; // Size of current netlog file
+		private string jumpsToClient; // Bound to UI element
+		private string logDirectory = Settings.Default.NetLogPath; // TODO: Remove this assignment and pull live from Settings, have the logfile watcher reaquire file if settings are changed.
+		private FileInfo logFile; // Pointed to the live netLog file.
+		private ClientInfo myClient = new ClientInfo(); // Semi-redundant UI bound data model. Somewhat duplicates myrescue, needs revision.
+		private PlayerInfo myplayer = new PlayerInfo(); // Playerinfo, bound to various UI elements
+		Datum myrescue; // TODO: See myClient - must be refactored.
+		private ICollection<TravelLog> myTravelLog; // Log of recently visited systems.
+		private Overlay overlay; // Pointer to UI overlay
+		RootObject rescues; // Current rescues. Source for items in rescues datagrid
+		private string scState; // Supercruise state.
+		public bool stopNetLog; // Used to terminate netlog reader thread.
+		private TelemetryClient tc = new TelemetryClient(); 
+		private Thread threadLogWatcher; // Holds logwatcher thread.
+		private FileSystemWatcher watcher; // FSW for the Netlog directory.
+		private EDDBData eddbworker;
 
+		/*
+		 * Initializes the application. Starts AI telemetry, checks log directory and makes sure AppConfig is configured for proper operation.
+		 * Any pre-initialization needs to go here.
+		 */
 		public MainWindow()
 		{
 			logger.Info("---Starting RatTracker---");
@@ -85,6 +90,7 @@ namespace RatTracker_WPF
 			InitializeComponent();
 			CheckLogDirectory();
 			InitAPI();
+			InitEDDB();
 			DataContext = this;
 			ParseEDAppConfig();
 		}
@@ -170,6 +176,10 @@ namespace RatTracker_WPF
 
 		public event PropertyChangedEventHandler PropertyChanged;
 
+		/*
+		 * Application Insights exception tracking. This SHOULD send off any unhandled fatal exceptions
+		 * to AI for investigation.
+		 */
 		public void TrackFatalException(Exception ex)
 		{
 			var exceptionTelemetry = new Microsoft.ApplicationInsights.DataContracts.ExceptionTelemetry(new
@@ -185,17 +195,28 @@ namespace RatTracker_WPF
 			TrackFatalException(e.ExceptionObject as Exception);
 			tc.Flush();
 		}
-
+		/*
+		 * Parses E:D's AppConfig and looks for the configuration variables we need to make RT work.
+		 * Offers to change them if not set correctly.
+		 */
 		public bool ParseEDAppConfig()
 		{
 			string edProductDir = Settings.Default.EDPath + "\\Products";
-			if (!Directory.Exists(edProductDir))
+			try {
+				if (!Directory.Exists(edProductDir))
+				{
+					logger.Fatal("Couldn't find E:D product directory, aborting AppConfig parse.");
+					return false;
+				}
+			}
+			catch (Exception ex)
 			{
-				logger.Fatal("Couldn't find E:D product directory, aborting AppConfig parse.");
-				return false;
+				logger.Fatal("Error during edProductDir check?!" + ex.Message);
 			}
 			foreach (string dir in Directory.GetDirectories(edProductDir))
 			{
+				if (dir.Contains("COMBAT_TUTORIAL_DEMO"))
+					break; // We don't need to do AppConfig work on that.
 				logger.Info("Checking AppConfig in Product directory " + dir);
 				try
 				{
@@ -252,7 +273,9 @@ namespace RatTracker_WPF
 			}
 			return true;
 		}
-
+		/*
+		 * Appends text to our status display window.
+		 */
 		public void AppendStatus(string text)
 		{
 			if (StatusDisplay.Dispatcher.CheckAccess())
@@ -268,6 +291,9 @@ namespace RatTracker_WPF
 			}
 		}
 
+		/*
+		 * Converter for E:Ds UTF encoded CMDR names. Seen in NetLog.
+		 */
 		public static byte[] StringToByteArray(string hex)
 		{
 			return Enumerable.Range(0, hex.Length)
@@ -308,8 +334,6 @@ namespace RatTracker_WPF
 					if (friend.Element("pending").Value == "1")
 					{
 						AppendStatus("Pending invite from CMDR " + Encoding.UTF8.GetString(byteenc) + "detected!");
-						//voice.Speak("You have a pending friend invite from commander " +
-						//Encoding.UTF8.GetString(byteenc));
 						if (Encoding.UTF8.GetString(byteenc) == MyClient.ClientName)
 						{
 							MyClient.Self.FriendRequest = RequestState.Recieved;
@@ -333,8 +357,7 @@ namespace RatTracker_WPF
 						logger.Debug("Return code: " + xdoc.Element("data").Element("OK").Value);
 						if (xdoc.Element("data").Element("OK").Value.Contains("Invitation accepted"))
 						{
-							AppendStatus("Friend request accepted!");
-							//voice.Speak("Friend request accepted.");
+							AppendStatus("Friend request accepted.");
 							MyClient.Self.FriendRequest = RequestState.Accepted;
 						}
 					}
@@ -412,96 +435,137 @@ namespace RatTracker_WPF
 
 		private void CheckLogDirectory()
 		{
-			if (Thread.CurrentThread.Name == null)
-			{
-				Thread.CurrentThread.Name = "MainThread";
-			}
+			try {
+				if (Thread.CurrentThread.Name == null)
+				{
+					Thread.CurrentThread.Name = "MainThread";
+				}
 
-			if (logDirectory == null | logDirectory == "")
-			{
-				MessageBox.Show("Error: No log directory is specified, please do so before attempting to go on duty.");
-				return;
-			}
+				if (logDirectory == null | logDirectory == "")
+				{
+					MessageBox.Show("Error: No log directory is specified, please do so before attempting to go on duty.");
+					return;
+				}
 
-			if (!Directory.Exists(Settings.Default.NetLogPath))
-			{
-				MessageBox.Show("Error: Couldn't find E:D Netlog directory: " + Settings.Default.NetLogPath +
-								". Please ensure that it is correct in Settings.");
-				return;
-			}
+				if (!Directory.Exists(Settings.Default.NetLogPath))
+				{
+					MessageBox.Show("Error: Couldn't find E:D Netlog directory: " + Settings.Default.NetLogPath +
+									". Please ensure that it is correct in Settings.");
+					return;
+				}
 
-			AppendStatus("Beginning to watch " + logDirectory + " for changes...");
-			if (watcher == null)
-			{
-				watcher = new FileSystemWatcher();
-				watcher.Path = logDirectory;
-				watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName |
-										NotifyFilters.DirectoryName | NotifyFilters.Size;
-				watcher.Filter = "*.log";
-				watcher.Changed += OnChanged;
-				watcher.Created += OnChanged;
-				watcher.Deleted += OnChanged;
-				watcher.Renamed += OnRenamed;
-				watcher.EnableRaisingEvents = true;
+				AppendStatus("Beginning to watch " + logDirectory + " for changes...");
+				if (watcher == null)
+				{
+					watcher = new FileSystemWatcher();
+					watcher.Path = logDirectory;
+					watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName |
+											NotifyFilters.DirectoryName | NotifyFilters.Size;
+					watcher.Filter = "*.log";
+					watcher.Changed += OnChanged;
+					watcher.Created += OnChanged;
+					watcher.Deleted += OnChanged;
+					watcher.Renamed += OnRenamed;
+					watcher.EnableRaisingEvents = true;
+				}
+				DirectoryInfo tempDir = new DirectoryInfo(logDirectory);
+				logFile = (from f in tempDir.GetFiles("netLog*.log") orderby f.LastWriteTime descending select f).First();
+				AppendStatus("Started watching file " + logFile.FullName);
+				logger.Debug("Watching file: " + logFile.FullName);
+				CheckClientConn(logFile.FullName);
+				ReadLogfile(logFile.FullName);
+				myTravelLog = new List<TravelLog>();
 			}
-			DirectoryInfo tempDir = new DirectoryInfo(logDirectory);
-			logFile = (from f in tempDir.GetFiles("netLog*.log") orderby f.LastWriteTime descending select f).First();
-			AppendStatus("Started watching file " + logFile.FullName);
-			logger.Debug("Watching file: " + logFile.FullName);
-			CheckClientConn(logFile.FullName);
-			ReadLogfile(logFile.FullName);
-			myTravelLog = new List<TravelLog>();
+			catch (Exception ex)
+			{
+				logger.Debug("Exception in CheckLogDirectory! " + ex.Message);
+			}
 		}
 
-		private async void InitAPI()
+		private void InitAPI()
 		{
-			logger.Info("Initializing API connection...");
-			List<KeyValuePair<string, string>> logindata = new List<KeyValuePair<string, string>>();
-			logindata.Add(new KeyValuePair<string, string>("email", "mecha@squeak.net"));
-			logindata.Add(new KeyValuePair<string, string>("password", "password"));
-			apworker = new APIWorker();
-			logger.Debug("Call to APIworker returning :" + apworker.connectAPI());
-			object col = await apworker.sendAPI("login", logindata);
-			logger.Debug("Login returned: " + col);
-			apworker.InitWs();
-			apworker.OpenWs();
-			apworker.ws.MessageReceived += websocketClient_MessageReceieved;
+			try {
+				logger.Info("Initializing API connection...");
+				apworker = new APIWorker();
+				apworker.InitWs();
+				apworker.OpenWs();
+				apworker.ws.MessageReceived += websocketClient_MessageReceieved;
+			}
+			catch (Exception ex)
+			{
+				logger.Fatal("Exception in InitAPI: " + ex.Message);
+			}
 		}
 
+		private async void InitEDDB()
+		{
+			AppendStatus("Initializing EDDB.");
+			eddbworker = new EDDBData();
+			string status = await eddbworker.UpdateEDDBData();
+			AppendStatus("EDDB: " + status);
+		}
 		/* Moved WS connection to the apworker, but to actually parse the messages we have to hook the event
          * handler here too.
          */
 
 		private async void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
 		{
-			logger.Debug("Raw JSON from WS: " + e.Message);
-			dynamic data = JsonConvert.DeserializeObject(e.Message);
-			dynamic meta = data.meta;
-			dynamic realdata = data.data;
-			logger.Debug("Meta data from API: " + meta);
-			switch ((string) meta.action)
+			Dispatcher disp = Dispatcher;
+			try {
+				logger.Debug("Raw JSON from WS: " + e.Message);
+				dynamic data = JsonConvert.DeserializeObject(e.Message);
+				dynamic meta = data.meta;
+				dynamic realdata = data.data;
+				logger.Debug("Meta data from API: " + meta);
+				switch ((string)meta.action)
+				{
+					case "welcome":
+						logger.Info("API MOTD: " + data.data);
+						break;
+					case "assignment":
+						logger.Debug("Got a new assignment datafield: " + data.data);
+						break;
+					case "rescues:read":
+						logger.Debug("Got a list of rescues: " + realdata);
+						rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
+
+						await disp.BeginInvoke(DispatcherPriority.Normal,
+							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
+						await GetMissingRats(rescues);
+						break;
+					case "message:send":
+						/* We got a message broadcast on our channel. */
+						AppendStatus("Test 3PA data from WS receieved: " + realdata);
+						break;
+					case "users:read":
+						AppendStatus("Got user data for "+realdata[0].email);
+						MyPlayer.RatID = new List<string>();
+						foreach (string id in realdata[0].CMDRs) {
+							AppendStatus("RatID " + id+" added to identity list.");
+							MyPlayer.RatID.Add(id);
+						}
+						break;
+					case "rescue:created":
+						AppendStatus("New rescue arrived!"+realdata);
+						//string rejson = realdata;
+						//Datum newrescue = JsonConvert.DeserializeObject<Datum>(rejson);
+						Datum newrescue = realdata.ToObject<Datum>();
+						AppendStatus("New rescue client name: " + newrescue.Client.NickName);
+						rescues.Data.Add(newrescue);
+						await disp.BeginInvoke(DispatcherPriority.Normal, 
+							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
+						await GetMissingRats(rescues);
+						break;
+					default:
+						logger.Info("Unknown API action field: " + meta.action);
+						break;
+				}
+				if (meta.id != null)
+					AppendStatus("My connID: " + meta.id);
+			}
+			catch (Exception ex)
 			{
-				case "welcome":
-					logger.Info("API MOTD: " + data.data);
-					break;
-				case "assignment":
-					logger.Debug("Got a new assignment datafield: " + data.data);
-					break;
-				case "rescues:read":
-					logger.Debug("Got a list of rescues: " + realdata);
-					rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
-					Dispatcher disp = Dispatcher;
-					await disp.BeginInvoke(DispatcherPriority.Normal,
-						(Action) (() => RescueGrid.ItemsSource = rescues.Data));
-					await GetMissingRats(rescues);
-					break;
-				case "stream:broadcast":
-					/* We got a message broadcast on our channel. */
-					AppendStatus("Test 3PA data from WS receieved: " + realdata);
-					break;
-				default:
-					logger.Info("Unknown API action field: " + meta.action);
-					break;
+				logger.Fatal("Exception in WSClient_MessageReceived: " + ex.Message);
 			}
 		}
 
@@ -534,8 +598,8 @@ namespace RatTracker_WPF
 							ConnInfo.runID = line.Substring(line.IndexOf("is "));
 						}
 						if (line.Contains("RxRoute"))
-							// Yes, this early in the netlog, I figure we can just parse the RxRoute without checking for ID. Don't do this later though.
 						{
+							// Yes, this early in the netlog, I figure we can just parse the RxRoute without checking for ID. Don't do this later though.
 							string rxpattern =
 								"IP4NAT:(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d),(\\d),(\\d),(\\d{1,4})";
 							Match match = Regex.Match(line, rxpattern, RegexOptions.IgnoreCase);
@@ -575,8 +639,6 @@ namespace RatTracker_WPF
 						if (line.Contains("Sync Established"))
 						{
 							AppendStatus("Sync Established.");
-							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => SyncButton.Background = Brushes.Green));
 						}
 
 						if (line.Contains("ConnectToServerActivity:StartRescueServer"))
@@ -595,7 +657,6 @@ namespace RatTracker_WPF
 								"WARNING: E:D reports that your network port appears to be blocked! This will prevent you from instancing with other players!");
 							ConnTypeLabel.Content = "Blocked!";
 							ConnTypeLabel.Foreground = Brushes.Red;
-							DirectButton.Background = Brushes.Red;
 							tc.TrackMetric("NATBlocked", 1);
 							break;
 						case NATType.Unknown:
@@ -614,12 +675,10 @@ namespace RatTracker_WPF
 							break;
 						case NATType.Open:
 							ConnTypeLabel.Content = "Open";
-							ConnTypeLabel.Foreground = Brushes.Green;
 							tc.TrackMetric("NATOpen", 1);
 							break;
 						case NATType.FullCone:
 							ConnTypeLabel.Content = "Full cone NAT";
-							ConnTypeLabel.Foreground = Brushes.Green;
 							tc.TrackMetric("NATFullCone", 1);
 							break;
 						case NATType.Failed:
@@ -633,8 +692,6 @@ namespace RatTracker_WPF
 								AppendStatus(
 									"WARNING: Symmetric NAT detected! Although your NAT allows UDP, this may cause SEVERE problems when instancing!");
 								ConnTypeLabel.Content = "Symmetric UDP";
-								ConnTypeLabel.Foreground = Brushes.Red;
-								DirectButton.Background = Brushes.Red;
 								tc.TrackMetric("NATSymmetricUDP", 1);
 							}
 
@@ -650,8 +707,6 @@ namespace RatTracker_WPF
 							{
 								AppendStatus("WARNING: Port restricted NAT detected. This may cause instancing problems!");
 								ConnTypeLabel.Content = "Port restricted NAT";
-								ConnTypeLabel.Foreground = Brushes.Red;
-								DirectButton.Background = Brushes.Red;
 								tc.TrackMetric("NATRestricted", 1);
 							}
 							else
@@ -665,8 +720,6 @@ namespace RatTracker_WPF
 							{
 								AppendStatus(
 									"WARNING: Symmetric NAT detected. This is usually VERY BAD for instancing. If you do not have a manual port mapping set up, you should consider changing your network configuration.");
-								ConnTypeLabel.Foreground = Brushes.Red;
-								DirectButton.Background = Brushes.Red;
 								tc.TrackMetric("NATSymmetric", 1);
 							}
 							else
@@ -974,7 +1027,7 @@ namespace RatTracker_WPF
 			/* Handle changed events */
 		}
 
-		private void button_Click(object sender, RoutedEventArgs e)
+		private void DutyButton_Click(object sender, RoutedEventArgs e)
 		{
 			if (MyPlayer.OnDuty == false)
 			{
@@ -997,13 +1050,19 @@ namespace RatTracker_WPF
 				Button.Background = Brushes.Red;
 				stopNetLog = true;
 			}
-			TPAMessage dutymessage = new TPAMessage();
-			dutymessage.action = "message:send";
-			dutymessage.data = new Dictionary<string, string>();
-			dutymessage.data.Add("OnDuty", MyPlayer.OnDuty.ToString());
-			dutymessage.data.Add("RatID", "bcd1234567890test");
-			dutymessage.data.Add("currentSystem", MyPlayer.CurrentSystem);
-			apworker.SendTPAMessage(dutymessage);
+			try {
+				TPAMessage dutymessage = new TPAMessage();
+				dutymessage.action = "message:send";
+				dutymessage.data = new Dictionary<string, string>();
+				dutymessage.data.Add("OnDuty", MyPlayer.OnDuty.ToString());
+				dutymessage.data.Add("RatID", "bcd1234567890test");
+				dutymessage.data.Add("currentSystem", MyPlayer.CurrentSystem);
+				apworker.SendTPAMessage(dutymessage);
+			}
+			catch (Exception ex)
+			{
+				logger.Fatal("Exception in sendTPAMessage: " + ex.Message);
+			}
 		}
 
 		private void NetLogWatcher()
@@ -1047,126 +1106,150 @@ namespace RatTracker_WPF
 
 		private async void updateButton_Click(object sender, RoutedEventArgs e)
 		{
-			logger.Debug("Trying to fetch rescues...");
-			Dictionary<string, string> data = new Dictionary<string, string>();
-			//data.Add("rats", "56a8fcc7abdd7cc91123fd25");
-			data.Add("open", "true");
-			string col = await apworker.queryAPI("rescues", data);
-
-			if (col == null)
-			{
-				logger.Debug("No COL returned from Rescues.");
-			}
-			else
-			{
-				logger.Debug("Got a COL from Rescues query: " + col);
-				rescues = JsonConvert.DeserializeObject<RootObject>(col);
-				await GetMissingRats(rescues);
-				logger.Debug($"Got {rescues.Data.Count} open rescues.");
-
-				RescueGrid.ItemsSource = rescues.Data;
-				RescueGrid.AutoGenerateColumns = false;
-				foreach (DataGridColumn column in RescueGrid.Columns)
-				{
-					logger.Debug("Column:" + column.Header);
-					if ((string) column.Header == "rats")
-					{
-						logger.Debug("It's the rats.");
-					}
-				}
-			}
-		}
-
-		private async void InitRescueGrid()
-		{
-			logger.Info("Initializing Rescues grid");
-			Dictionary<string, string> data = new Dictionary<string, string>();
-			data.Add("open", "true");
-			rescues = new RootObject();
-			if (apworker.ws.State != WebSocketState.Open)
-			{
-				logger.Info("No available WebSocket connection, falling back to HTML API.");
+			try {
+				logger.Debug("Trying to fetch rescues...");
+				Dictionary<string, string> data = new Dictionary<string, string>();
+				//data.Add("rats", "56a8fcc7abdd7cc91123fd25");
+				data.Add("open", "true");
 				string col = await apworker.queryAPI("rescues", data);
+
 				if (col == null)
 				{
 					logger.Debug("No COL returned from Rescues.");
 				}
 				else
 				{
-					logger.Debug("Rescue data received from HTML API.");
+					logger.Debug("Got a COL from Rescues query: " + col);
+					rescues = JsonConvert.DeserializeObject<RootObject>(col);
+					await GetMissingRats(rescues);
+					logger.Debug($"Got {rescues.Data.Count} open rescues.");
+
+					RescueGrid.ItemsSource = rescues.Data;
+					RescueGrid.AutoGenerateColumns = false;
+					foreach (DataGridColumn column in RescueGrid.Columns)
+					{
+						logger.Debug("Column:" + column.Header);
+						if ((string)column.Header == "rats")
+						{
+							logger.Debug("It's the rats.");
+						}
+					}
 				}
 			}
-			else
+			catch(Exception ex)
 			{
-				logger.Info("Fetching rescues from WS API.");
-				APIQuery rescuequery = new APIQuery();
-				rescuequery.action = "rescues:read";
-				rescuequery.data = new Dictionary<string, string>();
-				rescuequery.data.Add("open", "true");
-				apworker.SendQuery(rescuequery);
+				logger.Fatal("Exception in updateButtonClick: " + ex.Message);
 			}
-			RescueGrid.ItemsSource = rescues.Data;
-			RescueGrid.AutoGenerateColumns = false;
-			await GetMissingRats(rescues);
+		}
+
+		private async void InitRescueGrid()
+		{
+			try {
+				logger.Info("Initializing Rescues grid");
+				Dictionary<string, string> data = new Dictionary<string, string>();
+				data.Add("open", "true");
+				rescues = new RootObject();
+				if (apworker.ws.State != WebSocketState.Open)
+				{
+					logger.Info("No available WebSocket connection, falling back to HTML API.");
+					string col = await apworker.queryAPI("rescues", data);
+					if (col == null)
+					{
+						logger.Debug("No COL returned from Rescues.");
+					}
+					else
+					{
+						logger.Debug("Rescue data received from HTML API.");
+					}
+				}
+				else
+				{
+					logger.Info("Fetching rescues from WS API.");
+					APIQuery rescuequery = new APIQuery();
+					rescuequery.action = "rescues:read";
+					rescuequery.data = new Dictionary<string, string>();
+					rescuequery.data.Add("open", "true");
+					apworker.SendQuery(rescuequery);
+				}
+				RescueGrid.ItemsSource = rescues.Data;
+				RescueGrid.AutoGenerateColumns = false;
+				await GetMissingRats(rescues);
+			}
+			catch(Exception ex)
+			{
+				logger.Fatal("Exception in InitRescueGrid: " + ex.Message);
+			}
 		}
 
 		private async void RescueGrid_SelectionChanged(object sender, EventArgs e)
 		{
-			if (RescueGrid.SelectedItem == null)
-				return;
-			Datum myrow = (Datum) RescueGrid.SelectedItem;
-			logger.Debug("Client is " + myrow.Client.CmdrName);
+			try {
+				if (RescueGrid.SelectedItem == null)
+					return;
+				Datum myrow = (Datum)RescueGrid.SelectedItem;
+				logger.Debug("Client is " + myrow.Client.CmdrName);
 
-			var rats = Rats.Where(r => myrow.Rats.Contains(r.Key)).Select(r => r.Value.CmdrName).ToList();
-			var count = rats.Count;
+				var rats = Rats.Where(r => myrow.Rats.Contains(r.Key)).Select(r => r.Value.CmdrName).ToList();
+				var count = rats.Count;
 
-			MyClient = new ClientInfo {Rescue = myrow};
-			if (count > 0)
-			{
-				MyClient.Self.RatName = rats[0];
+				MyClient = new ClientInfo { Rescue = myrow };
+				if (count > 0)
+				{
+					MyClient.Self.RatName = rats[0];
+				}
+				if (count > 1)
+				{
+					MyClient.Rat2.RatName = rats[1];
+				}
+				if (count > 2)
+				{
+					MyClient.Rat3.RatName = rats[2];
+				}
+
+				DistanceToClient = -1;
+				DistanceToClientString = "Calculating...";
+				JumpsToClient = string.Empty;
+				ClientName.Text = myrow.Client.CmdrName;
+
+				AssignedRats = myrow.Rats.Any()
+					? string.Join(", ", rats)
+					: string.Empty;
+				SystemName.Text = myrow.System;
+				double distance = await CalculateEDSMDistance(MyPlayer.CurrentSystem, myrow.System);
+				DistanceToClient = Math.Round(distance, 2);
+				JumpsToClient = MyPlayer.JumpRange > 0 ? Math.Ceiling(distance / MyPlayer.JumpRange).ToString() : string.Empty;
 			}
-			if (count > 1)
+			catch(Exception ex)
 			{
-				MyClient.Rat2.RatName = rats[1];
+				logger.Fatal("Exception in RescueGrid_SelectionChanged: " + ex.Message);
 			}
-			if (count > 2)
-			{
-				MyClient.Rat3.RatName = rats[2];
-			}
-
-			DistanceToClient = -1;
-			DistanceToClientString = "Calculating...";
-			JumpsToClient = string.Empty;
-			ClientName.Text = myrow.Client.CmdrName;
-
-			AssignedRats = myrow.Rats.Any()
-				? string.Join(", ", rats)
-				: string.Empty;
-			SystemName.Text = myrow.System;
-			double distance = await CalculateEDSMDistance(MyPlayer.CurrentSystem, myrow.System);
-			DistanceToClient = Math.Round(distance, 2);
-			JumpsToClient = MyPlayer.JumpRange > 0 ? Math.Ceiling(distance/MyPlayer.JumpRange).ToString() : string.Empty;
 		}
 
 		private async Task GetMissingRats(RootObject rescues)
 		{
-			IEnumerable<string> ratIdsToGet = new List<string>();
-			if (rescues.Data == null)
-				return;
-			IEnumerable<List<string>> datas = rescues.Data.Select(d => d.Rats);
-			ratIdsToGet = datas.Aggregate(ratIdsToGet, (current, list) => current.Concat(list));
-			ratIdsToGet = ratIdsToGet.Distinct().Except(Rats.Values.Select(x => x._Id));
+			try {
+				IEnumerable<string> ratIdsToGet = new List<string>();
+				if (rescues.Data == null)
+					return;
+				IEnumerable<List<string>> datas = rescues.Data.Select(d => d.Rats);
+				ratIdsToGet = datas.Aggregate(ratIdsToGet, (current, list) => current.Concat(list));
+				ratIdsToGet = ratIdsToGet.Distinct().Except(Rats.Values.Select(x => x._Id));
 
-			foreach (string ratId in ratIdsToGet)
+				foreach (string ratId in ratIdsToGet)
+				{
+					string response =
+						await apworker.queryAPI("rats", new Dictionary<string, string> { { "_id", ratId }, { "limit", "1" } });
+					JObject jsonRepsonse = JObject.Parse(response);
+					List<JToken> tokens = jsonRepsonse["data"].Children().ToList();
+					Rat rat = JsonConvert.DeserializeObject<Rat>(tokens[0].ToString());
+					Rats.TryAdd(ratId, rat);
+
+					logger.Debug("Got name for " + ratId + ": " + rat.CmdrName);
+				}
+			}
+			catch(Exception ex)
 			{
-				string response =
-					await apworker.queryAPI("rats", new Dictionary<string, string> {{"_id", ratId}, {"limit", "1"}});
-				JObject jsonRepsonse = JObject.Parse(response);
-				List<JToken> tokens = jsonRepsonse["data"].Children().ToList();
-				Rat rat = JsonConvert.DeserializeObject<Rat>(tokens[0].ToString());
-				Rats.TryAdd(ratId, rat);
-
-				logger.Debug("Got name for " + ratId + ": " + rat.CmdrName);
+				logger.Fatal("Exception in GetMissingRats: " + ex.Message);
 			}
 		}
 
@@ -1188,6 +1271,7 @@ namespace RatTracker_WPF
 
 		public async Task<IEnumerable<EdsmSystem>> QueryEDSMSystem(string system)
 		{
+			logger.Debug("Querying EDSM for system " + system);
 			if (system.Length < 3)
 			{
 				//This would pretty much download the entire EDSM database. Refuse to do it.
@@ -1199,14 +1283,16 @@ namespace RatTracker_WPF
 				tc.TrackEvent("EDSMQuery");
 				using (HttpClient client = new HttpClient())
 				{
+					
 					UriBuilder content = new UriBuilder(edsmURL + "systems?sysname=" + system + "&coords=1") {Port = -1};
 					AppendStatus("Querying EDSM for " + system);
+					logger.Debug("Building query: " + content.ToString());
 					NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
 					content.Query = query.ToString();
 					HttpResponseMessage response = await client.GetAsync(content.ToString());
 					response.EnsureSuccessStatusCode();
 					string responseString = response.Content.ReadAsStringAsync().Result;
-					//AppendStatus("Got response: " + responseString);
+					logger.Debug("Got response: " + responseString);
 					if (responseString == "-1")
 						return new List<EdsmSystem>() {};
 					NameValueCollection temp = new NameValueCollection();
@@ -1221,30 +1307,39 @@ namespace RatTracker_WPF
 			}
 		}
 
+		// TODO: Be less stupid and actually support finding systems that AREN'T procedural. Duh.
 		public async Task<IEnumerable<EdsmSystem>> GetCandidateSystems(string target)
 		{
-			IEnumerable<EdsmSystem> candidates;
-			IEnumerable<EdsmSystem> finalcandidates = new List<EdsmSystem>();
-			string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-zA-Z])+(\\d+(?:-\\d+)+?)";
-			Match mymatch = Regex.Match(target, sysmatch, RegexOptions.IgnoreCase);
-			candidates = await QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
-			logger.Debug("Candidate count is " + candidates.Count().ToString() + " from a subgroup of " + mymatch.Groups[3].Value);
-			tc.TrackMetric("CandidateCount", candidates.Count());
-			finalcandidates = candidates.Where(x => x.Coords != null);
-			logger.Debug("FinalCandidates with coords only is size " + finalcandidates.Count());
-			if (finalcandidates.Count() < 1)
-			{
-				logger.Debug("No final candidates, widening search further...");
-				candidates = await QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[2].Value)));
+			logger.Debug("Finding candidate systems for " + target);
+			try {
+				IEnumerable<EdsmSystem> candidates;
+				IEnumerable<EdsmSystem> finalcandidates = new List<EdsmSystem>();
+				string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-zA-Z])+(\\d+(?:-\\d+)+?)";
+				Match mymatch = Regex.Match(target, sysmatch, RegexOptions.IgnoreCase);
+				candidates = await QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value)));
+				logger.Debug("Candidate count is " + candidates.Count().ToString() + " from a subgroup of " + mymatch.Groups[3].Value);
+				tc.TrackMetric("CandidateCount", candidates.Count());
 				finalcandidates = candidates.Where(x => x.Coords != null);
+				logger.Debug("FinalCandidates with coords only is size " + finalcandidates.Count());
 				if (finalcandidates.Count() < 1)
 				{
-					logger.Debug("Still nothing! Querying whole sector.");
-					candidates = await QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[1].Value)));
+					logger.Debug("No final candidates, widening search further...");
+					candidates = await QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[2].Value)));
 					finalcandidates = candidates.Where(x => x.Coords != null);
+					if (finalcandidates.Count() < 1)
+					{
+						logger.Debug("Still nothing! Querying whole sector.");
+						candidates = await QueryEDSMSystem(target.Substring(0, target.IndexOf(mymatch.Groups[1].Value)));
+						finalcandidates = candidates.Where(x => x.Coords != null);
+					}
 				}
+				return finalcandidates;
 			}
-			return finalcandidates;
+			catch(Exception ex)
+			{
+				logger.Fatal("Exception in GetCandidateSystems: " + ex.Message);
+				return new List<EdsmSystem>();
+			}
 		}
 
 		/* Attempts to calculate a distance in lightyears between two given systems.
@@ -1258,85 +1353,92 @@ namespace RatTracker_WPF
 
 		public async Task<double> CalculateEDSMDistance(string source, string target)
 		{
-			EdsmCoords sourcecoords = new EdsmCoords();
-			EdsmCoords targetcoords = new EdsmCoords();
-			IEnumerable<EdsmSystem> candidates;
-			if (source == target)
-				return 0; /* Well, it COULD happen? People have been known to do stupid things. */
-			if (source == null)
-			{
-				/* Dafuq? */
-				logger.Fatal("Null value passed as source to CalculateEDSMDistance!");
-				source = "Fuelum";
-			}
-			if (source.Length < 3)
-			{
-				AppendStatus("Source system name '" + source + "' too short, searching from Fuelum.");
-				source = "Fuelum";
-			}
-			if (target.Length < 3)
-			{
-				AppendStatus("Target system name '" + target + "' is too short. Can't perform distance search.");
-				return -1;
-			}
-			candidates = await QueryEDSMSystem(source);
-			if (candidates == null || candidates.Count() < 1)
-			{
-				logger.Debug("Unknown source system. Checking travel log. (" + myTravelLog.Count() + " entries)");
-				foreach (TravelLog mysource in myTravelLog.Reverse())
+			try {
+				EdsmCoords sourcecoords = new EdsmCoords();
+				EdsmCoords targetcoords = new EdsmCoords();
+				IEnumerable<EdsmSystem> candidates;
+				if (source == target)
+					return 0; /* Well, it COULD happen? People have been known to do stupid things. */
+				if (source == null)
 				{
-					if (mysource.system.Coords == null)
+					/* Dafuq? */
+					logger.Fatal("Null value passed as source to CalculateEDSMDistance!");
+					source = "Fuelum";
+				}
+				if (source.Length < 3)
+				{
+					AppendStatus("Source system name '" + source + "' too short, searching from Fuelum.");
+					source = "Fuelum";
+				}
+				if (target.Length < 3)
+				{
+					AppendStatus("Target system name '" + target + "' is too short. Can't perform distance search.");
+					return -1;
+				}
+				candidates = await QueryEDSMSystem(source);
+				if (candidates == null || candidates.Count() < 1)
+				{
+					logger.Debug("Unknown source system. Checking travel log. (" + myTravelLog.Count() + " entries)");
+					foreach (TravelLog mysource in myTravelLog.Reverse())
 					{
-						logger.Debug("System in travellog has no coords:" + mysource.system.Name);
-					}
-					else
-					{
-						logger.Debug("Found coord'ed system " + mysource.system.Name + ", using as source.");
-						sourcecoords = mysource.system.Coords;
+						if (mysource.system.Coords == null)
+						{
+							logger.Debug("System in travellog has no coords:" + mysource.system.Name);
+						}
+						else
+						{
+							logger.Debug("Found coord'ed system " + mysource.system.Name + ", using as source.");
+							sourcecoords = mysource.system.Coords;
+						}
 					}
 				}
+				if (sourcecoords == null || source == "Fuelum")
+				{
+					AppendStatus("Search for travellog coordinated system failed, using Fuelum coords");
+					// Add a static Fuelum system reference so we don't have to query EDSM for it.
+					sourcecoords = fuelumCoords;
+				}
+				candidates = await QueryEDSMSystem(target);
+				if (candidates == null || candidates.Count() < 1)
+				{
+					logger.Debug("EDSM does not know system '" + target + "'. Widening search...");
+					candidates = await GetCandidateSystems(target);
+				}
+				if (candidates.FirstOrDefault().Coords == null)
+				{
+					logger.Debug("Known system '" + target + "', but no coords. Widening search...");
+					candidates = await GetCandidateSystems(target);
+				}
+				if (candidates == null || candidates.Count() < 1)
+				{
+					//Still couldn't find something, abort.
+					AppendStatus("Couldn't find a candidate system, aborting...");
+					return -1;
+				}
+				else
+				{
+					logger.Debug("I got " + candidates.Count() + " systems with coordinates. Picking the first.");
+					targetcoords = candidates.FirstOrDefault().Coords;
+				}
+				if (sourcecoords != null && targetcoords != null)
+				{
+					logger.Debug("We have two sets of coords that we can use to find a distance.");
+					double deltaX = sourcecoords.X - targetcoords.X;
+					double deltaY = sourcecoords.Y - targetcoords.Y;
+					double deltaZ = sourcecoords.Z - targetcoords.Z;
+					double distance = (double)Math.Sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+					logger.Debug("Distance should be " + distance.ToString());
+					return distance;
+				}
+				else
+				{
+					AppendStatus("EDSM failed to find coords for system '" + target + "'.");
+					return -1;
+				}
 			}
-			if (sourcecoords == null || source == "Fuelum")
+			catch(Exception ex)
 			{
-				AppendStatus("Search for travellog coordinated system failed, using Fuelum coords");
-				// Add a static Fuelum system reference so we don't have to query EDSM for it.
-				sourcecoords = fuelumCoords;
-			}
-			candidates = await QueryEDSMSystem(target);
-			if (candidates == null || candidates.Count() < 1)
-			{
-				logger.Debug("EDSM does not know system '" + target + "'. Widening search...");
-				candidates = await GetCandidateSystems(target);
-			}
-			if (candidates.FirstOrDefault().Coords == null)
-			{
-				logger.Debug("Known system '" + target + "', but no coords. Widening search...");
-				candidates = await GetCandidateSystems(target);
-			}
-			if (candidates == null || candidates.Count() < 1)
-			{
-				//Still couldn't find something, abort.
-				AppendStatus("Couldn't find a candidate system, aborting...");
-				return -1;
-			}
-			else
-			{
-				logger.Debug("I got " + candidates.Count() + " systems with coordinates. Picking the first.");
-				targetcoords = candidates.FirstOrDefault().Coords;
-			}
-			if (sourcecoords != null && targetcoords != null)
-			{
-				logger.Debug("We have two sets of coords that we can use to find a distance.");
-				double deltaX = sourcecoords.X - targetcoords.X;
-				double deltaY = sourcecoords.Y - targetcoords.Y;
-				double deltaZ = sourcecoords.Z - targetcoords.Z;
-				double distance = (double) Math.Sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
-				logger.Debug("Distance should be " + distance.ToString());
-				return distance;
-			}
-			else
-			{
-				AppendStatus("EDSM failed to find coords for system '" + target + "'.");
+				logger.Fatal("Exception in CalculateEdsmDistance: " + ex.Message);
 				return -1;
 			}
 		}
@@ -1407,98 +1509,149 @@ namespace RatTracker_WPF
 		{
 			IDictionary<string, string> data = new Dictionary<string, string>();
 			RatState ratState = GetRatStateForButton(sender, FrButton, FrButton_Copy, FrButton_Copy1);
-
+			TPAMessage frmsg = new TPAMessage();
+			frmsg.data = new Dictionary<string, string>();
+			if (MyClient != null && MyClient.Rescue != null)
+			{
+				frmsg.action = "message:send";
+				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
+				frmsg.data.Add("RescueID", MyClient.Rescue._id);
+			}
 			switch (ratState.FriendRequest)
 			{
 				case RequestState.NotRecieved:
 					ratState.FriendRequest = RequestState.Recieved;
-					AppendStatus("Sending Friend Request acknowledgement.");
-					data.Add("ReceivedFR", "true");
-					apworker.SendWs("FriendRequest", data);
 					break;
 				case RequestState.Recieved:
 					ratState.FriendRequest = RequestState.Accepted;
+					AppendStatus("Sending Friend Request acknowledgement.");
+					frmsg.data.Add("FriendRequest", "true");
 					break;
 				case RequestState.Accepted:
 					AppendStatus("Cancelling FR status.");
-					data.Add("ReceivedFR", "false");
-					apworker.SendWs("FriendsRequest", data);
 					ratState.FriendRequest = RequestState.NotRecieved;
+					frmsg.data.Add("FriendRequest", "false");
 					break;
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
+			if (frmsg.action != null && ratState.FriendRequest!=RequestState.Recieved)
+				apworker.SendTPAMessage(frmsg);
 		}
 
 		private void wrButton_Click(object sender, RoutedEventArgs e)
 		{
 			IDictionary<string, string> data = new Dictionary<string, string>();
 			RatState ratState = GetRatStateForButton(sender, WrButton, WrButton_Copy, WrButton_Copy1);
-
+			TPAMessage frmsg = new TPAMessage();
+			frmsg.data = new Dictionary<string, string>();
+			if (MyClient != null && MyClient.Rescue != null)
+			{
+				frmsg.action = "message:send";
+				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
+				frmsg.data.Add("RescueID", MyClient.Rescue._id);
+			}
 			switch (ratState.WingRequest)
 			{
+
 				case RequestState.NotRecieved:
 					ratState.WingRequest = RequestState.Recieved;
-					AppendStatus("Sending Wing Request acknowledgement.");
-					data.Add("ReceivedWR", "true");
-					apworker.SendWs("WingRequest", data);
 					break;
 				case RequestState.Recieved:
+					AppendStatus("Sending Wing Request acknowledgement.");
+					frmsg.data.Add("WingRequest", "true");
 					ratState.WingRequest = RequestState.Accepted;
 					break;
 				case RequestState.Accepted:
 					ratState.WingRequest = RequestState.NotRecieved;
 					AppendStatus("Cancelled WR status.");
-					data.Add("ReceivedWR", "false");
-					apworker.SendWs("WingRequest", data);
+					frmsg.data.Add("WingRequest", "false");
 					break;
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
+			if (frmsg.action != null && ratState.FriendRequest != RequestState.Recieved)
+				apworker.SendTPAMessage(frmsg);
 		}
 
 		private void sysButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, SysButton, SysButton_Copy, SysButton_Copy1);
+			IDictionary<string, string> data = new Dictionary<string, string>();
+			TPAMessage frmsg = new TPAMessage();
+			frmsg.data = new Dictionary<string, string>();
+			if (MyClient != null && MyClient.Rescue != null)
+			{
+				frmsg.action = "message:send";
+				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
+				frmsg.data.Add("RescueID", MyClient.Rescue._id);
+			}
 			if (ratState.InSystem)
 			{
 				AppendStatus("Sending System acknowledgement.");
+				frmsg.data.Add("ArrivedSystem", "true");
 			}
 			else
 			{
 				AppendStatus("Cancelling System status.");
+				frmsg.data.Add("ArrivedSystem", "false");
 			}
-
+			if (frmsg.action != null && ratState.FriendRequest != RequestState.Recieved)
+				apworker.SendTPAMessage(frmsg);
 			ratState.InSystem = !ratState.InSystem;
 		}
 
 		private void bcnButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, BcnButton, BcnButton_Copy, BcnButton_Copy1);
+			IDictionary<string, string> data = new Dictionary<string, string>();
+			TPAMessage frmsg = new TPAMessage();
+			frmsg.data = new Dictionary<string, string>();
+			if (MyClient != null && MyClient.Rescue != null)
+			{
+				frmsg.action = "message:send";
+				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
+				frmsg.data.Add("RescueID", MyClient.Rescue._id);
+			}
 			if (ratState.Beacon)
 			{
 				AppendStatus("Sending Beacon acknowledgement.");
+				frmsg.data.Add("BeaconSpotted", "true");
 			}
 			else
 			{
 				AppendStatus("Cancelling Beacon status.");
+				frmsg.data.Add("BeaconSpotted", "false");
 			}
-
+			if (frmsg.action != null && ratState.FriendRequest != RequestState.Recieved)
+				apworker.SendTPAMessage(frmsg);
 			ratState.Beacon = !ratState.Beacon;
 		}
 
 		private void instButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, InstButton, InstButton_Copy, InstButton_Copy1);
+			IDictionary<string, string> data = new Dictionary<string, string>();
+			TPAMessage frmsg = new TPAMessage();
+			frmsg.data = new Dictionary<string, string>();
+			if (MyClient != null && MyClient.Rescue != null)
+			{
+				frmsg.action = "message:send";
+				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
+				frmsg.data.Add("RescueID", MyClient.Rescue._id);
+			}
 			if (ratState.InInstance)
 			{
 				AppendStatus("Sending Good Instance message.");
+				frmsg.data.Add("InstanceSuccessful", "true");
 			}
 			else
 			{
 				AppendStatus("Cancelling Good instance message.");
+				frmsg.data.Add("InstanceSuccessful", "false");
 			}
-
+			if (frmsg.action != null && ratState.FriendRequest != RequestState.Recieved)
+				apworker.SendTPAMessage(frmsg);
 			ratState.InInstance = !ratState.InInstance;
 		}
 
@@ -1589,6 +1742,11 @@ namespace RatTracker_WPF
 			//logindata.Add(new KeyValuePair<string, string>("password", "password"));
 			apworker.SendWs("rescues:read", logindata);
 			InitRescueGrid();
+			AppendStatus("Known RatIDs for self:");
+			foreach (string id in MyPlayer.RatID)
+			{
+				AppendStatus(id);
+			}
 		}
 
 		public void CompleteRescueUpdate(string json)
@@ -1650,6 +1808,59 @@ namespace RatTracker_WPF
 					}
 				}
 			}
+		}
+
+		private async void button2_Click(object sender, RoutedEventArgs e)
+		{
+			logger.Debug("Querying EDDB for closest station to " + MyClient.ClientSystem);
+			IEnumerable<EdsmSystem> mysys = await QueryEDSMSystem(MyClient.ClientSystem);
+			if (mysys != null && mysys.Count() >0)
+			{
+				logger.Debug("Got a mysys with " + mysys.Count() + " elements");
+				var station = eddbworker.GetClosestStation(mysys.First().Coords);
+				AppendStatus("Closest populated system to '"+MyClient.ClientSystem+"' is '" + mysys.First().Name +
+							"', closest station to star with known coordinates is '" + station.name + "'.");
+				double distance = await CalculateEDSMDistance(MyClient.ClientSystem, mysys.First().Name);
+				OverlayMessage mymessage = new OverlayMessage();
+				mymessage.Line1Header = "Nearest station:";
+				mymessage.Line1Content = station.name+", "+mysys.First().Name+" ("+Math.Round(distance,2)+"LY)";
+				mymessage.Line2Header = "Pad size:";
+				mymessage.Line2Content = station.max_landing_pad_size;
+				mymessage.Line3Header = "Capabilities:";
+				mymessage.Line3Content = new StringBuilder()
+															.AppendIf(station.has_refuel, "Refuel,")
+															.AppendIf(station.has_repair, "Repair,")
+															.AppendIf(station.has_outfitting, "Outfit").ToString();
+				if (overlay != null)
+					overlay.Queue_Message(mymessage, 30);
+				return;
+			}
+			AppendStatus("Unable to find a candidate system for location " + MyClient.ClientSystem);
+		}
+	}
+	public static class StringBuilderExtensions
+	{
+		public static StringBuilder AppendIf(
+			this StringBuilder @this,
+			bool? condition,
+			string str)
+		{
+			bool realcondition;
+			if (condition == null)
+				realcondition = false;
+			else
+				realcondition = (bool)condition;
+			if (@this == null)
+			{
+				throw new ArgumentNullException("this");
+			}
+
+			if (realcondition)
+			{
+				@this.Append(str);
+			}
+
+			return @this;
 		}
 	}
 }

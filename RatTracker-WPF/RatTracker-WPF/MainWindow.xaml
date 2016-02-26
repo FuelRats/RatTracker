@@ -35,7 +35,7 @@
                 <ColumnDefinition Width="163*"/>
                 <ColumnDefinition Width="299*"/>
             </Grid.ColumnDefinitions>
-            <Button x:Name="Button" Content="Go On-Duty" Margin="0,0,10,41" Background="{Binding MyPlayer.OnDuty, Converter={StaticResource BooleanToColourConverter}}" Click="button_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2"/>
+            <Button x:Name="Button" Content="Go On-Duty" Margin="0,0,10,41" Background="{Binding MyPlayer.OnDuty, Converter={StaticResource BooleanToColourConverter}}" Click="DutyButton_Click" Height="43" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="111" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2"/>
             <TextBox x:Name="StatusDisplay" Margin="10,10,279,40" TextWrapping="Wrap" Text="Status display" IsReadOnlyCaretVisible="True" VerticalScrollBarVisibility="Visible" Grid.Row="1" Grid.ColumnSpan="2"/>
             <Menu x:Name="MenuCopy" Height="19" VerticalAlignment="Top" Grid.ColumnSpan="2">
                 <MenuItem x:Name="MainMenu1" Header="Main Menu" Click="Main_Menu_Click">
@@ -77,6 +77,7 @@
                     <Button x:Name="button1" Content="Call jumps" HorizontalAlignment="Left" Height="24" Margin="130,201,0,0" VerticalAlignment="Top" Width="74" Click="button1_Click"/>
                     <Label x:Name="clientDistanceLabel" Content="{Binding DistanceToClientString}" HorizontalAlignment="Left" Height="23" Margin="12,173,0,0" VerticalAlignment="Top" Width="129"/>
                     <Label x:Name="label_Copy2" Content="{Binding JumpsToClient}" HorizontalAlignment="Left" Height="23" Margin="130,173,0,0" VerticalAlignment="Top" Width="129"/>
+                    <Button x:Name="button2" Content="Closest Station" HorizontalAlignment="Left" Height="24" Margin="12,201,0,0" VerticalAlignment="Top" Width="101" Click="button2_Click"/>
                 </Grid>
             </GroupBox>
             <GroupBox x:Name="groupBox1" Header="Active Rescues" HorizontalAlignment="Left" Height="236" Margin="19,28,0,0" VerticalAlignment="Top" Width="341" Grid.ColumnSpan="2">
