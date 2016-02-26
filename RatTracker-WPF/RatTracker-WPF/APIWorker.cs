@@ -163,13 +163,23 @@ namespace RatTracker_WPF
         public void websocketClient_Opened(object sender, EventArgs e)
         {
             logger.Info("Websocket: Connection to API established.");
-            Dictionary<string, string> rtsub = new Dictionary<string, string>();
-            rtsub.Add("action", "stream:subscribe");
-            rtsub.Add("applicationId", "0xDEADBEEF");
-            //queryAPI(rtsub);
+            SubscribeStream("0xDEADBEEF");
+			APIQuery login = new APIQuery();
+			login.action = "users:read";
+			login.data = new Dictionary<string, string>();
+			login.data.Add("email", Properties.Settings.Default.APIUsername);
+            SendQuery(login);
             //TODO: Put stream subscription messages here when Mecha goes live. Do we want to listen to ourselves?
         }
-
+		public void SubscribeStream(string applicationId)
+		{
+			Dictionary<string, string> data = new Dictionary<string, string>();
+			data.Add("action", "stream:subscribe");
+			data.Add("applicationId", applicationId);
+			logger.Debug("Subscribing to stream: " + applicationId);
+			string json = JsonConvert.SerializeObject(data);
+			ws.Send(json);
+		}
         public async Task<String> queryAPI(string action, Dictionary<string, string> data)
         {
             try
