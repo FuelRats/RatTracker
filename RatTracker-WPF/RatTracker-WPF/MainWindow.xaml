@@ -81,7 +81,7 @@
                 </Grid>
             </GroupBox>
             <GroupBox x:Name="groupBox1" Header="Active Rescues" HorizontalAlignment="Left" Height="236" Margin="19,28,0,0" VerticalAlignment="Top" Width="341" Grid.ColumnSpan="2">
-                <DataGrid x:Name="RescueGrid" Margin="10,5,10,10" ItemsSource="{Binding ItemsSource}" IsReadOnly="True" AutoGenerateColumns="False" SelectionMode="Single" SelectionChanged="RescueGrid_SelectionChanged">
+                <DataGrid x:Name="RescueGrid" Margin="10,5,10,10" ItemsSource="{Binding}" IsReadOnly="True" AutoGenerateColumns="False" SelectionMode="Single" SelectionChanged="RescueGrid_SelectionChanged">
                     <DataGrid.Columns>
                         <DataGridTextColumn Binding="{Binding Client, Converter={StaticResource ClientConverter}}" ClipboardContentBinding="{x:Null}" Header="Client"/>
                         <DataGridTextColumn Binding="{Binding Rats, Converter={StaticResource RatConverter}}" Header="Rats"/>
