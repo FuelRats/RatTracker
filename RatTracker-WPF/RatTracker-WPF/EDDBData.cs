@@ -33,7 +33,7 @@ namespace RatTracker_WPF
             {
                 filedate=new DateTime(1985,4,1);
             }
-            if (filedate.AddDays(1) < DateTime.Now)
+            if (filedate.AddDays(7) < DateTime.Now)
             {
                 logger.Info("EDDB cache is older than 7 days, updating...");
                 try
@@ -107,15 +107,22 @@ namespace RatTracker_WPF
             }
 		}
 
+		public EDDBSystem GetSystemById(int id)
+		{
+			if (id<1)
+				return new EDDBSystem();
+			return systems.Where(sys => sys.id == id).FirstOrDefault();
+		}
+
 		public EDDBStation GetClosestStation(EdsmCoords coords)
 		{
 			try {
 				logger.Debug("Calculating closest station to X:" + coords.X + " Y:" + coords.Y + " Z:" + coords.Z);
-				var closestSystemId = systems.Select(
+				var closestSystemId = systems.Where(system => system.population > 0).Select(
 					system =>
 						new
 						{
-							system.id,
+							system.id,system.population,
 							distance =
 								Math.Sqrt(Math.Pow(coords.X - system.x, 2) + Math.Pow(coords.Y - system.y, 2) + Math.Pow(coords.Z - system.z, 2))
 						}).OrderBy(x => x.distance).First().id;

@@ -951,6 +951,7 @@ namespace RatTracker_WPF
 			{
 				return; // Already 
 			}
+			MyPlayer.CurrentSystem = value;
 			try
 			{
 				tc.TrackEvent("SystemChange");
@@ -959,14 +960,11 @@ namespace RatTracker_WPF
 					UriBuilder content = new UriBuilder(edsmURL + "systems?sysname=" + value + "&coords=1") {Port = -1};
 					NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
 					content.Query = query.ToString();
-					logger.Debug("Built query string:" + content);
 					HttpResponseMessage response = await client.GetAsync(content.ToString());
 					response.EnsureSuccessStatusCode();
 					string responseString = await response.Content.ReadAsStringAsync();
-					logger.Debug("Response string:" + responseString);
 					NameValueCollection temp = new NameValueCollection();
 					IEnumerable<EdsmSystem> m = JsonConvert.DeserializeObject<IEnumerable<EdsmSystem>>(responseString);
-					//voice.Speak("Welcome to " + value);
 					EdsmSystem firstsys = m.FirstOrDefault();
 					// EDSM should return the closest lexical match as the first element. Trust that - for now.
 					if (firstsys.Name == value)
@@ -981,7 +979,7 @@ namespace RatTracker_WPF
 						logger.Debug("Added system to TravelLog.");
 						// Should we add systems even if they don't exist in EDSM? Maybe submit them?
 					}
-					MyPlayer.CurrentSystem = value;
+
 					if (myrescue != null)
 						if (myrescue.System == value)
 						{
@@ -1825,12 +1823,14 @@ namespace RatTracker_WPF
 			{
 				logger.Debug("Got a mysys with " + mysys.Count() + " elements");
 				var station = eddbworker.GetClosestStation(mysys.First().Coords);
-				AppendStatus("Closest populated system to '"+MyClient.ClientSystem+"' is '" + mysys.First().Name +
+				EDDBSystem system = eddbworker.GetSystemById(station.system_id);
+				AppendStatus("Closest populated system to '"+MyClient.ClientSystem+"' is '" + system.name+
 							"', closest station to star with known coordinates is '" + station.name + "'.");
 				double distance = await CalculateEDSMDistance(MyClient.ClientSystem, mysys.First().Name);
 				OverlayMessage mymessage = new OverlayMessage();
+				
 				mymessage.Line1Header = "Nearest station:";
-				mymessage.Line1Content = station.name+", "+mysys.First().Name+" ("+Math.Round(distance,2)+"LY)";
+				mymessage.Line1Content = station.name+", "+system.name+" ("+Math.Round(distance,2)+"LY)";
 				mymessage.Line2Header = "Pad size:";
 				mymessage.Line2Content = station.max_landing_pad_size;
 				mymessage.Line3Header = "Capabilities:";
