@@ -22,5 +22,16 @@ namespace RatTracker_WPF.Models.Api
         // ReSharper disable once InconsistentNaming
         public string _id { get; set; }
         public float Score { get; set; }
+
+		public string id { get
+			{
+				return _id;
+			}
+			set
+			{
+				_id = value;
+			}
+		}
+		
     }
 }
