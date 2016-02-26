@@ -88,11 +88,14 @@ namespace RatTracker_WPF
 			tc.Context.Component.Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
 			tc.TrackPageView("MainWindow");
 			InitializeComponent();
-			CheckLogDirectory();
+			if (ParseEDAppConfig())
+				CheckLogDirectory();
+			else
+				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Check your settings, and restart the app.");
 			InitAPI();
 			InitEDDB();
 			DataContext = this;
-			ParseEDAppConfig();
+			
 		}
 
 		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
@@ -538,11 +541,15 @@ namespace RatTracker_WPF
 						AppendStatus("Test 3PA data from WS receieved: " + realdata);
 						break;
 					case "users:read":
-						AppendStatus("Got user data for "+realdata[0].email);
-						MyPlayer.RatID = new List<string>();
-						foreach (string id in realdata[0].CMDRs) {
-							AppendStatus("RatID " + id+" added to identity list.");
-							MyPlayer.RatID.Add(id);
+						if (meta.count > 0)
+						{
+							AppendStatus("Got user data for " + realdata[0].email);
+							MyPlayer.RatID = new List<string>();
+							foreach (string id in realdata[0].CMDRs)
+							{
+								AppendStatus("RatID " + id + " added to identity list.");
+								MyPlayer.RatID.Add(id);
+							}
 						}
 						break;
 					case "rescue:created":
