@@ -1,4 +1,6 @@
-﻿namespace RatTracker_WPF.Models.App
+﻿using System.Collections.Generic;
+
+namespace RatTracker_WPF.Models.App
 {
 	public class PlayerInfo : PropertyChangedBase
 	{
@@ -6,7 +8,17 @@
 		private float jumpRange;
 		private bool onDuty;
 		private bool superCruise;
+		private List<string> ratId;
 
+		public List<string> RatID
+		{
+			get { return ratId; }
+			set
+			{
+				ratId = value;
+				NotifyPropertyChanged();
+			}
+		}
 		public string CurrentSystem
 		{
 			get { return currentSystem; }
