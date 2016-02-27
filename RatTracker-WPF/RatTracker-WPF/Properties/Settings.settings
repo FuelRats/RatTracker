@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="EDPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">C:\Program Files (x86)\Frontier\Products\elite-dangerous-64\</Value>
+      <Value Profile="(Default)">C:\Program Files (x86)\Frontier\</Value>
     </Setting>
     <Setting Name="NetLogPath" Type="System.String" Scope="User">
       <Value Profile="(Default)">C:\Program Files (x86)\Frontier\Products\elite-dangerous-64\Logs</Value>
@@ -31,6 +31,9 @@
     </Setting>
     <Setting Name="OverlayMonitor" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="JumpRange" Type="System.Single" Scope="User">
+      <Value Profile="(Default)">30</Value>
     </Setting>
   </Settings>
 </SettingsFile>

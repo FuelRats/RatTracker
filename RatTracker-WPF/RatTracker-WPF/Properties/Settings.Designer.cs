@@ -25,7 +25,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Program Files (x86)\\Frontier\\Products\\elite-dangerous-64\\")]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Program Files (x86)\\Frontier\\")]
         public string EDPath {
             get {
                 return ((string)(this["EDPath"]));
@@ -140,6 +140,18 @@ namespace RatTracker_WPF.Properties {
             }
             set {
                 this["OverlayMonitor"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        public float JumpRange {
+            get {
+                return ((float)(this["JumpRange"]));
+            }
+            set {
+                this["JumpRange"] = value;
             }
         }
     }
