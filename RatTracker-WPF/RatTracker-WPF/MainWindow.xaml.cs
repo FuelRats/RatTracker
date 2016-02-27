@@ -225,6 +225,8 @@ namespace RatTracker_WPF
 				{
 					logger.Debug("Loading " + dir + @"\AppConfig.xml");
 					XDocument appconf = XDocument.Load(dir + @"\AppConfig.xml");
+					XElement monitor = appconf.Element("AppConfig").Element("Display").Element("Monitor");
+
 					XElement networknode = appconf.Element("AppConfig").Element("Network");
 					if (networknode.Attribute("VerboseLogging") == null)
 					{
@@ -1463,18 +1465,33 @@ namespace RatTracker_WPF
 				overlay.SetCurrentClient(MyClient);
 				overlay.Show();
 				IEnumerable<Monitor> monitors = Monitor.AllMonitors;
-				foreach (Monitor mymonitor in monitors)
+				if (Properties.Settings.Default.OverlayMonitor != "")
 				{
-					if (mymonitor.IsPrimary == true)
+					logger.Debug("Overlaymonitor is" + Properties.Settings.Default.OverlayMonitor);
+					foreach (Monitor mymonitor in monitors)
 					{
-						overlay.Left = mymonitor.Bounds.Right - overlay.Width;
-						overlay.Top = mymonitor.Bounds.Top;
+						if (mymonitor.Name == Properties.Settings.Default.OverlayMonitor)
+						{
+							overlay.Left = mymonitor.Bounds.Right - overlay.Width;
+							overlay.Top = mymonitor.Bounds.Top;
+						}
 					}
 				}
-				overlay.Topmost = true;
-				HotKeyHost hotKeyHost = new HotKeyHost((HwndSource) PresentationSource.FromVisual(Application.Current.MainWindow));
-				hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
-				hotKeyHost.HotKeyPressed += handleHotkeyPress;
+				else {
+					foreach (Monitor mymonitor in monitors)
+					{
+						logger.Debug("Monitor ID: " + mymonitor.Name);
+						if (mymonitor.IsPrimary == true)
+						{
+							overlay.Left = mymonitor.Bounds.Right - overlay.Width;
+							overlay.Top = mymonitor.Bounds.Top;
+						}
+					}
+					overlay.Topmost = true;
+					HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)PresentationSource.FromVisual(Application.Current.MainWindow));
+					hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
+					hotKeyHost.HotKeyPressed += handleHotkeyPress;
+				}
 			}
 			else
 				overlay.Close();

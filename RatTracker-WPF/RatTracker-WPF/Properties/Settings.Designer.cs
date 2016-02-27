@@ -130,5 +130,17 @@ namespace RatTracker_WPF.Properties {
                 this["AppID"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string OverlayMonitor {
+            get {
+                return ((string)(this["OverlayMonitor"]));
+            }
+            set {
+                this["OverlayMonitor"] = value;
+            }
+        }
     }
 }

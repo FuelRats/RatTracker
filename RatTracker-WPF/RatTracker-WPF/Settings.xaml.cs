@@ -23,8 +23,21 @@ namespace RatTracker_WPF
         public wndSettings()
         {
             InitializeComponent();
+			PopulateMonitors();
         }
 
+		private void PopulateMonitors()
+		{
+			IEnumerable<Monitor> monitors = Monitor.AllMonitors;
+			foreach (Monitor mymonitor in monitors)
+			{
+				monitorBox.Items.Add(mymonitor.Name);
+			}
+			if (Properties.Settings.Default.OverlayMonitor != "")
+			{
+				monitorBox.SelectedItem = Properties.Settings.Default.OverlayMonitor;
+			}
+		}
         private void edDirBrowserButton_Click(object sender, RoutedEventArgs e)
         {
             VistaFolderBrowserDialog vfbd = new VistaFolderBrowserDialog();
@@ -52,5 +65,10 @@ namespace RatTracker_WPF
             Properties.Settings.Default.Save();
             this.Close();
         }
-    }
+
+		private void monitorBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			Properties.Settings.Default.OverlayMonitor = monitorBox.SelectedItem.ToString();
+		}
+	}
 }

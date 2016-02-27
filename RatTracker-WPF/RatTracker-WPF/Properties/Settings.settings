@@ -29,5 +29,8 @@
     <Setting Name="AppID" Type="System.String" Scope="User">
       <Value Profile="(Default)">0xDEADBEEF</Value>
     </Setting>
+    <Setting Name="OverlayMonitor" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

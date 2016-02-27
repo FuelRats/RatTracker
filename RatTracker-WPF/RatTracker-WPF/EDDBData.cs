@@ -92,18 +92,25 @@ namespace RatTracker_WPF
             }
             else
             {
-                string loadedfile;
-                using(StreamReader sr = new StreamReader(RTPath + @"\RatTracker\stations.json"))
-                {
-                    loadedfile= sr.ReadLine();
-                }
-                stations = JsonConvert.DeserializeObject<IEnumerable<EDDBStation>>(loadedfile);
-                using (StreamReader sr = new StreamReader(RTPath + @"\RatTracker\systems.json"))
-                {
-                    loadedfile = sr.ReadLine();
-                }
-                systems = JsonConvert.DeserializeObject<IEnumerable<EDDBSystem>>(loadedfile);
-                return "Loaded cached EDDB data. " + systems.Count() + " systems and " + stations.Count() + " stations added.";
+				try {
+					string loadedfile;
+					using (StreamReader sr = new StreamReader(RTPath + @"\RatTracker\stations.json"))
+					{
+						loadedfile = sr.ReadLine();
+					}
+					stations = JsonConvert.DeserializeObject<IEnumerable<EDDBStation>>(loadedfile);
+					using (StreamReader sr = new StreamReader(RTPath + @"\RatTracker\systems.json"))
+					{
+						loadedfile = sr.ReadLine();
+					}
+					systems = JsonConvert.DeserializeObject<IEnumerable<EDDBSystem>>(loadedfile);
+					return "Loaded cached EDDB data. " + systems.Count() + " systems and " + stations.Count() + " stations added.";
+				}
+				catch(Exception ex)
+				{
+					logger.Debug("Exception during load EDDB cached data: " + ex.Message);
+					return "Failed to load EDDB cache!";
+				}
             }
 		}
 
