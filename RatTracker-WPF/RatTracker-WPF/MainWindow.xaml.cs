@@ -94,10 +94,18 @@ namespace RatTracker_WPF
 				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Check your settings, and restart the app.");
 			InitAPI();
 			InitEDDB();
+			InitPlayer();
 			DataContext = this;
 			
 		}
 
+		public void InitPlayer()
+		{
+			if (Settings.Default.JumpRange.GetType() == typeof(float))
+				myplayer.JumpRange = Settings.Default.JumpRange;
+			else
+				myplayer.JumpRange = 30;
+		}
 		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
 
 
@@ -1349,13 +1357,68 @@ namespace RatTracker_WPF
 			}
 		}
 
+		public async Task<ClientDistance> GetDistanceToClient(string target)
+		{
+			int logdepth = 0;
+			EdsmCoords sourcecoords = new EdsmCoords(), targetcoords=new EdsmCoords();
+			IEnumerable<EdsmSystem> candidates;
+			ClientDistance cd = new ClientDistance();
+
+			foreach (TravelLog mysource in myTravelLog.Reverse())
+			{
+				if(mysource.system.Coords== null)
+				{
+					logdepth++;
+				}
+				else
+				{
+					sourcecoords = mysource.system.Coords;
+					break;
+				}
+			}
+			cd.sourcecertainty = logdepth.ToString();
+			if (sourcecoords == null)
+			{
+				sourcecoords = fuelumCoords;
+				cd.sourcecertainty = "Fuelum";
+			}
+			candidates = await QueryEDSMSystem(target);
+			cd.targetcertainty = "Exact";
+			if (candidates == null || candidates.Count() < 1)
+			{
+				logger.Debug("EDSM does not know system '" + target + "'. Widening search...");
+				candidates = await GetCandidateSystems(target);
+				cd.targetcertainty = "Nearby";
+			}
+			if (candidates.FirstOrDefault().Coords == null)
+			{
+				logger.Debug("Known system '" + target + "', but no coords. Widening search...");
+				candidates = await GetCandidateSystems(target);
+				cd.targetcertainty = "Region";
+			}
+			if (candidates == null || candidates.Count() < 1)
+			{
+				//Still couldn't find something, abort.
+				AppendStatus("Couldn't find a candidate system, aborting...");
+				return new ClientDistance();
+			}
+			logger.Debug("We have two sets of coords that we can use to find a distance.");
+			double deltaX = sourcecoords.X - targetcoords.X;
+			double deltaY = sourcecoords.Y - targetcoords.Y;
+			double deltaZ = sourcecoords.Z - targetcoords.Z;
+			double distance = (double)Math.Sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+			logger.Debug("Distance should be " + distance.ToString());
+			cd.distance = distance;
+			return cd;
+		}
 		/* Attempts to calculate a distance in lightyears between two given systems.
         * This is done using EDSM coordinates.
-        * TODO: Once done with testing, transition source to be a <List>TravelLog.
-        * TODO: Wait - this is not smart. CalculateEDSMDistance should just give you
-        * the distances between those two systems, not do any stunts with the source.
-        * Move this functionality out of there, and leave CED requiring a valid source
-        * coord - maybe even require source to be type EDSMCoords.
+        * 
+        * Transitioned to be exact source system, searches for nearest for target.
+        * For the client distance calculation, call GetDistanceToClient instead.
+        * 
+        * 
+		* 
         */
 
 		public async Task<double> CalculateEDSMDistance(string source, string target)
@@ -1385,25 +1448,8 @@ namespace RatTracker_WPF
 				candidates = await QueryEDSMSystem(source);
 				if (candidates == null || candidates.Count() < 1)
 				{
-					logger.Debug("Unknown source system. Checking travel log. (" + myTravelLog.Count() + " entries)");
-					foreach (TravelLog mysource in myTravelLog.Reverse())
-					{
-						if (mysource.system.Coords == null)
-						{
-							logger.Debug("System in travellog has no coords:" + mysource.system.Name);
-						}
-						else
-						{
-							logger.Debug("Found coord'ed system " + mysource.system.Name + ", using as source.");
-							sourcecoords = mysource.system.Coords;
-						}
-					}
-				}
-				if (sourcecoords == null || source == "Fuelum")
-				{
-					AppendStatus("Search for travellog coordinated system failed, using Fuelum coords");
-					// Add a static Fuelum system reference so we don't have to query EDSM for it.
-					sourcecoords = fuelumCoords;
+					logger.Debug("Unknown source system.");
+					return -1;
 				}
 				candidates = await QueryEDSMSystem(target);
 				if (candidates == null || candidates.Count() < 1)
@@ -1474,6 +1520,11 @@ namespace RatTracker_WPF
 						{
 							overlay.Left = mymonitor.Bounds.Right - overlay.Width;
 							overlay.Top = mymonitor.Bounds.Top;
+							overlay.Topmost = true;
+							HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)PresentationSource.FromVisual(Application.Current.MainWindow));
+							hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
+							hotKeyHost.HotKeyPressed += handleHotkeyPress;
+
 						}
 					}
 				}
@@ -1799,10 +1850,10 @@ namespace RatTracker_WPF
 			TPAMessage jumpmessage = new TPAMessage();
 			jumpmessage.action = "message:send";
 			jumpmessage.data = new Dictionary<string, string>();
-			jumpmessage.data.Add("CallJumps", "5");
-			jumpmessage.data.Add("RescueID", "abcdef1234567890");
-			jumpmessage.data.Add("RatID", "bcdef1234567890a");
-			jumpmessage.data.Add("Lightyears", "115.20");
+			jumpmessage.data.Add("CallJumps", Math.Ceiling(distance/myplayer.JumpRange).ToString());
+			jumpmessage.data.Add("RescueID", myrescue._id);
+			jumpmessage.data.Add("RatID", myplayer.RatID.FirstOrDefault());
+			jumpmessage.data.Add("Lightyears", distance.ToString());
 			jumpmessage.data.Add("SourceCertainty", "Exact");
 			jumpmessage.data.Add("DestinationCertainty", "Exact");
 			apworker.SendTPAMessage(jumpmessage);
@@ -1834,16 +1885,16 @@ namespace RatTracker_WPF
 
 		private async void button2_Click(object sender, RoutedEventArgs e)
 		{
-			logger.Debug("Querying EDDB for closest station to " + MyClient.ClientSystem);
-			IEnumerable<EdsmSystem> mysys = await QueryEDSMSystem(MyClient.ClientSystem);
+			logger.Debug("Querying EDDB for closest station to " + myplayer.CurrentSystem);
+			IEnumerable<EdsmSystem> mysys = await QueryEDSMSystem(myplayer.CurrentSystem);
 			if (mysys != null && mysys.Count() >0)
 			{
 				logger.Debug("Got a mysys with " + mysys.Count() + " elements");
 				var station = eddbworker.GetClosestStation(mysys.First().Coords);
 				EDDBSystem system = eddbworker.GetSystemById(station.system_id);
-				AppendStatus("Closest populated system to '"+MyClient.ClientSystem+"' is '" + system.name+
+				AppendStatus("Closest populated system to '"+myplayer.CurrentSystem+"' is '" + system.name+
 							"', closest station to star with known coordinates is '" + station.name + "'.");
-				double distance = await CalculateEDSMDistance(MyClient.ClientSystem, mysys.First().Name);
+				double distance = await CalculateEDSMDistance(myplayer.CurrentSystem, mysys.First().Name);
 				OverlayMessage mymessage = new OverlayMessage();
 				
 				mymessage.Line1Header = "Nearest station:";
