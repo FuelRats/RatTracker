@@ -70,5 +70,12 @@ namespace RatTracker_WPF
 		{
 			Properties.Settings.Default.OverlayMonitor = monitorBox.SelectedItem.ToString();
 		}
+
+		private void textBox1_TextChanged(object sender, TextChangedEventArgs e)
+		{
+			float myrange;
+			if (float.TryParse(textBox1.Text, out myrange))
+				Properties.Settings.Default.JumpRange = myrange;
+		}
 	}
 }

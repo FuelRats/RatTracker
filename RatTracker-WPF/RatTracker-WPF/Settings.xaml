@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:RatTracker_WPF"
         xmlns:p="clr-namespace:RatTracker_WPF.Properties"
         mc:Ignorable="d"
-        Title="Settings" Height="259.288" Width="587.645" ResizeMode="NoResize">
+        Title="Settings" Height="294.788" Width="587.645" ResizeMode="NoResize">
     <Grid Margin="0,0,2,0">
         <Label x:Name="label" Content="E:D logs directory" HorizontalAlignment="Left" Height="28" Margin="20,54,0,0" VerticalAlignment="Top" Width="106"/>
         <Label x:Name="label1" Content="FuelRats Username" HorizontalAlignment="Left" Height="25" Margin="20,87,0,0" VerticalAlignment="Top" Width="115"/>
@@ -18,11 +18,13 @@
         <TextBox x:Name="apiURLBox" HorizontalAlignment="Left" Height="25" Margin="145,120,0,0" TextWrapping="Wrap" Text="{Binding Source={x:Static p:Settings.Default}, Path=APIURL, Mode=TwoWay}" VerticalAlignment="Top" Width="366"/>
         <TextBox x:Name="textBox" HorizontalAlignment="Left" Height="25" Margin="145,21,0,0" TextWrapping="Wrap" Text="{Binding Source={x:Static p:Settings.Default}, Path=EDPath, Mode=TwoWay}" VerticalAlignment="Top" Width="366"/>
         <TextBox x:Name="apiPortBox" HorizontalAlignment="Left" Height="25" Margin="145,151,0,0" TextWrapping="Wrap" Text="{Binding Source={x:Static p:Settings.Default}, Path=APIPort, Mode=TwoWay}" VerticalAlignment="Top" Width="366"/>
-        <Button x:Name="saveButton" Content="Save" HorizontalAlignment="Left" Height="28" Margin="516,179,0,0" VerticalAlignment="Top" Width="49" Click="saveButton_Click"/>
+        <Button x:Name="saveButton" Content="Save" HorizontalAlignment="Left" Height="25" Margin="516,212,0,0" VerticalAlignment="Top" Width="49" Click="saveButton_Click"/>
         <Button x:Name="edDirBrowserButton" Content="..." HorizontalAlignment="Left" Height="28" Margin="516,21,0,0" VerticalAlignment="Top" Width="49" Click="edDirBrowserButton_Click"/>
         <Button x:Name="edNetLogBrowserButton" Content="..." HorizontalAlignment="Left" Height="28" Margin="516,54,0,0" VerticalAlignment="Top" Width="49" Click="edNetLogBrowserButton_Click"/>
         <Label x:Name="label5" Content="Overlay screen" HorizontalAlignment="Left" Height="25" Margin="20,182,0,0" VerticalAlignment="Top" Width="106"/>
         <ComboBox x:Name="monitorBox" HorizontalAlignment="Left" Height="25" Margin="145,182,0,0" VerticalAlignment="Top" Width="366" SelectionChanged="monitorBox_SelectionChanged"/>
+        <Label x:Name="label6" Content="Jump Range" HorizontalAlignment="Left" Height="25" Margin="20,212,0,0" VerticalAlignment="Top" Width="106"/>
+        <TextBox x:Name="textBox1" HorizontalAlignment="Left" Height="25" Margin="145,212,0,0" TextWrapping="Wrap" Text="{Binding Source={x:Static p:Settings.Default},Path=JumpRange, Mode=TwoWay}" VerticalAlignment="Top" Width="366" TextChanged="textBox1_TextChanged"/>
 
 
 
