@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RatTracker_WPF.Models.App
 {
-	class ClientDistance
+	public class ClientDistance
 	{
 		public string targetcertainty { get; set; }
 		public string sourcecertainty { get; set; }

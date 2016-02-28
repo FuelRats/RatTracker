@@ -35,7 +35,7 @@
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>index.html</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <ApplicationRevision>31</ApplicationRevision>
+    <ApplicationRevision>32</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -170,6 +170,7 @@
     <Compile Include="Models\Api\ClientInfo.cs" />
     <Compile Include="Converter\ClientConverter.cs" />
     <Compile Include="Models\Api\Datum.cs" />
+    <Compile Include="Models\App\ClientDistance.cs" />
     <Compile Include="Models\App\ConnectionInfo.cs" />
     <Compile Include="Models\App\NATType.cs" />
     <Compile Include="Models\App\NetworkError.cs" />

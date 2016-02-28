@@ -39,6 +39,7 @@ namespace RatTracker_WPF
 	/// </summary>
 	public partial class MainWindow : Window, INotifyPropertyChanged
 	{
+		#region GlobalVars
 		private const bool TestingMode = true; // Use the TestingMode bool to point RT to test API endpoints and non-live queries. Set to false when deployed.
 		private const string Unknown = "unknown";
 		/* These can not be static readonly. They may be changed by the UI XML pulled from E:D. */
@@ -74,6 +75,7 @@ namespace RatTracker_WPF
 		private Thread threadLogWatcher; // Holds logwatcher thread.
 		private FileSystemWatcher watcher; // FSW for the Netlog directory.
 		private EDDBData eddbworker;
+		#endregion
 
 		/*
 		 * Initializes the application. Starts AI telemetry, checks log directory and makes sure AppConfig is configured for proper operation.
@@ -99,16 +101,8 @@ namespace RatTracker_WPF
 			
 		}
 
-		public void InitPlayer()
-		{
-			if (Settings.Default.JumpRange.GetType() == typeof(float))
-				myplayer.JumpRange = Settings.Default.JumpRange;
-			else
-				myplayer.JumpRange = 30;
-		}
+		#region PropertyNotifiers
 		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
-
-
 		public ConnectionInfo ConnInfo
 		{
 			get { return conninfo; }
@@ -186,6 +180,110 @@ namespace RatTracker_WPF
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
+		#endregion
+
+		#region Initializers
+		private void InitAPI()
+		{
+			try
+			{
+				logger.Info("Initializing API connection...");
+				apworker = new APIWorker();
+				apworker.InitWs();
+				apworker.OpenWs();
+				apworker.ws.MessageReceived += websocketClient_MessageReceieved;
+			}
+			catch (Exception ex)
+			{
+				logger.Fatal("Exception in InitAPI: " + ex.Message);
+			}
+		}
+
+		public void InitPlayer()
+		{
+			if (Settings.Default.JumpRange.GetType() == typeof(float))
+				myplayer.JumpRange = Settings.Default.JumpRange;
+			else
+				myplayer.JumpRange = 30;
+			myplayer.CurrentSystem = "Fuelum";
+		}
+
+		private async void InitEDDB()
+		{
+			AppendStatus("Initializing EDDB.");
+			eddbworker = new EDDBData();
+			string status = await eddbworker.UpdateEDDBData();
+			AppendStatus("EDDB: " + status);
+		}
+		/* Moved WS connection to the apworker, but to actually parse the messages we have to hook the event
+         * handler here too.
+         */
+		#endregion
+		private async void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
+		{
+			Dispatcher disp = Dispatcher;
+			try
+			{
+				logger.Debug("Raw JSON from WS: " + e.Message);
+				dynamic data = JsonConvert.DeserializeObject(e.Message);
+				dynamic meta = data.meta;
+				dynamic realdata = data.data;
+				logger.Debug("Meta data from API: " + meta);
+				switch ((string)meta.action)
+				{
+					case "welcome":
+						logger.Info("API MOTD: " + data.data);
+						break;
+					case "assignment":
+						logger.Debug("Got a new assignment datafield: " + data.data);
+						break;
+					case "rescues:read":
+						logger.Debug("Got a list of rescues: " + realdata);
+						rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
+
+						await disp.BeginInvoke(DispatcherPriority.Normal,
+							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
+						await GetMissingRats(rescues);
+						break;
+					case "message:send":
+						/* We got a message broadcast on our channel. */
+						AppendStatus("Test 3PA data from WS receieved: " + realdata);
+						break;
+					case "users:read":
+						if (meta.count > 0)
+						{
+							AppendStatus("Got user data for " + realdata[0].email);
+							MyPlayer.RatID = new List<string>();
+							foreach (string id in realdata[0].CMDRs)
+							{
+								AppendStatus("RatID " + id + " added to identity list.");
+								MyPlayer.RatID.Add(id);
+							}
+						}
+						break;
+					case "rescue:created":
+						AppendStatus("New rescue arrived!" + realdata);
+						//string rejson = realdata;
+						//Datum newrescue = JsonConvert.DeserializeObject<Datum>(rejson);
+						Datum newrescue = realdata.ToObject<Datum>();
+						AppendStatus("New rescue client name: " + newrescue.Client.NickName);
+						rescues.Data.Add(newrescue);
+						await disp.BeginInvoke(DispatcherPriority.Normal,
+							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
+						await GetMissingRats(rescues);
+						break;
+					default:
+						logger.Info("Unknown API action field: " + meta.action);
+						break;
+				}
+				if (meta.id != null)
+					AppendStatus("My connID: " + meta.id);
+			}
+			catch (Exception ex)
+			{
+				logger.Fatal("Exception in WSClient_MessageReceived: " + ex.Message);
+			}
+		}
 
 		/*
 		 * Application Insights exception tracking. This SHOULD send off any unhandled fatal exceptions
@@ -248,7 +346,7 @@ namespace RatTracker_WPF
 						logger.Error("WARNING: Your Elite:Dangerous AppConfig is not set up correctly to allow RatTracker to work!");
 						MessageBoxResult result =
 							MessageBox.Show(
-								"Warning: Your AppConfig in " + dir +
+								"Your AppConfig in " + dir +
 								" is not configured correctly to allow RatTracker to perform its function. Would you like to alter the configuration to enable Verbose Logging? Your old AppConfig will be backed up.",
 								"Incorrect AppConfig", MessageBoxButton.YesNo, MessageBoxImage.Exclamation);
 						tc.TrackEvent("AppConfigNotCorrectlySetUp");
@@ -492,97 +590,6 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Debug("Exception in CheckLogDirectory! " + ex.Message);
-			}
-		}
-
-		private void InitAPI()
-		{
-			try {
-				logger.Info("Initializing API connection...");
-				apworker = new APIWorker();
-				apworker.InitWs();
-				apworker.OpenWs();
-				apworker.ws.MessageReceived += websocketClient_MessageReceieved;
-			}
-			catch (Exception ex)
-			{
-				logger.Fatal("Exception in InitAPI: " + ex.Message);
-			}
-		}
-
-		private async void InitEDDB()
-		{
-			AppendStatus("Initializing EDDB.");
-			eddbworker = new EDDBData();
-			string status = await eddbworker.UpdateEDDBData();
-			AppendStatus("EDDB: " + status);
-		}
-		/* Moved WS connection to the apworker, but to actually parse the messages we have to hook the event
-         * handler here too.
-         */
-
-		private async void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
-		{
-			Dispatcher disp = Dispatcher;
-			try {
-				logger.Debug("Raw JSON from WS: " + e.Message);
-				dynamic data = JsonConvert.DeserializeObject(e.Message);
-				dynamic meta = data.meta;
-				dynamic realdata = data.data;
-				logger.Debug("Meta data from API: " + meta);
-				switch ((string)meta.action)
-				{
-					case "welcome":
-						logger.Info("API MOTD: " + data.data);
-						break;
-					case "assignment":
-						logger.Debug("Got a new assignment datafield: " + data.data);
-						break;
-					case "rescues:read":
-						logger.Debug("Got a list of rescues: " + realdata);
-						rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
-
-						await disp.BeginInvoke(DispatcherPriority.Normal,
-							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
-						await GetMissingRats(rescues);
-						break;
-					case "message:send":
-						/* We got a message broadcast on our channel. */
-						AppendStatus("Test 3PA data from WS receieved: " + realdata);
-						break;
-					case "users:read":
-						if (meta.count > 0)
-						{
-							AppendStatus("Got user data for " + realdata[0].email);
-							MyPlayer.RatID = new List<string>();
-							foreach (string id in realdata[0].CMDRs)
-							{
-								AppendStatus("RatID " + id + " added to identity list.");
-								MyPlayer.RatID.Add(id);
-							}
-						}
-						break;
-					case "rescue:created":
-						AppendStatus("New rescue arrived!"+realdata);
-						//string rejson = realdata;
-						//Datum newrescue = JsonConvert.DeserializeObject<Datum>(rejson);
-						Datum newrescue = realdata.ToObject<Datum>();
-						AppendStatus("New rescue client name: " + newrescue.Client.NickName);
-						rescues.Data.Add(newrescue);
-						await disp.BeginInvoke(DispatcherPriority.Normal, 
-							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
-						await GetMissingRats(rescues);
-						break;
-					default:
-						logger.Info("Unknown API action field: " + meta.action);
-						break;
-				}
-				if (meta.id != null)
-					AppendStatus("My connID: " + meta.id);
-			}
-			catch (Exception ex)
-			{
-				logger.Fatal("Exception in WSClient_MessageReceived: " + ex.Message);
 			}
 		}
 
@@ -1230,9 +1237,9 @@ namespace RatTracker_WPF
 					? string.Join(", ", rats)
 					: string.Empty;
 				SystemName.Text = myrow.System;
-				double distance = await CalculateEDSMDistance(MyPlayer.CurrentSystem, myrow.System);
-				DistanceToClient = Math.Round(distance, 2);
-				JumpsToClient = MyPlayer.JumpRange > 0 ? Math.Ceiling(distance / MyPlayer.JumpRange).ToString() : string.Empty;
+				ClientDistance distance = await GetDistanceToClient(myrow.System);
+				DistanceToClient = Math.Round(distance.distance, 2);
+				JumpsToClient = MyPlayer.JumpRange > 0 ? Math.Ceiling(distance.distance / MyPlayer.JumpRange).ToString() : string.Empty;
 			}
 			catch(Exception ex)
 			{
@@ -1360,9 +1367,12 @@ namespace RatTracker_WPF
 		public async Task<ClientDistance> GetDistanceToClient(string target)
 		{
 			int logdepth = 0;
-			EdsmCoords sourcecoords = new EdsmCoords(), targetcoords=new EdsmCoords();
+			EdsmCoords sourcecoords = new EdsmCoords();
+			EdsmCoords targetcoords =new EdsmCoords();
 			IEnumerable<EdsmSystem> candidates;
 			ClientDistance cd = new ClientDistance();
+			sourcecoords = fuelumCoords;
+			cd.sourcecertainty = "Fuelum";
 
 			foreach (TravelLog mysource in myTravelLog.Reverse())
 			{
@@ -1372,18 +1382,15 @@ namespace RatTracker_WPF
 				}
 				else
 				{
+					logger.Debug("Found TL system to use: " + mysource.system.Name);
 					sourcecoords = mysource.system.Coords;
+					cd.sourcecertainty = logdepth.ToString();
 					break;
 				}
 			}
-			cd.sourcecertainty = logdepth.ToString();
-			if (sourcecoords == null)
-			{
-				sourcecoords = fuelumCoords;
-				cd.sourcecertainty = "Fuelum";
-			}
 			candidates = await QueryEDSMSystem(target);
 			cd.targetcertainty = "Exact";
+			
 			if (candidates == null || candidates.Count() < 1)
 			{
 				logger.Debug("EDSM does not know system '" + target + "'. Widening search...");
@@ -1403,6 +1410,8 @@ namespace RatTracker_WPF
 				return new ClientDistance();
 			}
 			logger.Debug("We have two sets of coords that we can use to find a distance.");
+			logger.Debug("Finding from coords: " + sourcecoords.X + " " + sourcecoords.Y + " " + sourcecoords.Z + " to " + targetcoords.X + " " + targetcoords.Y + " " + targetcoords.Z);
+			targetcoords = candidates.FirstOrDefault().Coords;
 			double deltaX = sourcecoords.X - targetcoords.X;
 			double deltaY = sourcecoords.Y - targetcoords.Y;
 			double deltaZ = sourcecoords.Z - targetcoords.Z;
@@ -1470,8 +1479,9 @@ namespace RatTracker_WPF
 				}
 				else
 				{
-					logger.Debug("I got " + candidates.Count() + " systems with coordinates. Picking the first.");
-					targetcoords = candidates.FirstOrDefault().Coords;
+					logger.Debug("I got " + candidates.Count() + " systems with coordinates. Sorting by lexical match and picking first.");
+					var sorted = candidates.OrderBy(s => LexicalOrder(target, s.Name));
+					targetcoords = sorted.FirstOrDefault().Coords;
 				}
 				if (sourcecoords != null && targetcoords != null)
 				{
@@ -1496,6 +1506,16 @@ namespace RatTracker_WPF
 			}
 		}
 
+		/* Used by CalculatedEDSMDistance to sort candidate lists by closest lexical match.
+		*/
+		int LexicalOrder(string query, string name)
+		{
+			if (name == query)
+				return -1;
+			if (name.Contains(query))
+				return 0;
+			return 1;
+		}
 		private void MenuItem_Click_1(object sender, RoutedEventArgs e)
 		{
 			//open the dispatch interface
@@ -1541,6 +1561,7 @@ namespace RatTracker_WPF
 					overlay.Topmost = true;
 					HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)PresentationSource.FromVisual(Application.Current.MainWindow));
 					hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
+					hotKeyHost.AddHotKey(new CustomHotKey("CopyClientSystemname", Key.C, ModifierKeys.Control | ModifierKeys.Alt, true));
 					hotKeyHost.HotKeyPressed += handleHotkeyPress;
 				}
 			}
@@ -1557,6 +1578,11 @@ namespace RatTracker_WPF
 					overlay.Visibility = Visibility.Visible;
 				else
 					overlay.Visibility = Visibility.Hidden;
+			}
+			if (e.HotKey.Key == Key.C)
+			{
+				if (myClient.ClientSystem != null)
+					System.Windows.Clipboard.SetText(myClient.ClientSystem);
 			}
 		}
 
@@ -1845,12 +1871,12 @@ namespace RatTracker_WPF
 			{
 				overlay.SetCurrentClient(MyClient);
 			}
-			double distance = await CalculateEDSMDistance(myplayer.CurrentSystem, MyClient.ClientSystem);
+			ClientDistance distance = await GetDistanceToClient(MyClient.ClientSystem);
 			AppendStatus("Sending jumps to IRC...");
 			TPAMessage jumpmessage = new TPAMessage();
 			jumpmessage.action = "message:send";
 			jumpmessage.data = new Dictionary<string, string>();
-			jumpmessage.data.Add("CallJumps", Math.Ceiling(distance/myplayer.JumpRange).ToString());
+			jumpmessage.data.Add("CallJumps", Math.Ceiling(distance.distance/myplayer.JumpRange).ToString());
 			jumpmessage.data.Add("RescueID", myrescue._id);
 			jumpmessage.data.Add("RatID", myplayer.RatID.FirstOrDefault());
 			jumpmessage.data.Add("Lightyears", distance.ToString());
