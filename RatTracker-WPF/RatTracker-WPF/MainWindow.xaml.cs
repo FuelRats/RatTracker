@@ -273,7 +273,6 @@ namespace RatTracker_WPF
 						}
 						break;
 					case "rescue:updated":
-						AppendStatus("Rescue updated: "+realdata);
 						Datum updrescue = realdata.ToObject<Datum>();
 						Datum myrescue = rescues.Data.Where(r => r._id == updrescue._id).FirstOrDefault();
 						if (myrescue == null)
@@ -643,11 +642,6 @@ namespace RatTracker_WPF
 			}
 		}
 
-		private void ProcessAPIResponse(IAsyncResult result)
-		{
-			this.AppendStatus("Whaddaya know, ProcessAPIResponse got called!");
-		}
-
 		private void CheckClientConn(string lf)
 		{
 			bool stopSnooping = false;
@@ -873,7 +867,8 @@ namespace RatTracker_WPF
 				Match match = Regex.Match(line, reMatchSystem, RegexOptions.IgnoreCase);
 				if (match.Success)
 				{
-					//AppendStatus("System change: " + match.Groups[2].Value + ".");
+					if (match.Groups[2].Value == myplayer.CurrentSystem)
+						return;
 					TriggerSystemChange(match.Groups[2].Value);
 				}
 
@@ -881,16 +876,16 @@ namespace RatTracker_WPF
 				Match frmatch = Regex.Match(line, reMatchPlayer, RegexOptions.IgnoreCase);
 				if (frmatch.Success)
 				{
-					if (scState == "Normalspace")
+					if (scState == "Normalspace" && myrescue!=null)
 					{
 						AppendStatus("Successful ID match in normal space. Sending good instance.");
 						MyClient.Self.InInstance = true;
 						TPAMessage instmsg = new TPAMessage();
 						instmsg.action = "message:send";
 						instmsg.data = new Dictionary<string, string>();
-						instmsg.data.Add("RatID", "abcdef1234567890");
+						instmsg.data.Add("RatID", myplayer.RatID.ToString());
 						instmsg.data.Add("InstanceSuccessful", "true");
-						instmsg.data.Add("RescueID", "def1234567890abc");
+						instmsg.data.Add("RescueID", myrescue.id);
 						apworker.SendTPAMessage(instmsg);
 					}
 					AppendStatus("Successful identity match! ID: " + frmatch.Groups[1] + " IP:" + frmatch.Groups[3]);
@@ -958,12 +953,12 @@ namespace RatTracker_WPF
 				}
 				if (line.Contains("<FriendWingInvite>"))
 				{
-					AppendStatus("Wing invite detected, parsing...");
+					logger.Debug("Wing invite detected, parsing...");
 					ParseWingInvite(line);
 				}
 				if (line.Contains("JoinSession:WingSession:") && line.Contains(MyClient.ClientIp))
 				{
-					AppendStatus("Prewing communication underway...");
+					logger.Debug("Prewing communication underway...");
 				}
 
 				if (line.Contains("TalkChannelManager::OpenOutgoingChannelTo") && line.Contains(MyClient.ClientIp))
@@ -982,14 +977,14 @@ namespace RatTracker_WPF
 				if (line.Contains("NormalFlight") && scState == "Supercruise")
 				{
 					scState = "Normalspace";
-					AppendStatus("Drop to normal space detected.");
+					logger.Debug("Drop to normal space detected.");
 					//voice.Speak("Dropping to normal space.");
 				}
 
 				if (line.Contains("Supercruise") && scState == "Normalspace")
 				{
 					scState = "Supercruise";
-					AppendStatus("Entering supercruise.");
+					logger.Debug("Entering supercruise.");
 					//voice.Speak("Entering supercruise.");
 				}
 				if (line.Contains("JoinSession:BeaconSession") && line.Contains(MyClient.ClientIp))
@@ -1000,8 +995,8 @@ namespace RatTracker_WPF
 					bcnmsg.action = "message:send";
 					bcnmsg.data = new Dictionary<string, string>();
 					bcnmsg.data.Add("BeaconSpotted", "true");
-					bcnmsg.data.Add("RatID", "abcdef1234567890");
-					bcnmsg.data.Add("RescueID", "abcdef1234fhaf");
+					bcnmsg.data.Add("RatID", myplayer.RatID.ToString());
+					bcnmsg.data.Add("RescueID", myrescue._id);
 					apworker.SendTPAMessage(bcnmsg);
 				}
 			}
@@ -1016,7 +1011,7 @@ namespace RatTracker_WPF
 			Dispatcher disp = Dispatcher;
 			if (value == MyPlayer.CurrentSystem)
 			{
-				return; // Already 
+				return; // Already know we're in that system, thanks.
 			}
 			MyPlayer.CurrentSystem = value;
 			try
@@ -1127,7 +1122,7 @@ namespace RatTracker_WPF
 				dutymessage.action = "message:send";
 				dutymessage.data = new Dictionary<string, string>();
 				dutymessage.data.Add("OnDuty", MyPlayer.OnDuty.ToString());
-				dutymessage.data.Add("RatID", "bcd1234567890test");
+				dutymessage.data.Add("RatID", myplayer.RatID.ToString());
 				dutymessage.data.Add("currentSystem", MyPlayer.CurrentSystem);
 				apworker.SendTPAMessage(dutymessage);
 			}
@@ -1172,38 +1167,15 @@ namespace RatTracker_WPF
 
 		private void currentButton_Click(object sender, RoutedEventArgs e)
 		{
-			AppendStatus("Setting client location to current system: Fuelum");
-			SystemName.Text = "Fuelum";
+			AppendStatus("Setting client location to current system: "+myplayer.CurrentSystem);
+			// SystemName.Text = "Fuelum";
+			// Do actual system name update through Mecha with 3PAM
 		}
 
 		private async void updateButton_Click(object sender, RoutedEventArgs e)
 		{
-			try {
-				logger.Debug("Trying to fetch rescues...");
-				Dictionary<string, string> data = new Dictionary<string, string>();
-				//data.Add("rats", "56a8fcc7abdd7cc91123fd25");
-				data.Add("open", "true");
-				string col = await apworker.queryAPI("rescues", data);
+			// No more of this testing bull, let's actually send the updated system now.
 
-				if (col == null)
-				{
-					logger.Debug("No COL returned from Rescues.");
-				}
-				else
-				{
-					logger.Debug("Got a COL from Rescues query: " + col);
-					rescues = JsonConvert.DeserializeObject<RootObject>(col);
-					await GetMissingRats(rescues);
-					logger.Debug($"Got {rescues.Data.Count} open rescues.");
-					Dispatcher disp = Dispatcher;
-					await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
-					await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => rescues.Data.ForEach(datum=> ItemsSource.Add(datum))));
-				}
-			}
-			catch(Exception ex)
-			{
-				logger.Fatal("Exception in updateButtonClick: " + ex.Message);
-			}
 		}
 		private async void InitRescueGrid()
 		{
@@ -1339,12 +1311,7 @@ namespace RatTracker_WPF
 		}
 		private void startButton_Click(object sender, RoutedEventArgs e)
 		{
-			AppendStatus("Starting new fake case for: " + ClientName.Text);
-			// TODO myClient.ClientName = ClientName.Text;
-			myClient = new ClientInfo();
-			myClient.ClientName = ClientName.Text;
-			myClient.ClientSystem = "Fuelum";
-			//myClient.Rescue = activeRescues.Data.First();
+			AppendStatus("Starting case: " + ClientName.Text);
 		}
 
 		private void MenuItem_Click(object sender, RoutedEventArgs e)
