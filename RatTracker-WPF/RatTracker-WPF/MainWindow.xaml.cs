@@ -499,7 +499,7 @@ namespace RatTracker_WPF
 							MyClient.Self.FriendRequest = RequestState.Recieved;
 							AppendStatus("FR is from our client. Notifying Dispatch.");
 							TPAMessage frmsg = new TPAMessage();
-							frmsg.action = "message:send";
+							frmsg.action = "FriendRequest:update";
 							frmsg.data = new Dictionary<string, string>();
 							frmsg.data.Add("FRReceived", "true");
 							frmsg.data.Add("RatID", "abcdef1234567890");
@@ -565,7 +565,7 @@ namespace RatTracker_WPF
 							MyClient.SessionId = wingdata.Element("session_runid").Value;
 							MyClient.Self.WingRequest = RequestState.Accepted;
 							TPAMessage wrmsg = new TPAMessage();
-							wrmsg.action = "message:send";
+							wrmsg.action = "WingRequest:update";
 							wrmsg.data = new Dictionary<string, string>();
 							wrmsg.data.Add("WRReceived", "true");
 							wrmsg.data.Add("RatID", "abcdef1234567890");
@@ -881,7 +881,7 @@ namespace RatTracker_WPF
 						AppendStatus("Successful ID match in normal space. Sending good instance.");
 						MyClient.Self.InInstance = true;
 						TPAMessage instmsg = new TPAMessage();
-						instmsg.action = "message:send";
+						instmsg.action = "InstanceSuccessful:update";
 						instmsg.data = new Dictionary<string, string>();
 						instmsg.data.Add("RatID", myplayer.RatID.ToString());
 						instmsg.data.Add("InstanceSuccessful", "true");
@@ -992,7 +992,7 @@ namespace RatTracker_WPF
 					AppendStatus("Client's Beacon in sight.");
 					MyClient.Self.Beacon = true;
 					TPAMessage bcnmsg = new TPAMessage();
-					bcnmsg.action = "message:send";
+					bcnmsg.action = "BeaconSpotted:update";
 					bcnmsg.data = new Dictionary<string, string>();
 					bcnmsg.data.Add("BeaconSpotted", "true");
 					bcnmsg.data.Add("RatID", myplayer.RatID.ToString());
@@ -1047,7 +1047,7 @@ namespace RatTracker_WPF
 						{
 							AppendStatus("Arrived in client system. Notifying dispatch.");
 							TPAMessage sysmsg = new TPAMessage();
-							sysmsg.action = "message:send";
+							sysmsg.action = "SysArrived:update";
 							sysmsg.data = new Dictionary<string, string>();
 							sysmsg.data.Add("SysArrived", "true");
 							sysmsg.data.Add("RatID", "abcdef1234567890");
@@ -1119,7 +1119,7 @@ namespace RatTracker_WPF
 			}
 			try {
 				TPAMessage dutymessage = new TPAMessage();
-				dutymessage.action = "message:send";
+				dutymessage.action = "OnDuty:update";
 				dutymessage.data = new Dictionary<string, string>();
 				dutymessage.data.Add("OnDuty", MyPlayer.OnDuty.ToString());
 				dutymessage.data.Add("RatID", myplayer.RatID.ToString());
@@ -1644,7 +1644,7 @@ namespace RatTracker_WPF
 			frmsg.data = new Dictionary<string, string>();
 			if (MyClient != null && MyClient.Rescue != null)
 			{
-				frmsg.action = "message:send";
+				frmsg.action = "FriendRequest:update";
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
@@ -1678,7 +1678,7 @@ namespace RatTracker_WPF
 			frmsg.data = new Dictionary<string, string>();
 			if (MyClient != null && MyClient.Rescue != null)
 			{
-				frmsg.action = "message:send";
+				frmsg.action = "WingRequest:update";
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
@@ -1713,7 +1713,7 @@ namespace RatTracker_WPF
 			frmsg.data = new Dictionary<string, string>();
 			if (MyClient != null && MyClient.Rescue != null)
 			{
-				frmsg.action = "message:send";
+				frmsg.action = "SysArrived:update";
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
@@ -1740,7 +1740,7 @@ namespace RatTracker_WPF
 			frmsg.data = new Dictionary<string, string>();
 			if (MyClient != null && MyClient.Rescue != null)
 			{
-				frmsg.action = "message:send";
+				frmsg.action = "BeaconSpotted:update";
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
@@ -1767,7 +1767,7 @@ namespace RatTracker_WPF
 			frmsg.data = new Dictionary<string, string>();
 			if (MyClient != null && MyClient.Rescue != null)
 			{
-				frmsg.action = "message:send";
+				frmsg.action = "InstanceSuccessful:update";
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
@@ -1857,7 +1857,7 @@ namespace RatTracker_WPF
             MyPlayer.JumpRange = float.Parse("31.24");
             */
 			TPAMessage testmessage = new TPAMessage();
-			testmessage.action = "message:send";
+			testmessage.action = "WingRequest:update";
 			testmessage.data = new Dictionary<string, string>();
 			testmessage.data.Add("WingRequest", "true");
 			testmessage.data.Add("RescueID", "abc1234567890test");
@@ -1901,7 +1901,7 @@ namespace RatTracker_WPF
 			ClientDistance distance = await GetDistanceToClient(MyClient.ClientSystem);
 			AppendStatus("Sending jumps to IRC...");
 			TPAMessage jumpmessage = new TPAMessage();
-			jumpmessage.action = "message:send";
+			jumpmessage.action = "CallJumps:update";
 			jumpmessage.data = new Dictionary<string, string>();
 			jumpmessage.data.Add("CallJumps", Math.Ceiling(distance.distance/myplayer.JumpRange).ToString());
 			jumpmessage.data.Add("RescueID", myrescue._id);
