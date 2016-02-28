@@ -9,7 +9,17 @@ namespace RatTracker_WPF.Models.App
 		private bool onDuty;
 		private bool superCruise;
 		private List<string> ratId;
+		private string ratname;
 
+		public string RatName
+		{
+			get { return ratname; }
+			set
+			{
+				ratname = value;
+				NotifyPropertyChanged();
+			}
+		}
 		public List<string> RatID
 		{
 			get { return ratId; }

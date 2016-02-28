@@ -31,6 +31,8 @@ using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
 using WebSocket4Net;
 using RatTracker_WPF.Models.EDDB;
+using System.Windows.Data;
+using System.Collections.ObjectModel;
 
 namespace RatTracker_WPF
 {
@@ -75,6 +77,7 @@ namespace RatTracker_WPF
 		private Thread threadLogWatcher; // Holds logwatcher thread.
 		private FileSystemWatcher watcher; // FSW for the Netlog directory.
 		private EDDBData eddbworker;
+		private static object _syncLock = new object();
 		#endregion
 
 		/*
@@ -90,18 +93,23 @@ namespace RatTracker_WPF
 			tc.Context.Component.Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
 			tc.TrackPageView("MainWindow");
 			InitializeComponent();
+			logger.Debug("Parsing AppConfig...");
 			if (ParseEDAppConfig())
 				CheckLogDirectory();
 			else
 				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Check your settings, and restart the app.");
+			logger.Debug("Initialize API...");
 			InitAPI();
+			logger.Debug("Initialize EDDB...");
 			InitEDDB();
+			logger.Debug("Initialize player data...");
 			InitPlayer();
 			DataContext = this;
 			
 		}
 
 		#region PropertyNotifiers
+		public ObservableCollection<Datum> ItemsSource { get; } = new ObservableCollection<Datum>();
 		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
 		public ConnectionInfo ConnInfo
 		{
@@ -219,12 +227,13 @@ namespace RatTracker_WPF
          * handler here too.
          */
 		#endregion
+
 		private async void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
 		{
 			Dispatcher disp = Dispatcher;
 			try
 			{
-				logger.Debug("Raw JSON from WS: " + e.Message);
+				//logger.Debug("Raw JSON from WS: " + e.Message);
 				dynamic data = JsonConvert.DeserializeObject(e.Message);
 				dynamic meta = data.meta;
 				dynamic realdata = data.data;
@@ -240,9 +249,10 @@ namespace RatTracker_WPF
 					case "rescues:read":
 						logger.Debug("Got a list of rescues: " + realdata);
 						rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
-
-						await disp.BeginInvoke(DispatcherPriority.Normal,
-							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
+						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(()=> ItemsSource.Clear()));
+						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => rescues.Data.ForEach(datum => ItemsSource.Add(datum))));
+						//await disp.BeginInvoke(DispatcherPriority.Normal,
+						//	(Action)(() => RescueGrid.ItemsSource = rescues.Data));
 						await GetMissingRats(rescues);
 						break;
 					case "message:send":
@@ -259,18 +269,58 @@ namespace RatTracker_WPF
 								AppendStatus("RatID " + id + " added to identity list.");
 								MyPlayer.RatID.Add(id);
 							}
+							myplayer.RatName = await GetRatName(MyPlayer.RatID.FirstOrDefault());
+						}
+						break;
+					case "rescue:updated":
+						AppendStatus("Rescue updated: "+realdata);
+						Datum updrescue = realdata.ToObject<Datum>();
+						Datum myrescue = rescues.Data.Where(r => r._id == updrescue._id).FirstOrDefault();
+						if (myrescue == null)
+							break;
+						if (updrescue.Open == false)
+						{
+							AppendStatus("Rescue closed: " + updrescue.Client.NickName);
+							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Remove(myrescue)));
+						}
+						else
+						{
+							rescues.Data[rescues.Data.IndexOf(myrescue)] = updrescue;
+							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource[ItemsSource.IndexOf(myrescue)] = updrescue));
+							logger.Debug("Rescue updated: "+updrescue.Client.NickName);
 						}
 						break;
 					case "rescue:created":
 						AppendStatus("New rescue arrived!" + realdata);
-						//string rejson = realdata;
-						//Datum newrescue = JsonConvert.DeserializeObject<Datum>(rejson);
 						Datum newrescue = realdata.ToObject<Datum>();
 						AppendStatus("New rescue client name: " + newrescue.Client.NickName);
-						rescues.Data.Add(newrescue);
+						OverlayMessage nr = new OverlayMessage();
+						nr.Line1Header = "New rescue:";
+						nr.Line1Content = newrescue.Client.NickName;
+						nr.Line2Header = "System:";
+						nr.Line2Content = newrescue.System;
+						nr.Line3Header = "Platform:";
+						nr.Line3Content = newrescue.Platform;
+						nr.Line4Header = "Press Ctrl-Alt-C to copy system name to clipboard";
+						if(overlay!=null)
+							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(()=> overlay.Queue_Message(nr, 30)));
+						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Add(newrescue))); // Maybe this works?
+						/* 
+						 * This does not work. Even if we can add the data to the collection, it seems we're not triggering the
+						 * right events to make RescueGrid update. Maybe this needs an ObservableCollection?
+						 *
+						lock (rescues)
+						/{
+							rescues.Data.Add(newrescue);
+						}
 						await disp.BeginInvoke(DispatcherPriority.Normal,
 							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
 						await GetMissingRats(rescues);
+						*/
+						//await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(()=> InitRescueGrid()));
+						break;
+					case "stream:subscribe":
+						logger.Debug("Subscribed to 3PA stream " + data.ToString());
 						break;
 					default:
 						logger.Info("Unknown API action field: " + meta.action);
@@ -1145,17 +1195,9 @@ namespace RatTracker_WPF
 					rescues = JsonConvert.DeserializeObject<RootObject>(col);
 					await GetMissingRats(rescues);
 					logger.Debug($"Got {rescues.Data.Count} open rescues.");
-
-					RescueGrid.ItemsSource = rescues.Data;
-					RescueGrid.AutoGenerateColumns = false;
-					foreach (DataGridColumn column in RescueGrid.Columns)
-					{
-						logger.Debug("Column:" + column.Header);
-						if ((string)column.Header == "rats")
-						{
-							logger.Debug("It's the rats.");
-						}
-					}
+					Dispatcher disp = Dispatcher;
+					await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
+					await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => rescues.Data.ForEach(datum=> ItemsSource.Add(datum))));
 				}
 			}
 			catch(Exception ex)
@@ -1163,10 +1205,10 @@ namespace RatTracker_WPF
 				logger.Fatal("Exception in updateButtonClick: " + ex.Message);
 			}
 		}
-
 		private async void InitRescueGrid()
 		{
 			try {
+				Dispatcher disp = Dispatcher;
 				logger.Info("Initializing Rescues grid");
 				Dictionary<string, string> data = new Dictionary<string, string>();
 				data.Add("open", "true");
@@ -1193,9 +1235,10 @@ namespace RatTracker_WPF
 					rescuequery.data.Add("open", "true");
 					apworker.SendQuery(rescuequery);
 				}
-				RescueGrid.ItemsSource = rescues.Data;
 				RescueGrid.AutoGenerateColumns = false;
-				await GetMissingRats(rescues);
+				//await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
+				//await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => rescues.Data.ForEach(datum => ItemsSource.Add(datum))));
+				//await GetMissingRats(rescues);
 			}
 			catch(Exception ex)
 			{
@@ -1275,6 +1318,25 @@ namespace RatTracker_WPF
 			}
 		}
 
+		private async Task<string> GetRatName(string ratid)
+		{
+			try { 
+
+			
+				string response =
+					await apworker.queryAPI("rats", new Dictionary<string, string> { { "_id", ratid }, { "limit", "1" } });
+				JObject jsonRepsonse = JObject.Parse(response);
+				List<JToken> tokens = jsonRepsonse["data"].Children().ToList();
+				Rat rat = JsonConvert.DeserializeObject<Rat>(tokens[0].ToString());
+				logger.Debug("Got name for " + ratid + ": " + rat.CmdrName);
+				return rat.CmdrName;
+			}
+			catch(Exception ex)
+			{
+				logger.Fatal("Exception in GetRatName: " + ex.Message);
+				return "Unknown rat";
+			}
+		}
 		private void startButton_Click(object sender, RoutedEventArgs e)
 		{
 			AppendStatus("Starting new fake case for: " + ClientName.Text);
@@ -1291,6 +1353,7 @@ namespace RatTracker_WPF
 			swindow.Show();
 		}
 
+		#region EDSM
 		public async Task<IEnumerable<EdsmSystem>> QueryEDSMSystem(string system)
 		{
 			logger.Debug("Querying EDSM for system " + system);
@@ -1505,6 +1568,8 @@ namespace RatTracker_WPF
 				return -1;
 			}
 		}
+		#endregion
+
 
 		/* Used by CalculatedEDSMDistance to sort candidate lists by closest lexical match.
 		*/
@@ -1791,11 +1856,6 @@ namespace RatTracker_WPF
 				AppendStatus("Fueled status now negative.");
 				FueledButton.Background = Brushes.Red;
 			}
-			logger.Debug("Sending fake rescue request!");
-			IDictionary<string, string> req = new Dictionary<string, string>();
-			req.Add("open", "true");
-			//req.Add("_id", myRescue.id); /* TODO: Must hold a handle to my rescue ID somewhere to identify for API interaction */
-			apworker.SendWs("rescues", req);
 		}
 
 		private async void button_Click_1(object sender, RoutedEventArgs e)
@@ -1880,8 +1940,8 @@ namespace RatTracker_WPF
 			jumpmessage.data.Add("RescueID", myrescue._id);
 			jumpmessage.data.Add("RatID", myplayer.RatID.FirstOrDefault());
 			jumpmessage.data.Add("Lightyears", distance.ToString());
-			jumpmessage.data.Add("SourceCertainty", "Exact");
-			jumpmessage.data.Add("DestinationCertainty", "Exact");
+			jumpmessage.data.Add("SourceCertainty", distance.sourcecertainty);
+			jumpmessage.data.Add("DestinationCertainty", distance.targetcertainty);
 			apworker.SendTPAMessage(jumpmessage);
 		}
 
@@ -1964,4 +2024,5 @@ namespace RatTracker_WPF
 			return @this;
 		}
 	}
+
 }

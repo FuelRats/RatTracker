@@ -5,14 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:converter="clr-namespace:RatTracker_WPF.Converter"
         mc:Ignorable="d"
-        Title="Overlay" Height="186.54" Width="325.238" AllowsTransparency="True" WindowStyle="None"
+        Title="Overlay" Height="207.026" Width="325.238" AllowsTransparency="True" WindowStyle="None"
         ResizeMode="NoResize" Background="{DynamicResource brushTransparent}"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Window.Resources>
         <converter:RequestStateToColourConverter x:Key="RequestStateToColourConverter" RatStatusColourNegative="#00000000" RatStatusColourPending="#FF00B3F7" RatStatusColourPositive="#FF029E4C" />
         <converter:BooleanToColourConverter x:Key="BooleanToColourConverter" RatStatusColourNegative="#00000000" RatStatusColourPositive="#FF029E4C"/>
     </Window.Resources>
-    
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="{Binding IsRescueActive, Converter={converter:BooleanGridHeightConverter TrueValue=1*}}" />
@@ -46,8 +46,8 @@
             </StackPanel>
 
             <!-- My state for current client -->
-            <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,0,-2" Orientation="Horizontal"
-                        VerticalAlignment="Bottom">
+            <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Horizontal"
+                        VerticalAlignment="Top">
                 <Label Content="My state:" Foreground="{DynamicResource brushEliteOrange}" />
                 <StackPanel Orientation="Horizontal" Height="20">
                     <Button x:Name="Rat1FrButton" Content="FR" Background="{Binding ClientInfo.Self.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" 

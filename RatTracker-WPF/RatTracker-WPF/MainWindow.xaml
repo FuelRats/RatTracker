@@ -18,6 +18,13 @@
         <converter:ClientConverter x:Key="ClientConverter"/>
         <ImageBrush x:Key="BackgroundBrush" ImageSource="pack://siteoforigin:,,,/Resources/rank-9.png"/>
         <SolidColorBrush x:Key="brushEliteRed" Color="Red"/>
+        <Style TargetType="DataGridRow">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding CodeRed}" Value="True">
+                    <Setter Property="Background" Value="Red" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
     <Grid>
         <Menu x:Name="Menu" Height="19" VerticalAlignment="Top">
@@ -81,7 +88,7 @@
                 </Grid>
             </GroupBox>
             <GroupBox x:Name="groupBox1" Header="Active Rescues" HorizontalAlignment="Left" Height="236" Margin="19,28,0,0" VerticalAlignment="Top" Width="341" Grid.ColumnSpan="2">
-                <DataGrid x:Name="RescueGrid" Margin="10,5,10,10" ItemsSource="{Binding}" IsReadOnly="True" AutoGenerateColumns="False" SelectionMode="Single" SelectionChanged="RescueGrid_SelectionChanged">
+                <DataGrid x:Name="RescueGrid" Margin="10,5,10,10" ItemsSource="{Binding ItemsSource}" IsReadOnly="True" AutoGenerateColumns="False" SelectionMode="Single" SelectionChanged="RescueGrid_SelectionChanged">
                     <DataGrid.Columns>
                         <DataGridTextColumn Binding="{Binding Client, Converter={StaticResource ClientConverter}}" ClipboardContentBinding="{x:Null}" Header="Client"/>
                         <DataGridTextColumn Binding="{Binding Rats, Converter={StaticResource RatConverter}}" Header="Rats"/>
@@ -115,7 +122,7 @@
             <Button x:Name="SysButton_Copy" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat2.InSystem, Converter={StaticResource BooleanToColourConverter}}" Click="sysButton_Click"/>
             <Button x:Name="BcnButton_Copy" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat2.Beacon, Converter={StaticResource BooleanToColourConverter}}" Click="bcnButton_Click"/>
             <Button x:Name="InstButton_Copy" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat2.InInstance, Converter={StaticResource BooleanToColourConverter}}" Click="instButton_Click"/>
-            <Label x:Name="Label4_Copy" Content="Rat2" Height="26" Margin="0,0,123,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
+            <Label x:Name="Label4_Copy" Content="Rat2" Height="26" Margin="0,0,55,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="122"/>
         </Grid>
         <Grid x:Name="rat3Grid" HorizontalAlignment="Left" Height="61" Margin="676,175,0,0" VerticalAlignment="Top" Width="187" Visibility="{Binding MyClient.Rat3.RatName, Converter={converter:EmptyStringToVisibilityConverter}}">
             <Button x:Name="FrButton_Copy1" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="{Binding MyClient.Rat3.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="frButton_Click"/>
@@ -123,7 +130,7 @@
             <Button x:Name="SysButton_Copy1" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat3.InSystem, Converter={StaticResource BooleanToColourConverter}}" Click="sysButton_Click"/>
             <Button x:Name="BcnButton_Copy1" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat3.Beacon, Converter={StaticResource BooleanToColourConverter}}" Click="bcnButton_Click"/>
             <Button x:Name="InstButton_Copy1" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat3.InInstance, Converter={StaticResource BooleanToColourConverter}}" Click="instButton_Click"/>
-            <Label x:Name="Label4_Copy1" Content="Rat3" Height="26" Margin="0,0,123,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
+            <Label x:Name="Label4_Copy1" Content="Rat3" Height="26" Margin="0,0,55,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="122"/>
         </Grid>
         <Grid x:Name="selfRatGrid" HorizontalAlignment="Left" Height="61" Margin="676,48,0,0" VerticalAlignment="Top" Width="187">
             <Button x:Name="FrButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="{Binding MyClient.Self.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="frButton_Click"/>
@@ -131,7 +138,7 @@
             <Button x:Name="SysButton" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Self.InSystem, Converter={StaticResource BooleanToColourConverter}}" Click="sysButton_Click"/>
             <Button x:Name="BcnButton" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Self.Beacon, Converter={StaticResource BooleanToColourConverter}}" Click="bcnButton_Click"/>
             <Button x:Name="InstButton" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Self.InInstance, Converter={StaticResource BooleanToColourConverter}}" Click="instButton_Click"/>
-            <Label x:Name="Label4" Content="Rat1" Height="26" Margin="0,0,123,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54"/>
+            <Label x:Name="SelfNameLabel" Content="{Binding MyPlayer.RatName}" Height="26" Margin="0,0,55,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="122"/>
         </Grid>
     </Grid>
 </Window>
