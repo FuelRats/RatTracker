@@ -17,11 +17,7 @@ namespace RatTracker_WPF
 {
 
     /*
-     * APIWorker is the HTTP based API query mechanism for RatTracker. As opposed to the WS version, it
-     * hits HTTP endpoints on the API. This is primarily used to asynchronously fetch long JSON without
-     * tieing up the WS connection, or if the WS connection is unavailable.
-     * (And because Trezy still hasn't made WS do much more than be an echo chamber. See, it's still
-     * all his fault. :P )
+     * APIWorker provides both HTTP and Websocket connection to the API. 
      */
 
     class APIWorker
@@ -29,6 +25,7 @@ namespace RatTracker_WPF
         private static readonly ILog logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private bool stopping = false;
         public WebSocket ws;
+		private bool failing = false;
         /*
          * queryAPI sends a GET request to the API. Kindasorta deprecated behavior.
          */
@@ -117,13 +114,20 @@ namespace RatTracker_WPF
             logger.Debug("Serialized TPA data: " + json);
             ws.Send(json);
         }
-        private void websocket_Client_Closed(object sender, EventArgs e)
+        private async void websocket_Client_Closed(object sender, EventArgs e)
         {
             if (stopping == true)
                 logger.Info("Disconnected from API WS server, stopping...");
             else {
+				if (failing == true)
+				{
+					logger.Info("API reconnect failed. Waiting...");
+					await Task.Delay(5000);
+					OpenWs();
+				}
                 logger.Info("API WS Connection closed unexpectedly. Reconnecting...");
-                OpenWs();
+				failing = true;
+				OpenWs();
             }
         }
 
@@ -162,6 +166,7 @@ namespace RatTracker_WPF
 
         public void websocketClient_Opened(object sender, EventArgs e)
         {
+			failing = false;
             logger.Info("Websocket: Connection to API established.");
             SubscribeStream("0xDEADBEEF");
 			APIQuery login = new APIQuery();
