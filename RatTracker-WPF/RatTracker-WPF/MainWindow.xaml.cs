@@ -33,6 +33,7 @@ using WebSocket4Net;
 using RatTracker_WPF.Models.EDDB;
 using System.Windows.Data;
 using System.Collections.ObjectModel;
+using Microsoft.ApplicationInsights.DataContracts;
 
 namespace RatTracker_WPF
 {
@@ -97,7 +98,7 @@ namespace RatTracker_WPF
 			if (ParseEDAppConfig())
 				CheckLogDirectory();
 			else
-				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Check your settings, and restart the app.");
+				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
 			logger.Debug("Initialize API...");
 			InitAPI();
 			logger.Debug("Initialize EDDB...");
@@ -108,6 +109,18 @@ namespace RatTracker_WPF
 			
 		}
 
+		public void Reinitialize()
+		{
+			logger.Debug("Reinitializing application...");
+			if (ParseEDAppConfig())
+				CheckLogDirectory();
+			else
+				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
+			InitAPI();
+			InitEDDB();
+			InitPlayer();
+			logger.Debug("Reinitialization complete.");
+		}
 		#region PropertyNotifiers
 		public ObservableCollection<Datum> ItemsSource { get; } = new ObservableCollection<Datum>();
 		public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
@@ -196,7 +209,8 @@ namespace RatTracker_WPF
 			try
 			{
 				logger.Info("Initializing API connection...");
-				apworker = new APIWorker();
+				if(apworker==null)
+					apworker = new APIWorker();
 				apworker.InitWs();
 				apworker.OpenWs();
 				apworker.ws.MessageReceived += websocketClient_MessageReceieved;
@@ -219,7 +233,8 @@ namespace RatTracker_WPF
 		private async void InitEDDB()
 		{
 			AppendStatus("Initializing EDDB.");
-			eddbworker = new EDDBData();
+			if(eddbworker==null)
+				eddbworker = new EDDBData();
 			string status = await eddbworker.UpdateEDDBData();
 			AppendStatus("EDDB: " + status);
 		}
@@ -331,6 +346,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Fatal("Exception in WSClient_MessageReceived: " + ex.Message);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -360,6 +376,7 @@ namespace RatTracker_WPF
 		public bool ParseEDAppConfig()
 		{
 			string edProductDir = Settings.Default.EDPath + "\\Products";
+			logger.Debug("Looking for Product dirs in " + Settings.Default.EDPath + "\\Products");
 			try {
 				if (!Directory.Exists(edProductDir))
 				{
@@ -370,6 +387,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Fatal("Error during edProductDir check?!" + ex.Message);
+				tc.TrackException(ex);
 			}
 			foreach (string dir in Directory.GetDirectories(edProductDir))
 			{
@@ -428,6 +446,7 @@ namespace RatTracker_WPF
 				catch (Exception ex)
 				{
 					logger.Fatal("Exception in AppConfigReader!", ex);
+					tc.TrackException(ex);
 					return false;
 				}
 			}
@@ -528,6 +547,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Fatal("XML Parsing exception:" + ex.Message);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -578,7 +598,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Fatal("Error in parseWingInvite: " + ex.Message);
-				tc.TrackTrace("ParseWingException");
+				tc.TrackException(ex);
 			}
 		}
 
@@ -595,13 +615,14 @@ namespace RatTracker_WPF
 
 		private void CheckLogDirectory()
 		{
+			logger.Debug("Checking log directories.");
 			try {
 				if (Thread.CurrentThread.Name == null)
 				{
 					Thread.CurrentThread.Name = "MainThread";
 				}
 
-				if (logDirectory == null | logDirectory == "")
+				if (Settings.Default.NetLogPath == null | Settings.Default.NetLogPath == "")
 				{
 					MessageBox.Show("Error: No log directory is specified, please do so before attempting to go on duty.");
 					return;
@@ -614,11 +635,11 @@ namespace RatTracker_WPF
 					return;
 				}
 
-				AppendStatus("Beginning to watch " + logDirectory + " for changes...");
+				AppendStatus("Beginning to watch " + Settings.Default.NetLogPath + " for changes...");
 				if (watcher == null)
 				{
 					watcher = new FileSystemWatcher();
-					watcher.Path = logDirectory;
+					watcher.Path = Settings.Default.NetLogPath;
 					watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName |
 											NotifyFilters.DirectoryName | NotifyFilters.Size;
 					watcher.Filter = "*.log";
@@ -628,7 +649,7 @@ namespace RatTracker_WPF
 					watcher.Renamed += OnRenamed;
 					watcher.EnableRaisingEvents = true;
 				}
-				DirectoryInfo tempDir = new DirectoryInfo(logDirectory);
+				DirectoryInfo tempDir = new DirectoryInfo(Settings.Default.NetLogPath);
 				logFile = (from f in tempDir.GetFiles("netLog*.log") orderby f.LastWriteTime descending select f).First();
 				AppendStatus("Started watching file " + logFile.FullName);
 				logger.Debug("Watching file: " + logFile.FullName);
@@ -639,6 +660,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Debug("Exception in CheckLogDirectory! " + ex.Message);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -808,7 +830,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Fatal("Exception in checkClientConn:" + ex.Message);
-				tc.TrackTrace("CheckClientConnException");
+				tc.TrackException(ex);
 			}
 		}
 
@@ -850,7 +872,8 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Fatal("Exception in readLogFile: ", ex);
-				tc.TrackTrace("readLogFile exception!");
+				logger.Debug("StackTrace: "+ ex.StackTrace);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -1003,6 +1026,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Debug("Exception in ParseLine: " + ex.Message);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -1085,6 +1109,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Fatal("Exception in triggerSystemChange: " + ex.Message);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -1122,13 +1147,14 @@ namespace RatTracker_WPF
 				dutymessage.action = "OnDuty:update";
 				dutymessage.data = new Dictionary<string, string>();
 				dutymessage.data.Add("OnDuty", MyPlayer.OnDuty.ToString());
-				dutymessage.data.Add("RatID", myplayer.RatID.ToString());
+				dutymessage.data.Add("RatID", myplayer.RatID.FirstOrDefault().ToString());
 				dutymessage.data.Add("currentSystem", MyPlayer.CurrentSystem);
 				apworker.SendTPAMessage(dutymessage);
 			}
 			catch (Exception ex)
 			{
 				logger.Fatal("Exception in sendTPAMessage: " + ex.Message);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -1157,6 +1183,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Debug("Netlog exception: " + ex.Message);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -1215,6 +1242,7 @@ namespace RatTracker_WPF
 			catch(Exception ex)
 			{
 				logger.Fatal("Exception in InitRescueGrid: " + ex.Message);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -1259,6 +1287,7 @@ namespace RatTracker_WPF
 			catch(Exception ex)
 			{
 				logger.Fatal("Exception in RescueGrid_SelectionChanged: " + ex.Message);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -1287,6 +1316,7 @@ namespace RatTracker_WPF
 			catch(Exception ex)
 			{
 				logger.Fatal("Exception in GetMissingRats: " + ex.Message);
+				tc.TrackException(ex);
 			}
 		}
 
@@ -1306,6 +1336,7 @@ namespace RatTracker_WPF
 			catch(Exception ex)
 			{
 				logger.Fatal("Exception in GetRatName: " + ex.Message);
+				tc.TrackException(ex);
 				return "Unknown rat";
 			}
 		}
@@ -1355,6 +1386,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Fatal("Exception in QueryEDSMSystem: " + ex.Message);
+				tc.TrackException(ex);
 				return new List<EdsmSystem>() {};
 			}
 		}
@@ -1390,6 +1422,7 @@ namespace RatTracker_WPF
 			catch(Exception ex)
 			{
 				logger.Fatal("Exception in GetCandidateSystems: " + ex.Message);
+				tc.TrackException(ex);
 				return new List<EdsmSystem>();
 			}
 		}
@@ -1532,6 +1565,7 @@ namespace RatTracker_WPF
 			catch(Exception ex)
 			{
 				logger.Fatal("Exception in CalculateEdsmDistance: " + ex.Message);
+				tc.TrackException(ex);
 				return -1;
 			}
 		}
@@ -1573,6 +1607,7 @@ namespace RatTracker_WPF
 							overlay.Left = mymonitor.Bounds.Right - overlay.Width;
 							overlay.Top = mymonitor.Bounds.Top;
 							overlay.Topmost = true;
+							logger.Debug("Overlay coordinates set to " + overlay.Left + " x " + overlay.Top);
 							HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)PresentationSource.FromVisual(Application.Current.MainWindow));
 							hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
 							hotKeyHost.HotKeyPressed += handleHotkeyPress;
@@ -1597,8 +1632,9 @@ namespace RatTracker_WPF
 					hotKeyHost.HotKeyPressed += handleHotkeyPress;
 				}
 			}
-			else
+			else {
 				overlay.Close();
+			}
 		}
 
 		private void handleHotkeyPress(object sender, HotKeyEventArgs e)
@@ -1701,7 +1737,7 @@ namespace RatTracker_WPF
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
-			if (frmsg.action != null && ratState.FriendRequest != RequestState.Recieved)
+			if (frmsg.action != null && ratState.WingRequest != RequestState.Recieved)
 				apworker.SendTPAMessage(frmsg);
 		}
 
@@ -1717,7 +1753,7 @@ namespace RatTracker_WPF
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
-			if (ratState.InSystem)
+			if (ratState.InSystem==true)
 			{
 				AppendStatus("Sending System acknowledgement.");
 				frmsg.data.Add("ArrivedSystem", "true");
@@ -1727,7 +1763,7 @@ namespace RatTracker_WPF
 				AppendStatus("Cancelling System status.");
 				frmsg.data.Add("ArrivedSystem", "false");
 			}
-			if (frmsg.action != null && ratState.FriendRequest != RequestState.Recieved)
+			if (frmsg.action != null)
 				apworker.SendTPAMessage(frmsg);
 			ratState.InSystem = !ratState.InSystem;
 		}
@@ -1744,7 +1780,7 @@ namespace RatTracker_WPF
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
-			if (ratState.Beacon)
+			if (ratState.Beacon==true)
 			{
 				AppendStatus("Sending Beacon acknowledgement.");
 				frmsg.data.Add("BeaconSpotted", "true");
@@ -1771,7 +1807,7 @@ namespace RatTracker_WPF
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
-			if (ratState.InInstance)
+			if (ratState.InInstance==true)
 			{
 				AppendStatus("Sending Good Instance message.");
 				frmsg.data.Add("InstanceSuccessful", "true");
@@ -1906,7 +1942,7 @@ namespace RatTracker_WPF
 			jumpmessage.data.Add("CallJumps", Math.Ceiling(distance.distance/myplayer.JumpRange).ToString());
 			jumpmessage.data.Add("RescueID", myrescue._id);
 			jumpmessage.data.Add("RatID", myplayer.RatID.FirstOrDefault());
-			jumpmessage.data.Add("Lightyears", distance.ToString());
+			jumpmessage.data.Add("Lightyears", distance.distance.ToString());
 			jumpmessage.data.Add("SourceCertainty", distance.sourcecertainty);
 			jumpmessage.data.Add("DestinationCertainty", distance.targetcertainty);
 			apworker.SendTPAMessage(jumpmessage);
