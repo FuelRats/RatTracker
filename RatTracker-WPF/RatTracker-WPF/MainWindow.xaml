@@ -49,7 +49,7 @@
                     <MenuItem/>
                 </MenuItem>
                 <MenuItem Header="Settings" Click="MenuItem_Click"/>
-                <MenuItem Header="DispatchInterface" Click="MenuItem_Click_1"/>
+                <MenuItem Header="DispatchInterface" Click="MenuItem_Click_1" Visibility="Collapsed"/>
                 <MenuItem x:Name="OverlayMenu" Header="Overlay" Click="OverlayMenu_Click"/>
             </Menu>
             <Image x:Name="StatusImage" HorizontalAlignment="Left" Margin="10,262,0,41" Width="29" Source="Resources/green_light.png" Panel.ZIndex="10" Grid.Row="1" Grid.RowSpan="2"/>
