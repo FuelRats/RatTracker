@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Ookii.Dialogs.Wpf;
+using RatTracker_WPF;
 
 namespace RatTracker_WPF
 {
@@ -20,7 +21,7 @@ namespace RatTracker_WPF
     /// </summary>
     public partial class wndSettings : Window
     {
-        public wndSettings()
+		public wndSettings()
         {
             InitializeComponent();
 			PopulateMonitors();
@@ -63,6 +64,8 @@ namespace RatTracker_WPF
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
             Properties.Settings.Default.Save();
+			Nullable<bool> result = true;
+			this.DialogResult = result;
             this.Close();
         }
 
@@ -76,6 +79,7 @@ namespace RatTracker_WPF
 			float myrange;
 			if (float.TryParse(textBox1.Text, out myrange))
 				Properties.Settings.Default.JumpRange = myrange;
+			
 		}
 	}
 }

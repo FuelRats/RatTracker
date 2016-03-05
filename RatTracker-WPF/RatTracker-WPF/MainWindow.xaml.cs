@@ -1348,7 +1348,14 @@ namespace RatTracker_WPF
 		private void MenuItem_Click(object sender, RoutedEventArgs e)
 		{
 			wndSettings swindow = new wndSettings();
-			swindow.Show();
+			Nullable<bool> result = swindow.ShowDialog();
+			if(result==true)
+			{
+				AppendStatus("Reinitializing application due to configuration change...");
+				Reinitialize();
+				return;
+			}
+			AppendStatus("No changes made, not reinitializing.");
 		}
 
 		#region EDSM
