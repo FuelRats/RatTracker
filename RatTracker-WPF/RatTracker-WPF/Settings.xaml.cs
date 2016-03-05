@@ -63,7 +63,17 @@ namespace RatTracker_WPF
 
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
-            Properties.Settings.Default.Save();
+			float myrange;
+			if (float.TryParse(textBox1.Text, out myrange))
+				Properties.Settings.Default.JumpRange = myrange;
+			else
+			{
+				MessageBoxResult res =
+							MessageBox.Show(
+								"Your jump range is not valid. Please specify it as a number with up to two decimal points.");
+				return;
+			}
+			Properties.Settings.Default.Save();
 			Nullable<bool> result = true;
 			this.DialogResult = result;
             this.Close();
@@ -76,10 +86,6 @@ namespace RatTracker_WPF
 
 		private void textBox1_TextChanged(object sender, TextChangedEventArgs e)
 		{
-			float myrange;
-			if (float.TryParse(textBox1.Text, out myrange))
-				Properties.Settings.Default.JumpRange = myrange;
-			
 		}
 	}
 }
