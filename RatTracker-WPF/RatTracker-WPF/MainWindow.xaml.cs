@@ -836,6 +836,11 @@ namespace RatTracker_WPF
 
 		private void ReadLogfile(string lf)
 		{
+			if (!File.Exists(lf))
+			{
+				AppendStatus("RatTracker tried to read a logfile that does not exist. Are you sure your path settings are correct?");
+				return;
+			}
 			try
 			{
 				using (
@@ -1061,6 +1066,8 @@ namespace RatTracker_WPF
 							logger.Debug("Got definite match in first pos, disregarding extra hits:" + firstsys.Name + " X:" +
 										firstsys.Coords.X + " Y:" + firstsys.Coords.Y + " Z:" + firstsys.Coords.Z);
 						//AppendStatus("Got M:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
+						if(myTravelLog==null)
+							myTravelLog=new Collection<TravelLog>();
 						myTravelLog.Add(new TravelLog() {system = firstsys, lastvisited = DateTime.Now});
 						logger.Debug("Added system to TravelLog.");
 						// Should we add systems even if they don't exist in EDSM? Maybe submit them?
