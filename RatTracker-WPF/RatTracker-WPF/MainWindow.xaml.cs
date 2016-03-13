@@ -600,7 +600,7 @@ namespace RatTracker_WPF
 							/* If the friend request matches the client name, store his session ID. */
 							MyClient.ClientId = wingdata.Element("commander_id").Value;
 							MyClient.SessionId = wingdata.Element("session_runid").Value;
-							MyClient.Self.WingRequest = RequestState.Accepted;
+							MyClient.Self.WingRequest = RequestState.Recieved;
 							TPAMessage wrmsg = new TPAMessage();
 							wrmsg.action = "WingRequest:update";
 							wrmsg.data = new Dictionary<string, string>();
@@ -1098,8 +1098,8 @@ namespace RatTracker_WPF
 							sysmsg.action = "SysArrived:update";
 							sysmsg.data = new Dictionary<string, string>();
 							sysmsg.data.Add("SysArrived", "true");
-							sysmsg.data.Add("RatID", "abcdef1234567890");
-							sysmsg.data.Add("RescueID", "def1234567890");
+							sysmsg.data.Add("RatID", myplayer.RatID.FirstOrDefault());
+							sysmsg.data.Add("RescueID", myrescue.id);
 							apworker.SendTPAMessage(sysmsg);
 							MyClient.Self.InSystem = true;
 						}
@@ -1535,7 +1535,7 @@ namespace RatTracker_WPF
 				if (source == null)
 				{
 					/* Dafuq? */
-					logger.Fatal("Null value passed as source to CalculateEDSMDistance!");
+					logger.Fatal("Null value passed as source to CalculateEDSMDistance! Falling back to Fuelum as source.");
 					source = "Fuelum";
 				}
 				if (source.Length < 3)
@@ -1641,6 +1641,7 @@ namespace RatTracker_WPF
 							logger.Debug("Overlay coordinates set to " + overlay.Left + " x " + overlay.Top);
 							HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)PresentationSource.FromVisual(Application.Current.MainWindow));
 							hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
+							hotKeyHost.AddHotKey(new CustomHotKey("CopyClientSystemname", Key.C, ModifierKeys.Control | ModifierKeys.Alt, true));
 							hotKeyHost.HotKeyPressed += handleHotkeyPress;
 
 						}
