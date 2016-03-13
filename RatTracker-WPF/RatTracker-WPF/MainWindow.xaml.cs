@@ -557,6 +557,10 @@ namespace RatTracker_WPF
 
 				AppendStatus("Parsed " + count + " friends in FRXML.");
 			}
+			catch (System.Xml.XmlException ex)
+			{
+				logger.Fatal("XML Parsing exception - Probably netlog overflow. " + ex.Message);
+			}
 			catch (Exception ex)
 			{
 				logger.Fatal("XML Parsing exception:" + ex.Message);
@@ -747,7 +751,7 @@ namespace RatTracker_WPF
 						if (line.Contains("ConnectToServerActivity:StartRescueServer"))
 						{
 							AppendStatus(
-								"E:D has established a connection and client is in main menu. Ending early netlog parse.");
+								"Client connectivity parsing complete.");
 							stopSnooping = true;
 						}
 					}
@@ -1007,7 +1011,7 @@ namespace RatTracker_WPF
 					AppendStatus("Wing established, opening voice comms.");
 					//voice.Speak("Wing established.");
 					Dispatcher disp = Dispatcher;
-					disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => WrButton.Background = Brushes.Green));
+					MyClient.Self.WingRequest = RequestState.Accepted;
 				}
 
 				if (line.Contains("ListenResponse->Listening (SUCCESS: User has responded via local talkchannel)"))
