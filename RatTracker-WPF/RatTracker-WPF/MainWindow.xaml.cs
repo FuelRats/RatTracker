@@ -380,8 +380,20 @@ namespace RatTracker_WPF
 			try {
 				if (!Directory.Exists(edProductDir))
 				{
-					logger.Fatal("Couldn't find E:D product directory, aborting AppConfig parse.");
-					return false;
+					logger.Fatal("Couldn't find E:D product directory, looking for Windows 10 installation...");
+					edProductDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\Local\\Frontier_Developments\\"; //Attempt Windows 10 path.
+					if (!Directory.Exists(edProductDir))
+					{
+						logger.Fatal("Couldn't find E:D product directory. Aborting AppConfig parse. You must set the path manually in settings.");
+						return false;
+					}
+					else
+					{
+						logger.Debug("Found Windows 10 installation. Setting application paths...");
+						Settings.Default.EDPath = edProductDir;
+						Settings.Default.NetLogPath = edProductDir + "\\logs";
+						Settings.Default.Save();
+					}
 				}
 			}
 			catch (Exception ex)
