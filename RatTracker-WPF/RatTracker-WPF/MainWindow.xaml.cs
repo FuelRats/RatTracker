@@ -381,7 +381,8 @@ namespace RatTracker_WPF
 				if (!Directory.Exists(edProductDir))
 				{
 					logger.Fatal("Couldn't find E:D product directory, looking for Windows 10 installation...");
-					edProductDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\Local\\Frontier_Developments\\"; //Attempt Windows 10 path.
+					edProductDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\Frontier_Developments\\Products"; //Attempt Windows 10 path.
+					logger.Debug("Looking in " + edProductDir);
 					if (!Directory.Exists(edProductDir))
 					{
 						logger.Fatal("Couldn't find E:D product directory. Aborting AppConfig parse. You must set the path manually in settings.");
