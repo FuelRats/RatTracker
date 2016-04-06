@@ -46,7 +46,7 @@
             <TextBox x:Name="StatusDisplay" Margin="10,10,279,40" TextWrapping="Wrap" Text="Status display" IsReadOnlyCaretVisible="True" VerticalScrollBarVisibility="Visible" Grid.Row="1" Grid.ColumnSpan="2"/>
             <Menu x:Name="MenuCopy" Height="19" VerticalAlignment="Top" Grid.ColumnSpan="2">
                 <MenuItem x:Name="MainMenu1" Header="Main Menu" Click="Main_Menu_Click">
-                    <MenuItem/>
+                    <MenuItem x:Name="SendErrorReport" Header="Send error report" Click="ErrorReportClick"/>
                 </MenuItem>
                 <MenuItem Header="Settings" Click="MenuItem_Click"/>
                 <MenuItem Header="DispatchInterface" Click="MenuItem_Click_1" Visibility="Collapsed"/>

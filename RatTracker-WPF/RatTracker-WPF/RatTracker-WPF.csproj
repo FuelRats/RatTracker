@@ -35,7 +35,7 @@
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>index.html</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <ApplicationRevision>38</ApplicationRevision>
+    <ApplicationRevision>39</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -163,6 +163,9 @@
       <DependentUpon>DispatchMain.xaml</DependentUpon>
     </Compile>
     <Compile Include="EDDBData.cs" />
+    <Compile Include="ErrorReporter.xaml.cs">
+      <DependentUpon>ErrorReporter.xaml</DependentUpon>
+    </Compile>
     <Compile Include="GlobalHotkey.cs" />
     <Compile Include="Models\Api\APIQuery.cs" />
     <Compile Include="Models\Api\TPAMessage.cs" />
@@ -203,6 +206,10 @@
       <DependentUpon>Settings.xaml</DependentUpon>
     </Compile>
     <Page Include="DispatchInterface\DispatchMain.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ErrorReporter.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

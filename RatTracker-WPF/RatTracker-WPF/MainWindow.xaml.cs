@@ -672,7 +672,7 @@ namespace RatTracker_WPF
 				logger.Debug("Watching file: " + logFile.FullName);
 				CheckClientConn(logFile.FullName);
 				ReadLogfile(logFile.FullName);
-				myTravelLog = new List<TravelLog>();
+				myTravelLog = new Collection<TravelLog>();
 			}
 			catch (Exception ex)
 			{
@@ -1682,7 +1682,12 @@ namespace RatTracker_WPF
 			if (e.HotKey.Key == Key.C)
 			{
 				if (myClient.ClientSystem != null)
+				{
 					System.Windows.Clipboard.SetText(myClient.ClientSystem);
+					AppendStatus("Client system copied to clipboard.");
+				}
+				else
+					AppendStatus("No active rescue, copy to clipboard aborted.");
 			}
 		}
 
@@ -2032,6 +2037,17 @@ namespace RatTracker_WPF
 				return;
 			}
 			AppendStatus("Unable to find a candidate system for location " + MyClient.ClientSystem);
+		}
+
+		private void ErrorReportClick(object sender, RoutedEventArgs e)
+		{
+			ErrorReporter errwnd= new ErrorReporter();
+			Nullable<bool> result = errwnd.ShowDialog();
+			if (result == true)
+			{
+				AppendStatus("Application bug report sent.");
+				return;
+			}
 		}
 	}
 	public static class StringBuilderExtensions
