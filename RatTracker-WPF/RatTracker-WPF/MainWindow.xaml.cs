@@ -1898,7 +1898,7 @@ namespace RatTracker_WPF
 			}
 		}
 
-		private async void button_Click_1(object sender, RoutedEventArgs e)
+		private async void runtests_button_click(object sender, RoutedEventArgs e)
 		{
 			//TriggerSystemChange("Lave");
 			//TriggerSystemChange("Blaa Hypai AI-I b26-1");
@@ -1941,12 +1941,36 @@ namespace RatTracker_WPF
 			//logindata.Add(new KeyValuePair<string, string>("password", "password"));
 			apworker.SendWs("rescues:read", logindata);
 			InitRescueGrid();
-			AppendStatus("Known RatIDs for self:");
-			foreach (string id in MyPlayer.RatID)
+			if (MyPlayer.RatID != null)
 			{
-				AppendStatus(id);
+				AppendStatus("Known RatIDs for self:");
+				foreach (string id in MyPlayer.RatID)
+				{
+					AppendStatus(id);
+				}
 			}
+			/* Start Oauth tests 
+			SentinelClientSettings oauthsettings = new SentinelClientSettings(new Uri("http://orthanc.localecho.net:7070/"), "5706205e361a6bef133f7183", "69d425a37f31b04499f8dcece6f2a5c782dc2f0b8b234975","RatTracker://home",new TimeSpan(300000));
+			SentinelOAuthClient oauthclient = new SentinelOAuthClient(oauthsettings);
+			AccessTokenResponse res=await oauthclient.Authenticate();
+			UserAgentClient o2c = new UserAgentClient()
+
+			AppendStatus("Got token: "+res.AccessToken+" + "+res.IdToken+", type "+res.TokenType);
+			*/
 		}
+
+
+	/*	private InMemoryTokenManager GetAccessTokenFromOwnAuthSrv()
+		{
+			var server = new AuthorizationServerDescription();
+			server.TokenEndpoint = new Uri("http://orthanc.localecho.net:7070/oauth2/token");
+			server.ProtocolVersion = DotNetOpenAuth.OAuth2.ProtocolVersion.V20;
+
+			var client = new UserAgentClient(server, clientIdentifier: "RatTracker");
+			client.ClientCredentialApplicator = ClientCredentialApplicator.PostParameter("data!");
+			var token = client.ExchangeUserCredentialForToken("kenneaal@gmail.com", "794aayp", new[] { "rattracker://main" });
+			return token;
+		} */
 
 		public void CompleteRescueUpdate(string json)
 		{

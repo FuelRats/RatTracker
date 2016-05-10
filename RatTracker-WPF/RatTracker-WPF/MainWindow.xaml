@@ -105,7 +105,7 @@
                     <Label x:Name="SystemNameLabel" Content="{Binding MyPlayer.CurrentSystem}" HorizontalAlignment="Left" Height="24" Margin="10,10,0,0" VerticalAlignment="Top" Width="220"/>
                 </Grid>
             </GroupBox>
-            <Button x:Name="button" Content="Run tests" Grid.Column="1" HorizontalAlignment="Left" Height="21" Margin="335,246,0,0" Grid.Row="1" VerticalAlignment="Top" Width="95" Click="button_Click_1"/>
+            <Button x:Name="button" Content="Run tests" Grid.Column="1" HorizontalAlignment="Left" Height="21" Margin="335,246,0,0" Grid.Row="1" VerticalAlignment="Top" Width="95" Click="runtests_button_click"/>
             <GroupBox x:Name="YourRescueBox" Grid.Column="1" Header="Your Rescue" HorizontalAlignment="Left" Height="235" Margin="335,28,0,0" VerticalAlignment="Top" Width="253">
                 <Grid HorizontalAlignment="Left" Height="219" Margin="1,0,-6,-6" VerticalAlignment="Top" Width="246">
                     <Button x:Name="RatButton" Content="Rats" Height="19" Margin="0,190,201,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="35"/>

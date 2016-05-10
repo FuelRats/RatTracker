@@ -5,12 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RatTracker_WPF.DispatchInterface"
         mc:Ignorable="d"
-        Title="DispatchMain" Height="600" Width="800" MinWidth="800" MinHeight="600" SizeChanged="Window_SizeChanged" Loaded="Window_Loaded">
-	<Grid>
-		<ListBox x:Name="CasesListbox" HorizontalAlignment="Stretch" Margin="10,22,599,20" VerticalAlignment="Stretch"/>
-		<Label x:Name="label" Content="Active cases" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top"/>
-		<Label x:Name="label1" Content="debug stuff&#xD;&#xA;" HorizontalAlignment="Left" Margin="632,4,0,0" VerticalAlignment="Top" Width="150" Height="27"/>
-		<Button x:Name="button" Content="Make some testcases" HorizontalAlignment="Left" Margin="632,36,0,0" VerticalAlignment="Top" Width="137" Click="button_Click"/>
+        Title="DispatchMain" Height="600" Width="800" MinWidth="800" MinHeight="600" SizeChanged="Window_SizeChanged" Loaded="Window_Loaded" Background="Black">
+    <Grid>
+        <Label x:Name="label" Content="Active cases" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}"/>
+        <Label x:Name="label1" Content="debug stuff&#xD;&#xA;" HorizontalAlignment="Left" Margin="632,4,0,0" VerticalAlignment="Top" Width="150" Height="27"/>
+        <Button x:Name="button" Content="Make some testcases" HorizontalAlignment="Left" Margin="645,0,0,10" VerticalAlignment="Bottom" Width="137" Click="button_Click"/>
+        <UniformGrid Margin="10,31,35.901,86.78" Rows="5" Columns="3">
+            <Expander x:Name="expander" Header="DerryBear" Margin="17.021,6.556,4.019,0" Foreground="{DynamicResource brushEliteGreen}" Background="Black">
+                <Grid Background="Black"/>
+            </Expander>
+        </UniformGrid>
 
-	</Grid>
+    </Grid>
 </Window>

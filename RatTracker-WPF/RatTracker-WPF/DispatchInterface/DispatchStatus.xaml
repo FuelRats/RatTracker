@@ -1,0 +1,23 @@
+﻿<Window x:Class="RatTracker_WPF.DispatchInterface.DispatchStatus"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RatTracker_WPF.DispatchInterface"
+        mc:Ignorable="d"
+        Title="DispatchStatus" Height="302.837" Width="404.255" Background="Black" Foreground="{DynamicResource brushEliteOrange}" ResizeMode="NoResize">
+    <Grid>
+        <Label x:Name="TimeLabel" Content="18:20:21 UTC" Height="25.702" Margin="143.815,10,175.729,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Center"/>
+        <Label x:Name="TimeLabel_Copy" Content="Active Cases" Height="25.702" Margin="10,38.014,0,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Left"/>
+        <Label x:Name="TimeLabel_Copy1" Content="3 (0)" Height="25.702" Margin="133.402,38.014,0,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Left"/>
+        <Label x:Name="TimeLabel_Copy2" Content="Rats Active" Height="25.702" Margin="10,68.716,0,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Left"/>
+        <Label x:Name="TimeLabel_Copy3" Content="Rats Ready" Height="25.702" Margin="0,68.716,128.952,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Right"/>
+        <Label x:Name="TimeLabel_Copy4" Content="Cases Today" Margin="0,38.014,122.352,0" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Right" Height="25.702" VerticalAlignment="Top"/>
+        <Label x:Name="TimeLabel_Copy5" Content="Dispatcher" Margin="10,99.418,0,0" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Left" Height="25.702" VerticalAlignment="Top"/>
+        <Label x:Name="TimeLabel_Copy6" Content="4" Height="25.702" Margin="133.402,68.716,0,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Left"/>
+        <Label x:Name="TimeLabel_Copy7" Content="Absolver[Dispatch]" Height="25.702" Margin="133.402,99.418,0,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Left"/>
+        <Label x:Name="TimeLabel_Copy8" Content="24 (3)" Height="25.702" Margin="0,38.014,83.885,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Right"/>
+        <Label x:Name="TimeLabel_Copy9" Content="6" Height="25.702" Margin="0,68.716,83.885,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Right"/>
+
+    </Grid>
+</Window>
