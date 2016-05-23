@@ -174,6 +174,7 @@ namespace RatTracker_WPF
 			login.data = new Dictionary<string, string>();
 			login.data.Add("email", Properties.Settings.Default.APIUsername);
             SendQuery(login);
+			logger.Info("Sent login for " + Properties.Settings.Default.APIUsername);
             //TODO: Put stream subscription messages here when Mecha goes live. Do we want to listen to ourselves?
         }
 		public void SubscribeStream(string applicationId)

@@ -275,18 +275,23 @@ namespace RatTracker_WPF
 						AppendStatus("Test 3PA data from WS receieved: " + realdata);
 						break;
 					case "users:read":
-						if (meta.count > 0)
-						{
+						logger.Info("Parsing login information..."+meta.count+" elements");
+						logger.Debug("Raw: " + realdata[0]);
+							
 							AppendStatus("Got user data for " + realdata[0].email);
 							MyPlayer.RatID = new List<string>();
-							foreach (string id in realdata[0].CMDRs)
+							foreach (dynamic cmdrdata in realdata[0].CMDRs)
 							{
-								AppendStatus("RatID " + id + " added to identity list.");
-								MyPlayer.RatID.Add(id);
+								AppendStatus("RatID " + cmdrdata._id + " added to identity list.");
+								MyPlayer.RatID.Add(cmdrdata._id.ToString());
 							}
-							myplayer.RatName = await GetRatName(MyPlayer.RatID.FirstOrDefault());
-						}
+							myplayer.RatName = await GetRatName(MyPlayer.RatID.FirstOrDefault()); // This will have to be redone when we go WS, as we can't load the variable then.
 						break;
+					case "rats:read":
+						logger.Info("Received rat identification: " + meta.count + " elements");
+						logger.Debug("Raw: " + realdata[0]);
+						break;
+
 					case "rescue:updated":
 						Datum updrescue = realdata.ToObject<Datum>();
 						Datum myrescue = rescues.Data.Where(r => r._id == updrescue._id).FirstOrDefault();

@@ -31,9 +31,6 @@ namespace RatTracker_WPF.DispatchInterface
 
 		private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
 		{
-			Thickness margin = CasesListbox.Margin;
-			margin.Right = (Width / 3) * 2;
-			CasesListbox.Margin = margin;
 		}
 
 		private void button_Click(object sender, RoutedEventArgs e)
