@@ -94,21 +94,46 @@ namespace RatTracker_WPF
 			tc.Context.Component.Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
 			tc.TrackPageView("MainWindow");
 			InitializeComponent();
+			this.Loaded += new RoutedEventHandler(Window_Loaded);
 			logger.Debug("Parsing AppConfig...");
 			if (ParseEDAppConfig())
 				CheckLogDirectory();
 			else
 				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
-			logger.Debug("Initialize API...");
-			InitAPI();
-			logger.Debug("Initialize EDDB...");
-			InitEDDB();
-			logger.Debug("Initialize player data...");
-			InitPlayer();
-			DataContext = this;
-			
 		}
+		private async void Window_Loaded(object sender, RoutedEventArgs e)
+		{
+			await DoInitialize();
+		}
+		public async Task DoInitialize()
+		{
+			BackgroundWorker APIworker = new BackgroundWorker();
+			BackgroundWorker EDDBworker = new BackgroundWorker();
+			BackgroundWorker PIworker = new BackgroundWorker();
 
+
+			APIworker.DoWork += async delegate (object s, DoWorkEventArgs args)
+			{
+				logger.Debug("Initialize API...");
+				await InitAPI();
+				return;
+			};
+			EDDBworker.DoWork += async delegate (object s, DoWorkEventArgs args)
+			{
+				logger.Debug("Initialize EDDB...");
+				await InitEDDB();
+				return;
+			};
+			PIworker.DoWork += async delegate (object s, DoWorkEventArgs args)
+			{
+				logger.Debug("Initialize player data...");
+				await InitPlayer();
+			}; 
+
+			EDDBworker.RunWorkerAsync();
+			APIworker.RunWorkerAsync();
+			PIworker.RunWorkerAsync();
+		}
 		public void Reinitialize()
 		{
 			logger.Debug("Reinitializing application...");
@@ -204,7 +229,7 @@ namespace RatTracker_WPF
 		#endregion
 
 		#region Initializers
-		private void InitAPI()
+		private async Task InitAPI()
 		{
 			try
 			{
@@ -214,14 +239,18 @@ namespace RatTracker_WPF
 				apworker.InitWs();
 				apworker.OpenWs();
 				apworker.ws.MessageReceived += websocketClient_MessageReceieved;
+				apworker.ws.Opened += websocketClient_Opened;
 			}
 			catch (Exception ex)
 			{
 				logger.Fatal("Exception in InitAPI: " + ex.Message);
 			}
 		}
-
-		public void InitPlayer()
+		private void websocketClient_Opened(object sender, EventArgs e)
+		{
+			InitRescueGrid();
+		}
+		public async Task InitPlayer()
 		{
 			if (Settings.Default.JumpRange.GetType() == typeof(float))
 				myplayer.JumpRange = Settings.Default.JumpRange;
@@ -230,7 +259,7 @@ namespace RatTracker_WPF
 			myplayer.CurrentSystem = "Fuelum";
 		}
 
-		private async void InitEDDB()
+		private async Task InitEDDB()
 		{
 			AppendStatus("Initializing EDDB.");
 			if(eddbworker==null)
@@ -913,13 +942,14 @@ namespace RatTracker_WPF
 					logger.Error("ParseLine was passed a null or empty line. This should not happen!");
 					return;
 				}
-				string reMatchSystem = ".*?(System:).*?\\(((?:[^)]+)).*?\\)";
+				// string reMatchSystem = ".*?(System:).*?\\(((?:[^)]+)).*?\\)"; // Pre-1.6/2.1 style
+				string reMatchSystem = ".*?(System:)\"(.*)?\".*?\\(((?:[^)]+)).*?\\)";
 				Match match = Regex.Match(line, reMatchSystem, RegexOptions.IgnoreCase);
 				if (match.Success)
 				{
 					if (match.Groups[2].Value == myplayer.CurrentSystem)
 						return;
-					TriggerSystemChange(match.Groups[2].Value);
+					TriggerSystemChange(match.Groups[2].Value, match.Groups[3].Value);
 				}
 
 				string reMatchPlayer = "\\{.+\\} (\\d+) x (\\d+).*\\(\\(([0-9.]+):\\d+\\)\\)Name (.+)$";
@@ -1057,7 +1087,7 @@ namespace RatTracker_WPF
 			}
 		}
 
-		private async void TriggerSystemChange(string value)
+		private async void TriggerSystemChange(string value, string coords)
 		{
 			Dispatcher disp = Dispatcher;
 			if (value == MyPlayer.CurrentSystem)
@@ -1286,10 +1316,11 @@ namespace RatTracker_WPF
 				var rats = Rats.Where(r => myrow.Rats.Contains(r.Key)).Select(r => r.Value.CmdrName).ToList();
 				var count = rats.Count;
 
+				/* TODO: Fix this. Needs to be smrt about figuring out if your own ratID is assigned. */
 				MyClient = new ClientInfo { Rescue = myrow };
 				if (count > 0)
 				{
-					MyClient.Self.RatName = rats[0];
+					MyClient.Self.RatName = rats[0]; // Nope! We have no guarantee that the first listed rat in the rescue is ourself.
 				}
 				if (count > 1)
 				{
@@ -1411,7 +1442,7 @@ namespace RatTracker_WPF
 					HttpResponseMessage response = await client.GetAsync(content.ToString());
 					response.EnsureSuccessStatusCode();
 					string responseString = response.Content.ReadAsStringAsync().Result;
-					logger.Debug("Got response: " + responseString);
+					logger.Debug("Got response: " + responseString[0-100]);
 					if (responseString == "-1")
 						return new List<EdsmSystem>() {};
 					NameValueCollection temp = new NameValueCollection();
@@ -1945,7 +1976,7 @@ namespace RatTracker_WPF
 			logindata.Add(new KeyValuePair<string, string>("open", "true"));
 			//logindata.Add(new KeyValuePair<string, string>("password", "password"));
 			apworker.SendWs("rescues:read", logindata);
-			InitRescueGrid();
+			//InitRescueGrid(); // We do this from post-API initialization now.
 			if (MyPlayer.RatID != null)
 			{
 				AppendStatus("Known RatIDs for self:");
