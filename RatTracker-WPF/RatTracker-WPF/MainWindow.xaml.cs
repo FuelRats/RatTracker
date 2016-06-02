@@ -103,9 +103,9 @@ namespace RatTracker_WPF
 		}
 		private async void Window_Loaded(object sender, RoutedEventArgs e)
 		{
-			await DoInitialize();
+			DoInitialize();
 		}
-		public async Task DoInitialize()
+		public void DoInitialize()
 		{
 			BackgroundWorker APIworker = new BackgroundWorker();
 			BackgroundWorker EDDBworker = new BackgroundWorker();
@@ -115,19 +115,19 @@ namespace RatTracker_WPF
 			APIworker.DoWork += async delegate (object s, DoWorkEventArgs args)
 			{
 				logger.Debug("Initialize API...");
-				await InitAPI();
+				InitAPI();
 				return;
 			};
 			EDDBworker.DoWork += async delegate (object s, DoWorkEventArgs args)
 			{
 				logger.Debug("Initialize EDDB...");
-				await InitEDDB();
+				InitEDDB();
 				return;
 			};
 			PIworker.DoWork += async delegate (object s, DoWorkEventArgs args)
 			{
 				logger.Debug("Initialize player data...");
-				await InitPlayer();
+				InitPlayer();
 			}; 
 
 			EDDBworker.RunWorkerAsync();
@@ -293,7 +293,7 @@ namespace RatTracker_WPF
 					case "rescues:read":
 						logger.Debug("Got a list of rescues: " + realdata);
 						rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
-						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(()=> ItemsSource.Clear()));
+						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
 						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => rescues.Data.ForEach(datum => ItemsSource.Add(datum))));
 						//await disp.BeginInvoke(DispatcherPriority.Normal,
 						//	(Action)(() => RescueGrid.ItemsSource = rescues.Data));
@@ -304,17 +304,17 @@ namespace RatTracker_WPF
 						AppendStatus("Test 3PA data from WS receieved: " + realdata);
 						break;
 					case "users:read":
-						logger.Info("Parsing login information..."+meta.count+" elements");
+						logger.Info("Parsing login information..." + meta.count + " elements");
 						logger.Debug("Raw: " + realdata[0]);
-							
-							AppendStatus("Got user data for " + realdata[0].email);
-							MyPlayer.RatID = new List<string>();
-							foreach (dynamic cmdrdata in realdata[0].CMDRs)
-							{
-								AppendStatus("RatID " + cmdrdata._id + " added to identity list.");
-								MyPlayer.RatID.Add(cmdrdata._id.ToString());
-							}
-							myplayer.RatName = await GetRatName(MyPlayer.RatID.FirstOrDefault()); // This will have to be redone when we go WS, as we can't load the variable then.
+
+						AppendStatus("Got user data for " + realdata[0].email);
+						MyPlayer.RatID = new List<string>();
+						foreach (dynamic cmdrdata in realdata[0].CMDRs)
+						{
+							AppendStatus("RatID " + cmdrdata._id + " added to identity list.");
+							MyPlayer.RatID.Add(cmdrdata._id.ToString());
+						}
+						myplayer.RatName = await GetRatName(MyPlayer.RatID.FirstOrDefault()); // This will have to be redone when we go WS, as we can't load the variable then.
 						break;
 					case "rats:read":
 						logger.Info("Received rat identification: " + meta.count + " elements");
@@ -323,19 +323,29 @@ namespace RatTracker_WPF
 
 					case "rescue:updated":
 						Datum updrescue = realdata.ToObject<Datum>();
+						if (updrescue == null)
+						{
+							logger.Debug("null rescue update object, breaking...");
+							break;
+						}
+						logger.Debug("Updrescue _ID is " + updrescue._id);
 						Datum myrescue = rescues.Data.Where(r => r._id == updrescue._id).FirstOrDefault();
 						if (myrescue == null)
+						{
+							logger.Debug("Myrescue is null in updaterescue, breaking...");
 							break;
+						}
 						if (updrescue.Open == false)
 						{
 							AppendStatus("Rescue closed: " + updrescue.Client.NickName);
+							logger.Debug("Rescue closed: " + updrescue.Client.NickName);
 							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Remove(myrescue)));
 						}
 						else
 						{
 							rescues.Data[rescues.Data.IndexOf(myrescue)] = updrescue;
 							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource[ItemsSource.IndexOf(myrescue)] = updrescue));
-							logger.Debug("Rescue updated: "+updrescue.Client.NickName);
+							logger.Debug("Rescue updated: " + updrescue.Client.NickName);
 						}
 						break;
 					case "rescue:created":
@@ -350,28 +360,29 @@ namespace RatTracker_WPF
 						nr.Line3Header = "Platform:";
 						nr.Line3Content = newrescue.Platform;
 						nr.Line4Header = "Press Ctrl-Alt-C to copy system name to clipboard";
-						if(overlay!=null)
-							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(()=> overlay.Queue_Message(nr, 30)));
+						if (overlay != null)
+							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => overlay.Queue_Message(nr, 30)));
 						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Add(newrescue))); // Maybe this works?
-						/* 
-						 * This does not work. Even if we can add the data to the collection, it seems we're not triggering the
-						 * right events to make RescueGrid update. Maybe this needs an ObservableCollection?
-						 *
-						lock (rescues)
-						/{
-							rescues.Data.Add(newrescue);
-						}
-						await disp.BeginInvoke(DispatcherPriority.Normal,
-							(Action)(() => RescueGrid.ItemsSource = rescues.Data));
-						await GetMissingRats(rescues);
-						*/
-						//await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(()=> InitRescueGrid()));
+																													   /* 
+																														* This does not work. Even if we can add the data to the collection, it seems we're not triggering the
+																														* right events to make RescueGrid update. Maybe this needs an ObservableCollection?
+																														*
+																													   lock (rescues)
+																													   /{
+																														   rescues.Data.Add(newrescue);
+																													   }
+																													   await disp.BeginInvoke(DispatcherPriority.Normal,
+																														   (Action)(() => RescueGrid.ItemsSource = rescues.Data));
+																													   await GetMissingRats(rescues);
+																													   */
+																													   //await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(()=> InitRescueGrid()));
 						break;
 					case "stream:subscribe":
 						logger.Debug("Subscribed to 3PA stream " + data.ToString());
 						break;
 					default:
 						logger.Info("Unknown API action field: " + meta.action);
+						//tc.TrackMetric("UnknownAPIField", 1, new IDictionary<string,string>["type", meta.action]);
 						break;
 				}
 				if (meta.id != null)
