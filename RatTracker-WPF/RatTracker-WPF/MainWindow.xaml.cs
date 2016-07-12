@@ -79,15 +79,57 @@ namespace RatTracker_WPF
 		private FileSystemWatcher watcher; // FSW for the Netlog directory.
 		private EDDBData eddbworker;
 		private static object _syncLock = new object();
+		private string OAuthCode;
 		#endregion
 
 		/*
 		 * Initializes the application. Starts AI telemetry, checks log directory and makes sure AppConfig is configured for proper operation.
 		 * Any pre-initialization needs to go here.
 		 */
+		private void Application_Startup(object sender, StartupEventArgs e)
+		{
+			if (e.Args.Length > 0)
+			{
+				foreach (string arg in e.Args)
+				{
+					logger.Debug("Arg: " + arg);
+				}
+			}
+		}
 		public MainWindow()
 		{
 			logger.Info("---Starting RatTracker---");
+			try
+			{
+
+
+				foreach (string arg in Environment.GetCommandLineArgs())
+				{
+					logger.Debug("Arg: " + arg);
+					if (arg.Contains("rattracker"))
+					{
+						logger.Debug("Received OAuth Token!");
+						string reMatchToken = ".*?code=(.*)?&state=preinit";
+						Match match = Regex.Match(arg, reMatchToken, RegexOptions.IgnoreCase);
+						if (match.Success)
+						{
+							logger.Debug("Token should be " + match.Groups[1]);
+							logger.Debug("We have a token, authenticate with OAuth...");
+							OAuthCode = match.Groups[1].ToString();
+						}
+						else
+						{
+							logger.Debug("Failed to match token?!!");
+						}
+					}
+				}
+			}
+			catch(Exception ex)
+			{
+				logger.Debug("Exception in token parse: "+ex.Message);
+				return;
+			}
+
 			tc.Context.Session.Id = Guid.NewGuid().ToString();
 			tc.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
 			tc.Context.User.Id = Environment.UserName.ToString();
@@ -240,6 +282,14 @@ namespace RatTracker_WPF
 				apworker.OpenWs();
 				apworker.ws.MessageReceived += websocketClient_MessageReceieved;
 				apworker.ws.Opened += websocketClient_Opened;
+				if (OAuthCode != null)
+				{
+					apworker.connectAPI(OAuthCode);
+				}
+				else
+				{
+					apworker.connectAPI();
+				}
 			}
 			catch (Exception ex)
 			{

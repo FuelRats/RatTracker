@@ -12,6 +12,8 @@ using System.Net;
 using log4net;
 using RatTracker_WPF.Models;
 using RatTracker_WPF.Models.Api;
+using System.Security.Principal;
+using System.Windows;
 
 namespace RatTracker_WPF
 {
@@ -235,13 +237,146 @@ namespace RatTracker_WPF
             //Console.WriteLine("apiGetResponse has string:" + data);
             return data;
         }
-        public bool connectAPI()
+        public async Task<String> connectAPI(params string[] code)
         {
-            /* Connect to the API here. */
-            //appendStatus("Connecting to API.");
-            return true;
-        }
-        private void submitPaperwork(string url)
+			if(Properties.Settings.Default.OAuthToken != "")
+			{
+				logger.Info("Authenticating with OAuth token...");
+				return "";
+			}
+			if (code.Length > 0)
+			{
+				logger.Debug("A code was passed to connectAPI, attempting token exchange.");
+				using (HttpClient hc = new HttpClient())
+				{
+					Auth myauth = new Auth();
+					myauth.code = code[0];
+					myauth.grant_type = "authorization_code";
+					myauth.redirect_url = "rattracker://auth";
+					string json = JsonConvert.SerializeObject(myauth);
+					logger.Debug("Passing auth JSON: " + json);
+					var content = new UriBuilder(System.IO.Path.Combine(Properties.Settings.Default.APIURL + "/oauth2/token"));
+					content.Port = Properties.Settings.Default.APIPort;
+					logger.Debug("Passing code: " + code[0]);
+					hc.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(string.Format("{0}:{1}", "RatTracker", "4e85186b4d43862f795bbe8c3ee900b0bdba7fce6501fd4c"))));
+					var query = HttpUtility.ParseQueryString(content.Query);
+					if (query == null)
+					{
+						logger.Debug("Null query in OAuth token exchange?!");
+						return "";
+					}
+					logger.Debug("Built query string:" + content.ToString());
+					var formenc = new FormUrlEncodedContent(new[]
+					{
+						new KeyValuePair<string,string>("code",code[0]),
+						new KeyValuePair<string,string>("grant_type","authorization_code"),
+						new KeyValuePair<string,string>("redirect_uri","rattracker://auth")
+					});
+					HttpResponseMessage response = await hc.PostAsync(content.ToString(), formenc).ConfigureAwait(false);
+					logger.Debug("AsyncPost sent with ConfigureAwait false.");
+					HttpContent mycontent = response.Content;
+					string data = mycontent.ReadAsStringAsync().Result;
+					logger.Debug("Got data: " + data);
+					if (data.Contains("access_token"))
+					{
+						TokenResponse token = JsonConvert.DeserializeObject<TokenResponse>(data);
+						logger.Debug("Access token received: "+token.access_token.value);
+						Properties.Settings.Default.OAuthToken = token.access_token.value;
+						Properties.Settings.Default.Save();
+						logger.Debug("Access token saved.");
+
+					}
+				}
+			}
+			/* Connect to the API here. */
+			logger.Debug("Connecting to API with Oauth.");
+			if(Properties.Settings.Default.OAuthCode != "")
+			{
+
+			}
+			ProcessStartInfo proc = new ProcessStartInfo();
+			proc.UseShellExecute = true;
+			proc.WorkingDirectory = Environment.CurrentDirectory;
+			proc.FileName = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+			proc.Verb = "runas";
+			WindowsIdentity identity = WindowsIdentity.GetCurrent();
+			WindowsPrincipal principal = new WindowsPrincipal(identity);
+/*			if (!principal.IsInRole(WindowsBuiltInRole.Administrator)){
+				if (Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(@"RatTracker\shell\open\command", true) == null)
+				{*/
+					try
+					{
+						logger.Debug("Not admin and key does not exist, requesting elevation.");
+						MessageBoxResult result = MessageBox.Show("RatTracker needs to set up a custom URL handler to handle OAuth authentication. This requires elevated privileges. Please click OK to restart RatTracker as Administrator. It will restart with normal privileges once the OAuth process is complete.", "RT Needs elevation", MessageBoxButton.YesNo, MessageBoxImage.Exclamation);
+						switch (result)
+						{
+							case MessageBoxResult.Yes:
+								Process.Start(proc);
+								Process.GetCurrentProcess().Kill();  // Die! DIEEE!!!
+								break;
+							case MessageBoxResult.No:
+								MessageBox.Show("RatTracker will not be able to connect to the API in this state! Continuing, but this will probably break RT.");
+								break;
+						}
+
+					}
+					catch
+					{
+						// Do nothing and return ...
+						return "";
+					}
+/*				}
+			} */
+			try
+			{
+				Microsoft.Win32.RegistryKey key= Microsoft.Win32.Registry.ClassesRoot;
+				key.CreateSubKey("RatTracker",true);
+				key = key.OpenSubKey("RatTracker",true);
+				key.SetValue("URL Protocol", "");
+				key.SetValue("DefaultIcon", "");
+				key.CreateSubKey("shell",true);
+				key = key.OpenSubKey("shell",true);
+				key.CreateSubKey("open",true);
+				key = key.OpenSubKey("open", true);
+				key.CreateSubKey("command",true);
+				key = key.OpenSubKey("command",true);
+				key.SetValue("", "\""+System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName + "\" \"%1\"");
+				/* Apparently not needed?
+
+				using (HttpClient hc = new HttpClient())
+				{
+					User myuser = new User();
+					myuser.UserName = Properties.Settings.Default.APIUsername;
+					myuser.Password = Properties.Settings.Default.APIPassword;
+					string json = JsonConvert.SerializeObject(myuser);
+					var content = new UriBuilder(Properties.Settings.Default.APIURL + "oauth2/authorise?client_id=RatTracker&scope=*&redirect_uri=rattracker://auth&state=preinit&response_type=code");
+					content.Port = Properties.Settings.Default.APIPort;
+					var query = HttpUtility.ParseQueryString(content.Query);
+					if (query == null)
+						return apiGetResponse("{\"Error\", \"No response\"}");
+					logger.Debug("Built query string:" + content.ToString());
+					var response = await hc.PostAsync(content.ToString(), new StringContent(json));
+					logger.Debug("AsyncPost sent.");
+					var url = content;
+				}
+				*/
+
+			}
+			catch (Exception ex)
+			{
+
+				logger.Fatal("Exception in ConnectAPI: ", ex);
+				return "";
+			}
+			var authcontent = new UriBuilder(System.IO.Path.Combine(Properties.Settings.Default.APIURL + "/oauth2/authorise?client_id=RatTracker&scope=*&redirect_uri=rattracker://auth&state=preinit&response_type=code"));
+			authcontent.Port = Properties.Settings.Default.APIPort;
+			System.Diagnostics.Process.Start(authcontent.ToString());
+			Process.GetCurrentProcess().Kill();
+			return "";
+
+		}
+
+		private void submitPaperwork(string url)
         {
             Process.Start(url);
         }

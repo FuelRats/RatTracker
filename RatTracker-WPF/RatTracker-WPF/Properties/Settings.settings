@@ -35,5 +35,11 @@
     <Setting Name="JumpRange" Type="System.Single" Scope="User">
       <Value Profile="(Default)">30</Value>
     </Setting>
+    <Setting Name="OAuthCode" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="OAuthToken" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

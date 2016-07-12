@@ -154,5 +154,29 @@ namespace RatTracker_WPF.Properties {
                 this["JumpRange"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string OAuthCode {
+            get {
+                return ((string)(this["OAuthCode"]));
+            }
+            set {
+                this["OAuthCode"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string OAuthToken {
+            get {
+                return ((string)(this["OAuthToken"]));
+            }
+            set {
+                this["OAuthToken"] = value;
+            }
+        }
     }
 }

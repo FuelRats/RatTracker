@@ -37,7 +37,7 @@
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>index.html</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <ApplicationRevision>40</ApplicationRevision>
+    <ApplicationRevision>67</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -190,13 +190,17 @@
       <DependentUpon>ErrorReporter.xaml</DependentUpon>
     </Compile>
     <Compile Include="GlobalHotkey.cs" />
+    <Compile Include="Models\Api\AccessToken.cs" />
     <Compile Include="Models\Api\APIQuery.cs" />
+    <Compile Include="Models\Api\Auth.cs" />
     <Compile Include="Models\Api\Platform.cs" />
+    <Compile Include="Models\Api\TokenResponse.cs" />
     <Compile Include="Models\Api\TPAMessage.cs" />
     <Compile Include="Models\Api\Client.cs" />
     <Compile Include="Models\Api\ClientInfo.cs" />
     <Compile Include="Converter\ClientConverter.cs" />
     <Compile Include="Models\Api\Datum.cs" />
+    <Compile Include="Models\Api\User.cs" />
     <Compile Include="Models\App\ClientDistance.cs" />
     <Compile Include="Models\App\ConnectionInfo.cs" />
     <Compile Include="Models\App\NATType.cs" />
