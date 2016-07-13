@@ -101,21 +101,19 @@ namespace RatTracker_WPF
 			logger.Info("---Starting RatTracker---");
 			try
 			{
-
-
 				foreach (string arg in Environment.GetCommandLineArgs())
 				{
 					logger.Debug("Arg: " + arg);
 					if (arg.Contains("rattracker"))
 					{
-						logger.Debug("Received OAuth Token!");
+						logger.Debug("Invoked for OAuth code authentication");
 						string reMatchToken = ".*?code=(.*)?&state=preinit";
 						Match match = Regex.Match(arg, reMatchToken, RegexOptions.IgnoreCase);
 						if (match.Success)
 						{
-							logger.Debug("Token should be " + match.Groups[1]);
-							logger.Debug("We have a token, authenticate with OAuth...");
-							OAuthCode = match.Groups[1].ToString();
+							logger.Debug("Authorization code should be " + match.Groups[1]);
+							logger.Debug("Calling OAuth authentication...");
+							OAuth_Authorize(match.Groups[1].ToString());
 						}
 						else
 						{
@@ -142,6 +140,54 @@ namespace RatTracker_WPF
 				CheckLogDirectory();
 			else
 				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
+		}
+		private async void OAuth_Authorize(string code)
+		{
+			if (code.Length > 0)
+			{
+				logger.Debug("A code was passed to connectAPI, attempting token exchange.");
+				using (HttpClient hc = new HttpClient())
+				{
+					Auth myauth = new Auth();
+					myauth.code = code;
+					myauth.grant_type = "authorization_code";
+					myauth.redirect_url = "rattracker://auth";
+					string json = JsonConvert.SerializeObject(myauth);
+					logger.Debug("Passing auth JSON: " + json);
+					var content = new UriBuilder(System.IO.Path.Combine(Properties.Settings.Default.APIURL + "oauth2/token"));
+					content.Port = Properties.Settings.Default.APIPort;
+					logger.Debug("Passing code: " + code);
+					hc.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(string.Format("{0}:{1}", "RatTracker", "4e85186b4d43862f795bbe8c3ee900b0bdba7fce6501fd4c"))));
+					var query = HttpUtility.ParseQueryString(content.Query);
+					if (query == null)
+					{
+						logger.Debug("Null query in OAuth code exchange?!");
+						return;
+					}
+					logger.Debug("Built query string:" + content.ToString());
+					var formenc = new FormUrlEncodedContent(new[]
+					{
+						new KeyValuePair<string,string>("code",code),
+						new KeyValuePair<string,string>("grant_type","authorization_code"),
+						new KeyValuePair<string,string>("redirect_uri","rattracker://auth")
+					});
+					HttpResponseMessage response = await hc.PostAsync(content.ToString(), formenc).ConfigureAwait(false);
+					logger.Debug("AsyncPost sent with ConfigureAwait false.");
+					HttpContent mycontent = response.Content;
+					string data = mycontent.ReadAsStringAsync().Result;
+					logger.Debug("Got data: " + data);
+					if (data.Contains("access_token"))
+					{
+						TokenResponse token = JsonConvert.DeserializeObject<TokenResponse>(data);
+						logger.Debug("Access token received: " + token.access_token.value);
+						Properties.Settings.Default.OAuthToken = token.access_token.value;
+						Properties.Settings.Default.Save();
+						logger.Debug("Access token saved.");
+						AppendStatus("OAuth authentication transaction successful, bearer token stored.");
+
+					}
+				}
+			}
 		}
 		private async void Window_Loaded(object sender, RoutedEventArgs e)
 		{

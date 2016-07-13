@@ -41,5 +41,8 @@
     <Setting Name="OAuthToken" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="AppSecret" Type="System.String" Scope="User">
+      <Value Profile="(Default)">4e85186b4d43862f795bbe8c3ee900b0bdba7fce6501fd4c</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

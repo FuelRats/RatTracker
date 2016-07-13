@@ -178,5 +178,17 @@ namespace RatTracker_WPF.Properties {
                 this["OAuthToken"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("4e85186b4d43862f795bbe8c3ee900b0bdba7fce6501fd4c")]
+        public string AppSecret {
+            get {
+                return ((string)(this["AppSecret"]));
+            }
+            set {
+                this["AppSecret"] = value;
+            }
+        }
     }
 }
