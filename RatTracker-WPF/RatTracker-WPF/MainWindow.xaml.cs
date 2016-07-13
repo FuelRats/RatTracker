@@ -1503,8 +1503,8 @@ namespace RatTracker_WPF
 					HttpResponseMessage response = await client.GetAsync(content.ToString());
 					response.EnsureSuccessStatusCode();
 					string responseString = response.Content.ReadAsStringAsync().Result;
-					logger.Debug("Got response: " + responseString[0-100]);
-					if (responseString == "-1")
+					//logger.Debug("Got response: " + responseString[0-100]);
+					if (responseString == "[]")
 						return new List<EdsmSystem>() {};
 					NameValueCollection temp = new NameValueCollection();
 					IEnumerable<EdsmSystem> m = JsonConvert.DeserializeObject<IEnumerable<EdsmSystem>>(responseString);
@@ -1887,7 +1887,7 @@ namespace RatTracker_WPF
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
-			if (ratState.InSystem==true)
+			if (ratState.InSystem==false)
 			{
 				AppendStatus("Sending System acknowledgement.");
 				frmsg.data.Add("ArrivedSystem", "true");
@@ -1914,7 +1914,7 @@ namespace RatTracker_WPF
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
-			if (ratState.Beacon==true)
+			if (ratState.Beacon==false)
 			{
 				AppendStatus("Sending Beacon acknowledgement.");
 				frmsg.data.Add("BeaconSpotted", "true");
@@ -1941,7 +1941,7 @@ namespace RatTracker_WPF
 				frmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
-			if (ratState.InInstance==true)
+			if (ratState.InInstance==false)
 			{
 				AppendStatus("Sending Good Instance message.");
 				frmsg.data.Add("InstanceSuccessful", "true");
@@ -1982,17 +1982,27 @@ namespace RatTracker_WPF
 
 		private void fueledButton_Click(object sender, RoutedEventArgs e)
 		{
+			TPAMessage fuelmsg = new TPAMessage();
+			fuelmsg.action = "Fueled:update";
+			fuelmsg.data.Add("ratID", MyPlayer.RatID.FirstOrDefault());
+			fuelmsg.data.Add("RescueID", MyClient.Rescue._id);
+
 			if (Equals(FueledButton.Background, Brushes.Red))
 			{
 				AppendStatus("Reporting fueled status, requesting paperwork link...");
 				FueledButton.Background = Brushes.Green;
+				fuelmsg.data.Add("Fueled", "true");
 				/* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
 			}
 			else
 			{
 				AppendStatus("Fueled status now negative.");
 				FueledButton.Background = Brushes.Red;
+				fuelmsg.data.Add("Fueled", "false");
+
 			}
+			apworker.SendTPAMessage(fuelmsg);
+
 		}
 
 		private async void runtests_button_click(object sender, RoutedEventArgs e)
