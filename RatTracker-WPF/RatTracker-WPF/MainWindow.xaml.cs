@@ -106,12 +106,11 @@ namespace RatTracker_WPF
 					logger.Debug("Arg: " + arg);
 					if (arg.Contains("rattracker"))
 					{
-						logger.Debug("Invoked for OAuth code authentication");
+						logger.Debug("RatTracker was invoked for OAuth code authentication.");
 						string reMatchToken = ".*?code=(.*)?&state=preinit";
 						Match match = Regex.Match(arg, reMatchToken, RegexOptions.IgnoreCase);
 						if (match.Success)
 						{
-							logger.Debug("Authorization code should be " + match.Groups[1]);
 							logger.Debug("Calling OAuth authentication...");
 							OAuth_Authorize(match.Groups[1].ToString());
 						}
@@ -203,7 +202,7 @@ namespace RatTracker_WPF
 			APIworker.DoWork += async delegate (object s, DoWorkEventArgs args)
 			{
 				logger.Debug("Initialize API...");
-				InitAPI();
+				InitAPI(false);
 				return;
 			};
 			EDDBworker.DoWork += async delegate (object s, DoWorkEventArgs args)
@@ -229,7 +228,7 @@ namespace RatTracker_WPF
 				CheckLogDirectory();
 			else
 				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
-			InitAPI();
+			InitAPI(true); 
 			InitEDDB();
 			InitPlayer();
 			logger.Debug("Reinitialization complete.");
@@ -317,7 +316,7 @@ namespace RatTracker_WPF
 		#endregion
 
 		#region Initializers
-		private async Task InitAPI()
+		private async Task InitAPI(bool reinitialize)
 		{
 			try
 			{
@@ -326,8 +325,11 @@ namespace RatTracker_WPF
 					apworker = new APIWorker();
 				apworker.InitWs();
 				apworker.OpenWs();
-				apworker.ws.MessageReceived += websocketClient_MessageReceieved;
-				apworker.ws.Opened += websocketClient_Opened;
+				if (!reinitialize)
+				{
+					apworker.ws.MessageReceived += websocketClient_MessageReceieved;
+					apworker.ws.Opened += websocketClient_Opened;
+				}
 				if (OAuthCode != null)
 				{
 					apworker.connectAPI(OAuthCode);
@@ -428,7 +430,12 @@ namespace RatTracker_WPF
 						Datum myrescue = rescues.Data.Where(r => r._id == updrescue._id).FirstOrDefault();
 						if (myrescue == null)
 						{
-							logger.Debug("Myrescue is null in updaterescue, breaking...");
+							logger.Debug("Myrescue is null in updaterescue, reinitialize grid.");
+							APIQuery rescuequery = new APIQuery();
+							rescuequery.action = "rescues:read";
+							rescuequery.data = new Dictionary<string, string>();
+							rescuequery.data.Add("open", "true");
+							apworker.SendQuery(rescuequery);
 							break;
 						}
 						if (updrescue.Open == false)
@@ -445,9 +452,8 @@ namespace RatTracker_WPF
 						}
 						break;
 					case "rescue:created":
-						AppendStatus("New rescue arrived!" + realdata);
 						Datum newrescue = realdata.ToObject<Datum>();
-						AppendStatus("New rescue client name: " + newrescue.Client.NickName);
+						AppendStatus("New rescue: " + newrescue.Client.NickName);
 						OverlayMessage nr = new OverlayMessage();
 						nr.Line1Header = "New rescue:";
 						nr.Line1Content = newrescue.Client.NickName;
@@ -458,20 +464,7 @@ namespace RatTracker_WPF
 						nr.Line4Header = "Press Ctrl-Alt-C to copy system name to clipboard";
 						if (overlay != null)
 							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => overlay.Queue_Message(nr, 30)));
-						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Add(newrescue))); // Maybe this works?
-																													   /* 
-																														* This does not work. Even if we can add the data to the collection, it seems we're not triggering the
-																														* right events to make RescueGrid update. Maybe this needs an ObservableCollection?
-																														*
-																													   lock (rescues)
-																													   /{
-																														   rescues.Data.Add(newrescue);
-																													   }
-																													   await disp.BeginInvoke(DispatcherPriority.Normal,
-																														   (Action)(() => RescueGrid.ItemsSource = rescues.Data));
-																													   await GetMissingRats(rescues);
-																													   */
-																													   //await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(()=> InitRescueGrid()));
+						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Add(newrescue))); 
 						break;
 					case "stream:subscribe":
 						logger.Debug("Subscribed to 3PA stream " + data.ToString());
@@ -1368,7 +1361,18 @@ namespace RatTracker_WPF
 		private async void updateButton_Click(object sender, RoutedEventArgs e)
 		{
 			// No more of this testing bull, let's actually send the updated system now.
-
+			if (MyClient==null)
+			{
+				logger.Debug("No current rescue, ignoring system update request.");
+				return;
+			}
+			TPAMessage systemmessage = new TPAMessage();
+			systemmessage.action = "ClientSystem:update";
+			systemmessage.data = new Dictionary<string, string>();
+			systemmessage.data.Add("SystemName", SystemName.Text);
+			systemmessage.data.Add("RatID", myplayer.RatID.FirstOrDefault().ToString());
+			systemmessage.data.Add("RescueID", MyClient.Rescue.id);
+			apworker.SendTPAMessage(systemmessage);
 		}
 		private async void InitRescueGrid()
 		{
@@ -2135,7 +2139,7 @@ namespace RatTracker_WPF
 			myrescue = (Datum) RescueGrid.SelectedItem;
 			if (myrescue == null)
 				AppendStatus("Null myrescue!");
-			if (myrescue.Client.CmdrName == null)
+			if (myrescue.Client == null)
 				AppendStatus("Null client.");
 			if (myrescue.System == null)
 				AppendStatus("Null system.");
