@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RatTracker_WPF.Models.Api
 {
-    class APIQuery
+    public class APIQuery
     {
         public string action { get; set; }
         public IDictionary<string, string> data { get; set; }

@@ -80,6 +80,20 @@ namespace RatTracker_WPF
 		private EDDBData eddbworker;
 		private static object _syncLock = new object();
 		private string OAuthCode;
+
+		public APIWorker APworker {
+			get { return apworker; }
+		}
+
+		public RootObject ActiveRescues
+		{
+			get { return activeRescues; }
+		}
+
+		public RootObject Rescues
+		{
+			get { return rescues; }
+		}
 		#endregion
 
 		/*
@@ -1470,7 +1484,7 @@ namespace RatTracker_WPF
 					return;
 				IEnumerable<List<string>> datas = rescues.Data.Select(d => d.Rats);
 				ratIdsToGet = datas.Aggregate(ratIdsToGet, (current, list) => current.Concat(list));
-				ratIdsToGet = ratIdsToGet.Distinct().Except(Rats.Values.Select(x => x._Id));
+				ratIdsToGet = ratIdsToGet.Distinct().Except(Rats.Values.Select(x => x.id));
 
 				foreach (string ratId in ratIdsToGet)
 				{
