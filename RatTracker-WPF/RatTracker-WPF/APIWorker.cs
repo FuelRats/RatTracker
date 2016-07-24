@@ -22,7 +22,7 @@ namespace RatTracker_WPF
      * APIWorker provides both HTTP and Websocket connection to the API. 
      */
 
-	class APIWorker
+	public class APIWorker
 	{
 		private static readonly ILog logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 		private bool stopping = false;

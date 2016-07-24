@@ -80,6 +80,15 @@ namespace RatTracker_WPF
 		private EDDBData eddbworker;
 		private static object _syncLock = new object();
 		private string OAuthCode;
+
+		public APIWorker APworker {
+			get { return apworker; }
+		}
+
+		public RootObject ActiveRescues
+		{
+			get { return ActiveRescues; }
+		}
 		#endregion
 
 		/*
