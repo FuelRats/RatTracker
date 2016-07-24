@@ -89,6 +89,11 @@ namespace RatTracker_WPF
 		{
 			get { return activeRescues; }
 		}
+
+		public RootObject Rescues
+		{
+			get { return rescues; }
+		}
 		#endregion
 
 		/*
