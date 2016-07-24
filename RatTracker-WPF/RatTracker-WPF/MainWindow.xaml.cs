@@ -1479,7 +1479,7 @@ namespace RatTracker_WPF
 					return;
 				IEnumerable<List<string>> datas = rescues.Data.Select(d => d.Rats);
 				ratIdsToGet = datas.Aggregate(ratIdsToGet, (current, list) => current.Concat(list));
-				ratIdsToGet = ratIdsToGet.Distinct().Except(Rats.Values.Select(x => x._Id));
+				ratIdsToGet = ratIdsToGet.Distinct().Except(Rats.Values.Select(x => x.id));
 
 				foreach (string ratId in ratIdsToGet)
 				{
