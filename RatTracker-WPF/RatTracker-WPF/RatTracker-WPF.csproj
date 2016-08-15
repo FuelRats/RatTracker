@@ -342,7 +342,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <None Include="rattracker.pfx" />
     <None Include="Resources\rank-9.png" />
   </ItemGroup>
   <ItemGroup />
