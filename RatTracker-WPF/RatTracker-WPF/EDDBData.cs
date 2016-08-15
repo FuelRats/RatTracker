@@ -9,6 +9,7 @@ using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.EDDB;
 using log4net;
 using System.IO;
+using FirebirdSql.Data.FirebirdClient;
 
 namespace RatTracker_WPF
 {
@@ -120,7 +121,28 @@ namespace RatTracker_WPF
 				return new EDDBSystem();
 			return systems.Where(sys => sys.id == id).FirstOrDefault();
 		}
-
+		/*
+		public EDDBSystem GetNearestSystem(string systemname)
+		{
+			try
+			{
+				logger.Debug("Searching for system " + systemname);
+				var nearestsystem = systems.Where(mysystem => mysystem.name == systemname).Select(
+					system => new
+					{
+						system.id,
+						system.population,
+						system.name
+					}).OrderBy(mysys => mysys.name).First().id;
+				return nearestsystem;
+			}
+			catch (Exception ex)
+			{
+				logger.Debug("FAIL!");
+				return new EDDBSystem();
+			}
+		}
+		*/
 		public EDDBStation GetClosestStation(EdsmCoords coords)
 		{
 			try {

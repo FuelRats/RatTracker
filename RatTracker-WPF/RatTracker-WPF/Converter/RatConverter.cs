@@ -22,7 +22,7 @@ namespace RatTracker_WPF.Converter
             }
 
             IEnumerable<KeyValuePair<string, Rat>> matchedRats = MainWindow.Rats.Where(x => myrats.Contains(x.Key));
-            IEnumerable<string> missingRats = myrats.Except(matchedRats.Select(x => x.Value._Id));
+            IEnumerable<string> missingRats = myrats.Except(matchedRats.Select(x => x.Value.id));
             foreach (string missingRat in missingRats)
             {
                 Console.WriteLine("Cannot find rat '" + missingRat + "'");
