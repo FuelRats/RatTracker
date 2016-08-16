@@ -192,6 +192,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="APIWorker.cs" />
+    <Compile Include="CustomHotKey.cs" />
     <Compile Include="ConfigChecker.cs" />
     <Compile Include="Converter\BooleanGridHeightConverter.cs" />
     <Compile Include="Converter\BooleanToColourConverter.cs" />
@@ -251,6 +252,7 @@
     <Compile Include="Settings.xaml.cs">
       <DependentUpon>Settings.xaml</DependentUpon>
     </Compile>
+    <Compile Include="StringBuilderExtensions.cs" />
     <Page Include="DispatchInterface\DispatchMain.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
