@@ -30,7 +30,7 @@ using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
 using WebSocket4Net;
-using RatTracker_WPF.Models.EDDB;
+using RatTracker_WPF.Models.Eddb;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
@@ -2260,7 +2260,7 @@ namespace RatTracker_WPF
 			{
 				logger.Debug("Got a mysys with " + mysys.Count() + " elements");
 				var station = eddbworker.GetClosestStation(mysys.First().Coords);
-				EDDBSystem system = eddbworker.GetSystemById(station.system_id);
+				EddbSystem system = eddbworker.GetSystemById(station.system_id);
 				AppendStatus("Closest populated system to '"+myplayer.CurrentSystem+"' is '" + system.name+
 							"', closest station to star with known coordinates is '" + station.name + "'.");
 				double distance = await CalculateEdsmDistance(myplayer.CurrentSystem, mysys.First().Name);

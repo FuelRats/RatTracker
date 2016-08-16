@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Newtonsoft.Json;
 using RatTracker_WPF.Models.Edsm;
-using RatTracker_WPF.Models.EDDB;
+using RatTracker_WPF.Models.Eddb;
 using log4net;
 using System.IO;
 
@@ -16,8 +16,8 @@ namespace RatTracker_WPF
 	{
 		private const string EddbUrl = "http://eddb.io/archive/v4/";
 		private static readonly ILog logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        public IEnumerable<EDDBStation> stations;
-		public IEnumerable<EDDBSystem> systems;
+        public IEnumerable<EddbStation> stations;
+		public IEnumerable<EddbSystem> systems;
 
 		public async Task<string> UpdateEddbData()
 		{
@@ -51,7 +51,7 @@ namespace RatTracker_WPF
                             await sw.WriteLineAsync(responseString);
                             logger.Info("Saved stations.json");
                         }
-                        stations = JsonConvert.DeserializeObject<IEnumerable<EDDBStation>>(responseString);
+                        stations = JsonConvert.DeserializeObject<IEnumerable<EddbStation>>(responseString);
                         logger.Debug("Deserialized stations: " + stations.Count());
                     }
                     
@@ -74,7 +74,7 @@ namespace RatTracker_WPF
                             logger.Info("Saved systems.json");
                         }
 
-                        systems = JsonConvert.DeserializeObject<IEnumerable<EDDBSystem>>(responseString);
+                        systems = JsonConvert.DeserializeObject<IEnumerable<EddbSystem>>(responseString);
                         logger.Info("Deserialized systems: " + systems.Count());
                         return "EDDB data downloaded. " + systems.Count() + " systems and " + stations.Count() + " stations added.";
                     }
@@ -93,12 +93,12 @@ namespace RatTracker_WPF
 					{
 						loadedfile = sr.ReadLine();
 					}
-					stations = JsonConvert.DeserializeObject<IEnumerable<EDDBStation>>(loadedfile);
+					stations = JsonConvert.DeserializeObject<IEnumerable<EddbStation>>(loadedfile);
 					using (StreamReader sr = new StreamReader(rtPath + @"\RatTracker\systems.json"))
 					{
 						loadedfile = sr.ReadLine();
 					}
-					systems = JsonConvert.DeserializeObject<IEnumerable<EDDBSystem>>(loadedfile);
+					systems = JsonConvert.DeserializeObject<IEnumerable<EddbSystem>>(loadedfile);
 					return "Loaded cached EDDB data. " + systems.Count() + " systems and " + stations.Count() + " stations added.";
 				}
 				catch(Exception ex)
@@ -109,9 +109,9 @@ namespace RatTracker_WPF
             }
 		}
 
-		public EDDBSystem GetSystemById(int id)
+		public EddbSystem GetSystemById(int id)
 		{
-			return id < 1 ? new EDDBSystem() : systems.FirstOrDefault(sys => sys.id == id);
+			return id < 1 ? new EddbSystem() : systems.FirstOrDefault(sys => sys.id == id);
 		}
 
 		/*
@@ -136,7 +136,7 @@ namespace RatTracker_WPF
 			}
 		}
 		*/
-		public EDDBStation GetClosestStation(EdsmCoords coords)
+		public EddbStation GetClosestStation(EdsmCoords coords)
 		{
 			try {
 				logger.Debug("Calculating closest station to X:" + coords.X + " Y:" + coords.Y + " Z:" + coords.Z);
@@ -149,7 +149,7 @@ namespace RatTracker_WPF
 								Math.Sqrt(Math.Pow(coords.X - system.x, 2) + Math.Pow(coords.Y - system.y, 2) + Math.Pow(coords.Z - system.z, 2))
 						}).OrderBy(x => x.distance).First().id;
 				logger.Debug("Got system " + closestSystemId);
-				EDDBStation station =
+				EddbStation station =
 					stations.Where(st => st.system_id == closestSystemId && st.distance_to_star != null)
 						.OrderBy(st => st.distance_to_star)
 						.FirstOrDefault();
@@ -159,7 +159,7 @@ namespace RatTracker_WPF
 			catch (Exception ex)
 			{
 				logger.Fatal("Exception in GetClosestStation: " + ex.Message);
-				return new EDDBStation();
+				return new EddbStation();
 			}
 		}
 

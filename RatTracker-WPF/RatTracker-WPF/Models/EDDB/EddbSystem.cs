@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RatTracker_WPF.Models.EDDB
+namespace RatTracker_WPF.Models.Eddb
 {
 	public class EddbSystem
     {
