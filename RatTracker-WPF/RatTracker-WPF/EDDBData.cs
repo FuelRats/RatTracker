@@ -9,31 +9,25 @@ using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.EDDB;
 using log4net;
 using System.IO;
-using FirebirdSql.Data.FirebirdClient;
 
 namespace RatTracker_WPF
 {
-	class EDDBData
+	public class EddbData
 	{
-		private readonly string EDDBUrl = "http://eddb.io/archive/v4/";
-        private static readonly ILog logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+		private const string EddbUrl = "http://eddb.io/archive/v4/";
+		private static readonly ILog logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public IEnumerable<EDDBStation> stations;
 		public IEnumerable<EDDBSystem> systems;
 
-		public async Task<string> UpdateEDDBData()
+		public async Task<string> UpdateEddbData()
 		{
-            DateTime filedate;
-            string RTPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+			string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             if (Thread.CurrentThread.Name == null)
             {
                 Thread.CurrentThread.Name = "EDDBWorker";
             }
-            if (File.Exists(RTPath + @"\RatTracker\stations.json")) 
-                filedate = File.GetLastWriteTime(RTPath + @"\RatTracker\stations.json");
-            else
-            {
-                filedate=new DateTime(1985,4,1);
-            }
+
+            DateTime filedate = File.Exists(rtPath + @"\RatTracker\stations.json") ? File.GetLastWriteTime(rtPath + @"\RatTracker\stations.json") : new DateTime(1985,4,1);
             if (filedate.AddDays(7) < DateTime.Now)
             {
                 logger.Info("EDDB cache is older than 7 days, updating...");
@@ -46,13 +40,13 @@ namespace RatTracker_WPF
                                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
                             }))
                     {
-                        UriBuilder content = new UriBuilder(EDDBUrl + "stations.json") { Port = -1 };
-                        logger.Info("Downloading " + content.ToString());
+                        UriBuilder content = new UriBuilder(EddbUrl + "stations.json") { Port = -1 };
+                        logger.Info("Downloading " + content);
                         HttpResponseMessage response = await client.GetAsync(content.ToString());
                         response.EnsureSuccessStatusCode();
                         string responseString = await response.Content.ReadAsStringAsync();
                         //AppendStatus("Got response: " + responseString);
-                        using (StreamWriter sw = new StreamWriter(RTPath + @"\RatTracker\stations.json"))
+                        using (StreamWriter sw = new StreamWriter(rtPath + @"\RatTracker\stations.json"))
                         {
                             await sw.WriteLineAsync(responseString);
                             logger.Info("Saved stations.json");
@@ -68,13 +62,13 @@ namespace RatTracker_WPF
                                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
                             }))
                     {
-                        UriBuilder content = new UriBuilder(EDDBUrl + "systems.json") { Port = -1 };
-                        logger.Debug("Downloading " + content.ToString());
+                        UriBuilder content = new UriBuilder(EddbUrl + "systems.json") { Port = -1 };
+                        logger.Debug("Downloading " + content);
                         HttpResponseMessage response = await client.GetAsync(content.ToString());
                         response.EnsureSuccessStatusCode();
                         string responseString = await response.Content.ReadAsStringAsync();
                         //AppendStatus("Got response: " + responseString);
-                        using (StreamWriter sw = new StreamWriter(RTPath + @"\RatTracker\systems.json"))
+                        using (StreamWriter sw = new StreamWriter(rtPath + @"\RatTracker\systems.json"))
                         {
                             await sw.WriteLineAsync(responseString);
                             logger.Info("Saved systems.json");
@@ -95,12 +89,12 @@ namespace RatTracker_WPF
             {
 				try {
 					string loadedfile;
-					using (StreamReader sr = new StreamReader(RTPath + @"\RatTracker\stations.json"))
+					using (StreamReader sr = new StreamReader(rtPath + @"\RatTracker\stations.json"))
 					{
 						loadedfile = sr.ReadLine();
 					}
 					stations = JsonConvert.DeserializeObject<IEnumerable<EDDBStation>>(loadedfile);
-					using (StreamReader sr = new StreamReader(RTPath + @"\RatTracker\systems.json"))
+					using (StreamReader sr = new StreamReader(rtPath + @"\RatTracker\systems.json"))
 					{
 						loadedfile = sr.ReadLine();
 					}
@@ -117,10 +111,9 @@ namespace RatTracker_WPF
 
 		public EDDBSystem GetSystemById(int id)
 		{
-			if (id<1)
-				return new EDDBSystem();
-			return systems.Where(sys => sys.id == id).FirstOrDefault();
+			return id < 1 ? new EDDBSystem() : systems.FirstOrDefault(sys => sys.id == id);
 		}
+
 		/*
 		public EDDBSystem GetNearestSystem(string systemname)
 		{

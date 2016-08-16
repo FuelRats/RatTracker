@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace RatTracker_WPF.Models.App
+﻿namespace RatTracker_WPF.Models.App
 {
 	public class ClientDistance
 	{
-		public string targetcertainty { get; set; }
-		public string sourcecertainty { get; set; }
-		public double distance { get; set; }
+		public string TargetCertainty { get; set; }
+		public string SourceCertainty { get; set; }
+		public double Distance { get; set; }
 	}
 }

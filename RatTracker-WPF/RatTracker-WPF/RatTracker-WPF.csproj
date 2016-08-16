@@ -222,7 +222,7 @@
     <Compile Include="Models\Api\User.cs" />
     <Compile Include="Models\App\ClientDistance.cs" />
     <Compile Include="Models\App\ConnectionInfo.cs" />
-    <Compile Include="Models\App\NATType.cs" />
+    <Compile Include="Models\App\NatType.cs" />
     <Compile Include="Models\App\NetworkError.cs" />
     <Compile Include="Models\App\OverlayMessage.cs" />
     <Compile Include="Models\App\PlayerInfo.cs" />

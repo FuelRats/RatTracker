@@ -57,7 +57,7 @@ namespace RatTracker_WPF
 		private static readonly EdsmCoords fuelumCoords = new EdsmCoords() {X = 52, Y = -52.65625, Z = 49.8125}; // Static coords to Fuelum, saves a EDSM query
 
 		//private readonly SpVoice voice = new SpVoice();
-		private APIWorker apworker; // Provides connection to the API
+		private ApiWorker apworker; // Provides connection to the API
 		private string assignedRats; // String representation of assigned rats to current case, bound to the UI 
 		public ConnectionInfo conninfo = new ConnectionInfo(); // The rat's connection information
 		private double distanceToClient; // Bound to UI element
@@ -80,7 +80,7 @@ namespace RatTracker_WPF
 		private readonly TelemetryClient tc = new TelemetryClient(); 
 		private Thread threadLogWatcher; // Holds logwatcher thread.
 		private FileSystemWatcher watcher; // FSW for the Netlog directory.
-		private EDDBData eddbworker;
+		private EddbData eddbworker;
 		
 		// TODO
 #pragma warning disable 649
@@ -196,10 +196,10 @@ namespace RatTracker_WPF
 			BackgroundWorker piWorker = new BackgroundWorker();
 
 
-			apiWorker.DoWork += async (s, args) =>
+			apiWorker.DoWork += (s, args) =>
 			{
 				logger.Debug("Initialize API...");
-				await InitApi(false);
+				InitApi(false);
 			};
 			eddbWorker.DoWork += async delegate
 			{
@@ -229,7 +229,7 @@ namespace RatTracker_WPF
 				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
 			}
 
-			await InitApi(true); 
+			InitApi(true); 
 			await InitEddb();
 			await InitPlayer();
 			logger.Debug("Reinitialization complete.");
@@ -319,13 +319,13 @@ namespace RatTracker_WPF
 
 		#region Initializers
 
-		private async Task InitApi(bool reinitialize)
+		private void InitApi(bool reinitialize)
 		{
 			try
 			{
 				logger.Info("Initializing API connection...");
 				if(apworker==null)
-					apworker = new APIWorker();
+					apworker = new ApiWorker();
 				apworker.InitWs();
 				apworker.OpenWs();
 				if (!reinitialize)
@@ -333,13 +333,14 @@ namespace RatTracker_WPF
 					apworker.ws.MessageReceived += websocketClient_MessageReceieved;
 					apworker.ws.Opened += websocketClient_Opened;
 				}
+
 				if (oAuthCode != null)
 				{
-					await apworker.connectAPI(oAuthCode);
+					ApiWorker.ConnectApi();
 				}
 				else
 				{
-					await apworker.connectAPI();
+					ApiWorker.ConnectApi();
 				}
 			}
 			catch (Exception ex)
@@ -365,10 +366,10 @@ namespace RatTracker_WPF
 			AppendStatus("Initializing EDDB.");
 			if (eddbworker == null)
 			{
-				eddbworker = new EDDBData();
+				eddbworker = new EddbData();
 			}
 
-			string status = await eddbworker.UpdateEDDBData();
+			string status = await eddbworker.UpdateEddbData();
 			AppendStatus("EDDB: " + status);
 		}
 
@@ -413,13 +414,13 @@ namespace RatTracker_WPF
 						logger.Debug("Raw: " + realdata[0]);
 
 						AppendStatus("Got user data for " + realdata[0].email);
-						MyPlayer.RatID = new List<string>();
+						MyPlayer.RatId = new List<string>();
 						foreach (dynamic cmdrdata in realdata[0].CMDRs)
 						{
 							AppendStatus("RatID " + cmdrdata._id + " added to identity list.");
-							MyPlayer.RatID.Add(cmdrdata._id.ToString());
+							MyPlayer.RatId.Add(cmdrdata._id.ToString());
 						}
-						myplayer.RatName = await GetRatName(MyPlayer.RatID.FirstOrDefault()); // This will have to be redone when we go WS, as we can't load the variable then.
+						myplayer.RatName = await GetRatName(MyPlayer.RatId.FirstOrDefault()); // This will have to be redone when we go WS, as we can't load the variable then.
 						break;
 					case "rats:read":
 						logger.Info("Received rat identification: " + meta.count + " elements");
@@ -440,8 +441,8 @@ namespace RatTracker_WPF
 							logger.Debug("Myrescue is null in updaterescue, reinitialize grid.");
 							APIQuery rescuequery = new APIQuery
 							{
-								action = "rescues:read",
-								data = new Dictionary<string, string> {{"open", "true"}}
+								Action = "rescues:read",
+								Data = new Dictionary<string, string> {{"open", "true"}}
 							};
 							apworker.SendQuery(rescuequery);
 							break;
@@ -699,7 +700,7 @@ namespace RatTracker_WPF
 									{"RescueID", "abcdef1234567890"}
 								}
 							};
-							apworker.SendTPAMessage(frmsg);
+							apworker.SendTpaMessage(frmsg);
 						}
 					}
 				}
@@ -773,7 +774,7 @@ namespace RatTracker_WPF
 									{"RescueID", "abcdef1234567890"}
 								}
 							};
-							apworker.SendTPAMessage(wrmsg);
+							apworker.SendTpaMessage(wrmsg);
 						}
 					}
 				}
@@ -868,7 +869,7 @@ namespace RatTracker_WPF
 						if (line.Contains("Local machine is"))
 						{
 							logger.Info("My RunID: " + line.Substring(line.IndexOf("is ", StringComparison.Ordinal)));
-							ConnInfo.runID = line.Substring(line.IndexOf("is ", StringComparison.Ordinal));
+							ConnInfo.RunId = line.Substring(line.IndexOf("is ", StringComparison.Ordinal));
 						}
 						if (line.Contains("RxRoute"))
 						{
@@ -882,10 +883,10 @@ namespace RatTracker_WPF
 											match.Groups[6].Value + ", TURN: " + match.Groups[7].Value + ":" + match.Groups[8].Value +
 											" MTU: " + match.Groups[12].Value + " NAT type: " + match.Groups[9].Value + " uPnP: " +
 											match.Groups[10].Value + " MultiNAT: " + match.Groups[11].Value);
-								ConnInfo.WANAddress = match.Groups[1].Value + ":" + match.Groups[2].Value;
-								ConnInfo.MTU = int.Parse(match.Groups[12].Value);
-								tc.TrackMetric("Rat_Detected_MTU", ConnInfo.MTU);
-								ConnInfo.NATType = (NATType) Enum.Parse(typeof (NATType), match.Groups[9].Value);
+								ConnInfo.WanAddress = match.Groups[1].Value + ":" + match.Groups[2].Value;
+								ConnInfo.Mtu = int.Parse(match.Groups[12].Value);
+								tc.TrackMetric("Rat_Detected_MTU", ConnInfo.Mtu);
+								ConnInfo.NatType = (NatType) Enum.Parse(typeof (NatType), match.Groups[9].Value);
 								if (match.Groups[2].Value == match.Groups[4].Value && match.Groups[10].Value == "0")
 								{
 									logger.Debug("Probably using static portmapping, source and destination port matches and uPnP disabled.");
@@ -900,7 +901,7 @@ namespace RatTracker_WPF
                                     tc.TrackMetric("MultipleNAT", 1);
                                 }
                                 */
-								ConnInfo.TURNServer = match.Groups[7].Value + ":" + match.Groups[8].Value;
+								ConnInfo.TurnServer = match.Groups[7].Value + ":" + match.Groups[8].Value;
 							}
 						}
 						if (line.Contains("failed to initialise upnp"))
@@ -922,16 +923,16 @@ namespace RatTracker_WPF
 					}
 
 					AppendStatus("Parsed " + count + " lines to derive client info.");
-					switch (ConnInfo.NATType)
+					switch (ConnInfo.NatType)
 					{
-						case NATType.Blocked:
+						case NatType.Blocked:
 							AppendStatus(
 								"WARNING: E:D reports that your network port appears to be blocked! This will prevent you from instancing with other players!");
 							ConnTypeLabel.Content = "Blocked!";
 							ConnTypeLabel.Foreground = Brushes.Red;
 							tc.TrackMetric("NATBlocked", 1);
 							break;
-						case NATType.Unknown:
+						case NatType.Unknown:
 							if (ConnInfo.PortMapped != true)
 							{
 								AppendStatus(
@@ -945,20 +946,20 @@ namespace RatTracker_WPF
 								tc.TrackMetric("ManualPortMap", 1);
 							}
 							break;
-						case NATType.Open:
+						case NatType.Open:
 							ConnTypeLabel.Content = "Open";
 							tc.TrackMetric("NATOpen", 1);
 							break;
-						case NATType.FullCone:
+						case NatType.FullCone:
 							ConnTypeLabel.Content = "Full cone NAT";
 							tc.TrackMetric("NATFullCone", 1);
 							break;
-						case NATType.Failed:
+						case NatType.Failed:
 							AppendStatus("WARNING: E:D failed to detect your NAT type. This might be problematic for instancing.");
 							ConnTypeLabel.Content = "Failed to detect!";
 							tc.TrackMetric("NATFailed", 1);
 							break;
-						case NATType.SymmetricUDP:
+						case NatType.SymmetricUdp:
 							if (ConnInfo.PortMapped != true)
 							{
 								AppendStatus(
@@ -974,7 +975,7 @@ namespace RatTracker_WPF
 							}
 
 							break;
-						case NATType.Restricted:
+						case NatType.Restricted:
 							if (ConnInfo.PortMapped != true)
 							{
 								AppendStatus("WARNING: Port restricted NAT detected. This may cause instancing problems!");
@@ -987,7 +988,7 @@ namespace RatTracker_WPF
 								tc.TrackMetric("ManualPortMap", 1);
 							}
 							break;
-						case NATType.Symmetric:
+						case NatType.Symmetric:
 							if (ConnInfo.PortMapped != true)
 							{
 								AppendStatus(
@@ -1100,12 +1101,12 @@ namespace RatTracker_WPF
 							action = "InstanceSuccessful:update",
 							data = new Dictionary<string, string>
 							{
-								{"RatID", myplayer.RatID.ToString()},
+								{"RatID", myplayer.RatId.ToString()},
 								{"InstanceSuccessful", "true"},
 								{"RescueID", myrescue.id}
 							}
 						};
-						apworker.SendTPAMessage(instmsg);
+						apworker.SendTpaMessage(instmsg);
 					}
 					AppendStatus("Successful identity match! ID: " + frmatch.Groups[1] + " IP:" + frmatch.Groups[3]);
 				}
@@ -1115,31 +1116,31 @@ namespace RatTracker_WPF
 				if (natmatch.Success)
 				{
 					logger.Debug("Found NAT datapoint for runID " + natmatch.Groups[1] + ": " + natmatch.Groups[11]);
-					NATType clientnat = (NATType) Enum.Parse(typeof (NATType), match.Groups[11].Value);
+					NatType clientnat = (NatType) Enum.Parse(typeof (NatType), match.Groups[11].Value);
 					switch (clientnat)
 					{
-						case NATType.Blocked:
+						case NatType.Blocked:
 							tc.TrackMetric("ClientNATBlocked", 1);
 							break;
-						case NATType.Unknown:
+						case NatType.Unknown:
 							tc.TrackMetric("ClientNATUnknown", 1);
 							break;
-						case NATType.Open:
+						case NatType.Open:
 							tc.TrackMetric("ClientNATOpen", 1);
 							break;
-						case NATType.FullCone:
+						case NatType.FullCone:
 							tc.TrackMetric("ClientNATFullCone", 1);
 							break;
-						case NATType.Failed:
+						case NatType.Failed:
 							tc.TrackMetric("ClientNATFailed", 1);
 							break;
-						case NATType.SymmetricUDP:
+						case NatType.SymmetricUdp:
 							tc.TrackMetric("ClientNATSymmetricUDP", 1);
 							break;
-						case NATType.Restricted:
+						case NatType.Restricted:
 							tc.TrackMetric("ClientNATRestricted", 1);
 							break;
-						case NATType.Symmetric:
+						case NatType.Symmetric:
 							tc.TrackMetric("ClientNATSymmetric", 1);
 							break;
 					}
@@ -1216,11 +1217,11 @@ namespace RatTracker_WPF
 						data = new Dictionary<string, string>
 						{
 							{"BeaconSpotted", "true"},
-							{"RatID", myplayer.RatID.ToString()},
+							{"RatID", myplayer.RatId.ToString()},
 							{"RescueID", myrescue._id}
 						}
 					};
-					apworker.SendTPAMessage(bcnmsg);
+					apworker.SendTpaMessage(bcnmsg);
 				}
 			}
 			catch (Exception ex)
@@ -1266,7 +1267,7 @@ namespace RatTracker_WPF
 							myTravelLog=new Collection<TravelLog>();
 						}
 
-						myTravelLog.Add(new TravelLog() {system = firstsys, lastvisited = DateTime.Now});
+						myTravelLog.Add(new TravelLog() {System = firstsys, LastVisited = DateTime.Now});
 						logger.Debug("Added system to TravelLog.");
 						// Should we add systems even if they don't exist in EDSM? Maybe submit them?
 					}
@@ -1282,11 +1283,11 @@ namespace RatTracker_WPF
 								data = new Dictionary<string, string>
 								{
 									{"SysArrived", "true"},
-									{"RatID", myplayer.RatID.FirstOrDefault()},
+									{"RatID", myplayer.RatId.FirstOrDefault()},
 									{"RescueID", myrescue.id}
 								}
 							};
-							apworker.SendTPAMessage(sysmsg);
+							apworker.SendTpaMessage(sysmsg);
 							MyClient.Self.InSystem = true;
 						}
 					}
@@ -1360,11 +1361,11 @@ namespace RatTracker_WPF
 					data = new Dictionary<string, string>
 					{
 						{"OnDuty", MyPlayer.OnDuty.ToString()},
-						{"RatID", myplayer.RatID.FirstOrDefault()},
+						{"RatID", myplayer.RatId.FirstOrDefault()},
 						{"currentSystem", MyPlayer.CurrentSystem}
 					}
 				};
-				apworker.SendTPAMessage(dutymessage);
+				apworker.SendTpaMessage(dutymessage);
 			}
 			catch (Exception ex)
 			{
@@ -1425,11 +1426,11 @@ namespace RatTracker_WPF
 				data = new Dictionary<string, string>
 				{
 					{"SystemName", SystemName.Text},
-					{"RatID", myplayer.RatID.FirstOrDefault()},
+					{"RatID", myplayer.RatId.FirstOrDefault()},
 					{"RescueID", MyClient.Rescue.id}
 				}
 			};
-			apworker.SendTPAMessage(systemmessage);
+			apworker.SendTpaMessage(systemmessage);
 		}
 		private async void InitRescueGrid()
 		{
@@ -1440,7 +1441,7 @@ namespace RatTracker_WPF
 				if (apworker.ws.State != WebSocketState.Open)
 				{
 					logger.Info("No available WebSocket connection, falling back to HTML API.");
-					string col = await apworker.queryAPI("rescues", data);
+					string col = await apworker.QueryApi("rescues", data);
 					logger.Debug(col == null ? "No COL returned from Rescues." : "Rescue data received from HTML API.");
 				}
 				else
@@ -1448,8 +1449,8 @@ namespace RatTracker_WPF
 					logger.Info("Fetching rescues from WS API.");
 					APIQuery rescuequery = new APIQuery
 					{
-						action = "rescues:read",
-						data = new Dictionary<string, string> {{"open", "true"}}
+						Action = "rescues:read",
+						Data = new Dictionary<string, string> {{"open", "true"}}
 					};
 					apworker.SendQuery(rescuequery);
 				}
@@ -1503,8 +1504,8 @@ namespace RatTracker_WPF
 					: string.Empty;
 				SystemName.Text = myrow.System;
 				ClientDistance distance = await GetDistanceToClient(myrow.System);
-				DistanceToClient = Math.Round(distance.distance, 2);
-				JumpsToClient = MyPlayer.JumpRange > 0 ? Math.Ceiling(distance.distance / MyPlayer.JumpRange).ToString() : string.Empty;
+				DistanceToClient = Math.Round(distance.Distance, 2);
+				JumpsToClient = MyPlayer.JumpRange > 0 ? Math.Ceiling(distance.Distance / MyPlayer.JumpRange).ToString() : string.Empty;
 			}
 			catch(Exception ex)
 			{
@@ -1529,7 +1530,7 @@ namespace RatTracker_WPF
 
 				foreach (string ratId in ratIdsToGet)
 				{
-					string response = await apworker.queryAPI("rats", new Dictionary<string, string> { { "_id", ratId }, { "limit", "1" } });
+					string response = await apworker.QueryApi("rats", new Dictionary<string, string> { { "_id", ratId }, { "limit", "1" } });
 					JObject jsonRepsonse = JObject.Parse(response);
 					List<JToken> tokens = jsonRepsonse["data"].Children().ToList();
 					Rat rat = JsonConvert.DeserializeObject<Rat>(tokens[0].ToString());
@@ -1549,7 +1550,7 @@ namespace RatTracker_WPF
 		{
 			try
 			{ 
-				string response = await apworker.queryAPI("rats", new Dictionary<string, string> { { "_id", ratid }, { "limit", "1" } });
+				string response = await apworker.QueryApi("rats", new Dictionary<string, string> { { "_id", ratid }, { "limit", "1" } });
 				JObject jsonRepsonse = JObject.Parse(response);
 				List<JToken> tokens = jsonRepsonse["data"].Children().ToList();
 				Rat rat = JsonConvert.DeserializeObject<Rat>(tokens[0].ToString());
@@ -1663,37 +1664,37 @@ namespace RatTracker_WPF
 			EdsmCoords targetcoords =new EdsmCoords();
 			ClientDistance cd = new ClientDistance();
 			EdsmCoords sourcecoords = fuelumCoords;
-			cd.sourcecertainty = "Fuelum";
+			cd.SourceCertainty = "Fuelum";
 
 			foreach (TravelLog mysource in myTravelLog.Reverse())
 			{
-				if(mysource.system.Coords== null)
+				if(mysource.System.Coords== null)
 				{
 					logdepth++;
 				}
 				else
 				{
-					logger.Debug("Found TL system to use: " + mysource.system.Name);
-					sourcecoords = mysource.system.Coords;
-					cd.sourcecertainty = logdepth.ToString();
+					logger.Debug("Found TL system to use: " + mysource.System.Name);
+					sourcecoords = mysource.System.Coords;
+					cd.SourceCertainty = logdepth.ToString();
 					break;
 				}
 			}
 
 			IEnumerable<EdsmSystem> candidates = await QueryEdsmSystem(target);
-			cd.targetcertainty = "Exact";
+			cd.TargetCertainty = "Exact";
 			
 			if (candidates == null || !candidates.Any())
 			{
 				logger.Debug("EDSM does not know system '" + target + "'. Widening search...");
 				candidates = await GetCandidateSystems(target);
-				cd.targetcertainty = "Nearby";
+				cd.TargetCertainty = "Nearby";
 			}
 			if (candidates.FirstOrDefault().Coords == null)
 			{
 				logger.Debug("Known system '" + target + "', but no coords. Widening search...");
 				candidates = await GetCandidateSystems(target);
-				cd.targetcertainty = "Region";
+				cd.TargetCertainty = "Region";
 			}
 			if (candidates == null || !candidates.Any())
 			{
@@ -1710,7 +1711,7 @@ namespace RatTracker_WPF
 			double deltaZ = sourcecoords.Z - targetcoords.Z;
 			double distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
 			logger.Debug("Distance should be " + distance);
-			cd.distance = distance;
+			cd.Distance = distance;
 			return cd;
 		}
 
@@ -1917,7 +1918,7 @@ namespace RatTracker_WPF
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "FriendRequest:update";
-				frmsg.data.Add("RatID", MyPlayer.RatID.FirstOrDefault());
+				frmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
 
@@ -1942,7 +1943,7 @@ namespace RatTracker_WPF
 
 			if (frmsg.action != null && ratState.FriendRequest != RequestState.Recieved)
 			{
-				apworker.SendTPAMessage(frmsg);
+				apworker.SendTpaMessage(frmsg);
 			}
 		}
 
@@ -1953,7 +1954,7 @@ namespace RatTracker_WPF
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "WingRequest:update";
-				frmsg.data.Add("RatID", MyPlayer.RatID.FirstOrDefault());
+				frmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
 
@@ -1978,7 +1979,7 @@ namespace RatTracker_WPF
 			}
 			if (frmsg.action != null && ratState.WingRequest != RequestState.Recieved)
 			{
-				apworker.SendTPAMessage(frmsg);
+				apworker.SendTpaMessage(frmsg);
 			}
 		}
 
@@ -1989,7 +1990,7 @@ namespace RatTracker_WPF
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "SysArrived:update";
-				frmsg.data.Add("RatID", MyPlayer.RatID.FirstOrDefault());
+				frmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
 
@@ -2006,7 +2007,7 @@ namespace RatTracker_WPF
 
 			if (frmsg.action != null)
 			{
-				apworker.SendTPAMessage(frmsg);
+				apworker.SendTpaMessage(frmsg);
 			}
 
 			ratState.InSystem = !ratState.InSystem;
@@ -2019,7 +2020,7 @@ namespace RatTracker_WPF
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "BeaconSpotted:update";
-				frmsg.data.Add("RatID", MyPlayer.RatID.FirstOrDefault());
+				frmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
 
@@ -2036,7 +2037,7 @@ namespace RatTracker_WPF
 
 			if (frmsg.action != null && ratState.FriendRequest != RequestState.Recieved)
 			{
-				apworker.SendTPAMessage(frmsg);
+				apworker.SendTpaMessage(frmsg);
 			}
 
 			ratState.Beacon = !ratState.Beacon;
@@ -2049,7 +2050,7 @@ namespace RatTracker_WPF
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "InstanceSuccessful:update";
-				frmsg.data.Add("RatID", MyPlayer.RatID.FirstOrDefault());
+				frmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
 				frmsg.data.Add("RescueID", MyClient.Rescue._id);
 			}
 
@@ -2066,7 +2067,7 @@ namespace RatTracker_WPF
 
 			if (frmsg.action != null && ratState.FriendRequest != RequestState.Recieved)
 			{
-				apworker.SendTPAMessage(frmsg);
+				apworker.SendTpaMessage(frmsg);
 			}
 
 			ratState.InInstance = !ratState.InInstance;
@@ -2099,7 +2100,7 @@ namespace RatTracker_WPF
 		private void fueledButton_Click(object sender, RoutedEventArgs e)
 		{
 			TPAMessage fuelmsg = new TPAMessage {action = "Fueled:update"};
-			fuelmsg.data.Add("RatID", MyPlayer.RatID.FirstOrDefault());
+			fuelmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
 			fuelmsg.data.Add("RescueID", MyClient.Rescue._id);
 
 			if (Equals(FueledButton.Background, Brushes.Red))
@@ -2117,7 +2118,7 @@ namespace RatTracker_WPF
 
 			}
 
-			apworker.SendTPAMessage(fuelmsg);
+			apworker.SendTpaMessage(fuelmsg);
 		}
 
 		private void Runtests_button_click(object sender, RoutedEventArgs e)
@@ -2163,16 +2164,16 @@ namespace RatTracker_WPF
 					{"RatID", "bcd1234567890test"}
 				}
 			};
-			apworker.SendTPAMessage(testmessage);
+			apworker.SendTpaMessage(testmessage);
 			IDictionary<string, string> logindata = new Dictionary<string, string>();
 			logindata.Add(new KeyValuePair<string, string>("open", "true"));
 			//logindata.Add(new KeyValuePair<string, string>("password", "password"));
 			apworker.SendWs("rescues:read", logindata);
 			//InitRescueGrid(); // We do this from post-API initialization now.
-			if (MyPlayer.RatID != null)
+			if (MyPlayer.RatId != null)
 			{
 				AppendStatus("Known RatIDs for self:");
-				foreach (string id in MyPlayer.RatID)
+				foreach (string id in MyPlayer.RatId)
 				{
 					AppendStatus(id);
 				}
@@ -2239,15 +2240,15 @@ namespace RatTracker_WPF
 				action = "CallJumps:update",
 				data = new Dictionary<string, string>
 				{
-					{"CallJumps", Math.Ceiling(distance.distance/myplayer.JumpRange).ToString()},
+					{"CallJumps", Math.Ceiling(distance.Distance/myplayer.JumpRange).ToString()},
 					{"RescueID", myrescue._id},
-					{"RatID", myplayer.RatID.FirstOrDefault()},
-					{"Lightyears", distance.distance.ToString()},
-					{"SourceCertainty", distance.sourcecertainty},
-					{"DestinationCertainty", distance.targetcertainty}
+					{"RatID", myplayer.RatId.FirstOrDefault()},
+					{"Lightyears", distance.Distance.ToString()},
+					{"SourceCertainty", distance.SourceCertainty},
+					{"DestinationCertainty", distance.TargetCertainty}
 				}
 			};
-			apworker.SendTPAMessage(jumpmessage);
+			apworker.SendTpaMessage(jumpmessage);
 		}
 
 

@@ -7,13 +7,11 @@ namespace RatTracker_WPF.Converter
 {
 	public class BooleanGridHeightConverter : MarkupExtension, IValueConverter
 	{
-		public string TrueValue { get; set; }
+		public string TrueValue { get; set; } = "1*";
 
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			bool state = value as bool? ?? false;
-
-			return "1*";
+			return TrueValue;
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

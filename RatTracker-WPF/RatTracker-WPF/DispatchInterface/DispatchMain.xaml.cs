@@ -20,7 +20,7 @@ namespace RatTracker_WPF.DispatchInterface
 	/// </summary>
 	public partial class DispatchMain : Window
 	{
-		private APIWorker m_ApiWorker;
+		private ApiWorker m_ApiWorker;
 		private string m_PW = "lalala"; //doing this for now as absolver has no field for password in the settings dialog
 		private string m_UN = "am@drl.dk"; //temp hack for username and pw
 		public DispatchMain()
@@ -43,7 +43,7 @@ namespace RatTracker_WPF.DispatchInterface
 			logindata.Add(new KeyValuePair<string, string>("email", m_UN));
 			logindata.Add(new KeyValuePair<string, string>("password", m_PW));
 
-			m_ApiWorker = new APIWorker();
+			m_ApiWorker = new ApiWorker();
 			object o = await m_ApiWorker.sendAPI("login", logindata);
 
 			Models.Api.Rat r = JsonConvert.DeserializeObject<Models.Api.Rat>(o.ToString());

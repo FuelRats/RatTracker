@@ -48,7 +48,7 @@ namespace RatTracker_WPF
 
         #endregion
 
-        public static HandleRef NullHandleRef = new HandleRef(null, IntPtr.Zero);
+        public static HandleRef nullHandleRef = new HandleRef(null, IntPtr.Zero);
 
         public System.Windows.Rect Bounds { get; private set; }
         public System.Windows.Rect WorkingArea { get; private set; }
@@ -56,7 +56,7 @@ namespace RatTracker_WPF
 
         public bool IsPrimary { get; private set; }
 
-        private Monitor(IntPtr monitor, IntPtr hdc)
+        private Monitor(IntPtr monitor)
         {
             var info = new MonitorInfoEx();
             GetMonitorInfo(new HandleRef(null, monitor), info);
@@ -78,14 +78,14 @@ namespace RatTracker_WPF
             {
                 var closure = new MonitorEnumCallback();
                 var proc = new MonitorEnumProc(closure.Callback);
-                EnumDisplayMonitors(NullHandleRef, IntPtr.Zero, proc, IntPtr.Zero);
+                EnumDisplayMonitors(nullHandleRef, IntPtr.Zero, proc, IntPtr.Zero);
                 return closure.Monitors.Cast<Monitor>();
             }
         }
 
         private class MonitorEnumCallback
         {
-            public ArrayList Monitors { get; private set; }
+            public ArrayList Monitors { get; }
 
             public MonitorEnumCallback()
             {
@@ -95,7 +95,7 @@ namespace RatTracker_WPF
             public bool Callback(IntPtr monitor, IntPtr hdc,
                            IntPtr lprcMonitor, IntPtr lparam)
             {
-                Monitors.Add(new Monitor(monitor, hdc));
+                Monitors.Add(new Monitor(monitor));
                 return true;
             }
         }

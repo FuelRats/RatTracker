@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace RatTracker_WPF.Models.Api
+﻿namespace RatTracker_WPF.Models.Api
 {
     class WsApiData
     {
