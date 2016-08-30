@@ -9,20 +9,20 @@ using System.Xml;
 
 namespace RatTracker_WPF
 {
-    class ConfigChecker
+	public class ConfigChecker
     {
-        string edProductDir= Settings.Default.EDPath + "\\Products";
+		private static readonly ILog logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+		private readonly string edProductDir= Settings.Default.EDPath + "\\Products";
+        private readonly TelemetryClient tc = new TelemetryClient();
 
-        private static readonly ILog logger =
-            LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private TelemetryClient tc = new TelemetryClient();
-        public bool ParseEDAppConfig()
+        public bool ParseEdAppConfig()
         {
             if (!Directory.Exists(edProductDir))
             {
                 logger.Fatal("Couldn't find E:D product directory, aborting AppConfig parse.");
                 return false;
             }
+
             foreach (string dir in Directory.GetDirectories(edProductDir))
             {
                 logger.Info("Checking AppConfig in Product directory " + dir);
@@ -37,6 +37,7 @@ namespace RatTracker_WPF
                         networknode.SetAttributeValue("VerboseLogging", 0);
                         logger.Info("No VerboseLogging configuration at all. Setting temporarily for testing.");
                     }
+
                     if (networknode.Attribute("VerboseLogging").Value != "1" || networknode.Attribute("ReportSentLetters") == null ||
                         networknode.Attribute("ReportReceivedLetters") == null)
                     {
@@ -55,13 +56,17 @@ namespace RatTracker_WPF
                                 networknode.SetAttributeValue("VerboseLogging", "1");
                                 networknode.SetAttributeValue("ReportSentLetters", 1);
                                 networknode.SetAttributeValue("ReportReceivedLetters", 1);
-                                XmlWriterSettings settings = new XmlWriterSettings();
-                                settings.OmitXmlDeclaration = true;
-                                settings.Indent = true;
-                                settings.NewLineOnAttributes = true;
-                                StringWriter sw = new StringWriter();
-                                using (XmlWriter xw = XmlWriter.Create(dir + @"\AppConfig.xml", settings))
-                                    appconf.Save(xw);
+		                        XmlWriterSettings settings = new XmlWriterSettings
+		                        {
+			                        OmitXmlDeclaration = true,
+			                        Indent = true,
+			                        NewLineOnAttributes = true
+		                        };
+		                        using (XmlWriter xw = XmlWriter.Create(dir + @"\AppConfig.xml", settings))
+		                        {
+			                        appconf.Save(xw);
+		                        }
+
                                 logger.Info("Wrote new configuration to " + dir + @"\AppConfig.xml");
                                 tc.TrackEvent("AppConfigAutofixed");
                                 return true;
@@ -70,6 +75,7 @@ namespace RatTracker_WPF
                                 tc.TrackEvent("AppConfigDenied");
                                 return false;
                         }
+
                         return true;
                     }
                 }
@@ -79,6 +85,7 @@ namespace RatTracker_WPF
                     return false;
                 }
             }
+
             return true;
         }
 

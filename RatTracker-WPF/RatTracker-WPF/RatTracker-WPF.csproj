@@ -73,13 +73,14 @@
     <ManifestCertificateThumbprint>9B8FE20692C02D5986D6BD64CA1D26F80EEFFA1A</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>Kenneth_Devcert.p12</ManifestKeyFile>
+    <ManifestKeyFile>rattracker.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>RatTracker-WPF_1_TemporaryKey.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateManifests>true</GenerateManifests>
@@ -191,6 +192,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="APIWorker.cs" />
+    <Compile Include="CustomHotKey.cs" />
     <Compile Include="ConfigChecker.cs" />
     <Compile Include="Converter\BooleanGridHeightConverter.cs" />
     <Compile Include="Converter\BooleanToColourConverter.cs" />
@@ -220,14 +222,14 @@
     <Compile Include="Models\Api\User.cs" />
     <Compile Include="Models\App\ClientDistance.cs" />
     <Compile Include="Models\App\ConnectionInfo.cs" />
-    <Compile Include="Models\App\NATType.cs" />
+    <Compile Include="Models\App\NatType.cs" />
     <Compile Include="Models\App\NetworkError.cs" />
     <Compile Include="Models\App\OverlayMessage.cs" />
     <Compile Include="Models\App\PlayerInfo.cs" />
-    <Compile Include="Models\EDDB\EDDBStation.cs" />
-    <Compile Include="Models\EDDB\EDDBSystem.cs" />
-    <Compile Include="Models\Edsm\EDSMCoords.cs" />
-    <Compile Include="Models\Edsm\EDSMSystem.cs" />
+    <Compile Include="Models\Eddb\EddbStation.cs" />
+    <Compile Include="Models\Eddb\EddbSystem.cs" />
+    <Compile Include="Models\Edsm\EdsmCoords.cs" />
+    <Compile Include="Models\Edsm\EdsmSystem.cs" />
     <Compile Include="Models\NetLog\Friend.cs" />
     <Compile Include="Models\Api\Meta.cs" />
     <Compile Include="Models\Api\DrillStatus.cs" />
@@ -250,6 +252,7 @@
     <Compile Include="Settings.xaml.cs">
       <DependentUpon>Settings.xaml</DependentUpon>
     </Compile>
+    <Compile Include="StringBuilderExtensions.cs" />
     <Page Include="DispatchInterface\DispatchMain.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -304,7 +307,6 @@
     <None Include="ApplicationInsights.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Kenneth_Devcert.p12" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -318,8 +320,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="RatTracker-WPF_1_TemporaryKey.pfx" />
-    <None Include="RatTracker-WPF_TemporaryKey.pfx" />
     <Resource Include="Resources\RedLight.png" />
   </ItemGroup>
   <ItemGroup>

@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace RatTracker_WPF.Models.Api
 {
-    class APIQuery
+	public class APIQuery
     {
-        public string action { get; set; }
-        public IDictionary<string, string> data { get; set; }
+        public string Action { get; set; }
+        public IDictionary<string, string> Data { get; set; }
     }
 }

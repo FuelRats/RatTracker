@@ -2,21 +2,22 @@
 {
 	public class ConnectionInfo : PropertyChangedBase
 	{
-		public float act1;
-		public float act2;
-		public string edserver;
-		public int flowcontrol;
-		public float fragmentationrate;
-		public float jitter;
-		public float loss;
-		public int mtu;
-		public NATType natType;
-		public string runid;
-		public int srtt;
-		public bool turnactive;
-		public string turnServer;
-		public string wanAddress;
-        public bool portmapped;
+		private float act1;
+		private float act2;
+		private string edserver;
+		private int flowcontrol;
+		private float fragmentationrate;
+		private float jitter;
+		private float loss;
+		private int mtu;
+		private NatType natType;
+		private string runid;
+		private int srtt;
+		private bool turnactive;
+		private string turnServer;
+		private string wanAddress;
+        private bool portmapped;
+
         public bool PortMapped
         {
             get { return portmapped; }
@@ -26,7 +27,8 @@
                 NotifyPropertyChanged();
             }
         }
-		public string WANAddress
+
+		public string WanAddress
 		{
 			get { return wanAddress; }
 			set
@@ -36,7 +38,7 @@
 			}
 		}
 
-		public NATType NATType
+		public NatType NatType
 		{
 			get { return natType; }
 			set
@@ -46,7 +48,7 @@
 			}
 		}
 
-		public string TURNServer
+		public string TurnServer
 		{
 			get { return turnServer; }
 			set
@@ -56,7 +58,7 @@
 			}
 		}
 
-		public string runID
+		public string RunId
 		{
 			get { return runid; }
 			set
@@ -66,7 +68,7 @@
 			}
 		}
 
-		public int MTU
+		public int Mtu
 		{
 			get { return mtu; }
 			set
@@ -136,7 +138,7 @@
 			}
 		}
 
-		public bool TURNActive
+		public bool TurnActive
 		{
 			get { return turnactive; }
 			set
@@ -146,7 +148,7 @@
 			}
 		}
 
-		public string EDServer
+		public string EdServer
 		{
 			get { return edserver; }
 			set

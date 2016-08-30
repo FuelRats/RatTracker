@@ -20,7 +20,8 @@ namespace RatTracker_WPF.Models.App
 				NotifyPropertyChanged();
 			}
 		}
-		public List<string> RatID
+
+		public List<string> RatId
 		{
 			get { return ratId; }
 			set
@@ -29,6 +30,7 @@ namespace RatTracker_WPF.Models.App
 				NotifyPropertyChanged();
 			}
 		}
+
 		public string CurrentSystem
 		{
 			get { return currentSystem; }

@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.Windows.Data;
-using RatTracker_WPF.Models;
 using RatTracker_WPF.Models.Api;
 
 namespace RatTracker_WPF.Converter

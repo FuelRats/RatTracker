@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace RatTracker_WPF.Models.Edsm
+﻿namespace RatTracker_WPF.Models.Edsm
 {
     public class EdsmSystem
     {

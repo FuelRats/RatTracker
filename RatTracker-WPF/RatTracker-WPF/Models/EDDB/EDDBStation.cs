@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace RatTracker_WPF.Models.EDDB
+namespace RatTracker_WPF.Models.Eddb
 {
-    class EDDBStation
+	public class EddbStation
     {
         public int id { get; set; }
         public string name { get; set; }
