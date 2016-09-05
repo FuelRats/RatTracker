@@ -9,7 +9,7 @@ namespace RatTracker_WPF.Models.Api
         public string Client { get; set; }
         public bool CodeRed { get; set; }
         public string CreatedAt { get; set; }
-        public bool Epic { get; set; }
+        public bool? Epic { get; set; }
         public string LastModified { get; set; }
         public bool Open { get; set; }
         public string Notes { get; set; }

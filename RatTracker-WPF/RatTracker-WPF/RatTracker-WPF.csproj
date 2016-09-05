@@ -37,7 +37,7 @@
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>index.html</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <ApplicationRevision>74</ApplicationRevision>
+    <ApplicationRevision>91</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -212,6 +212,7 @@
     <Compile Include="Models\Api\AccessToken.cs" />
     <Compile Include="Models\Api\APIQuery.cs" />
     <Compile Include="Models\Api\Auth.cs" />
+    <Compile Include="Models\Api\AuthQuery.cs" />
     <Compile Include="Models\Api\Platform.cs" />
     <Compile Include="Models\Api\TokenResponse.cs" />
     <Compile Include="Models\Api\TPAMessage.cs" />
