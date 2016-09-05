@@ -413,6 +413,11 @@ namespace RatTracker_WPF
 						logger.Debug("Got a new assignment datafield: " + data.data);
 						break;
 					case "rescues:read":
+						if (realdata == null)
+						{
+							logger.Error("Null list of rescues received from rescues:read!");
+							break;
+						}
 						logger.Debug("Got a list of rescues: " + realdata);
 						rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
 						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
@@ -498,6 +503,9 @@ namespace RatTracker_WPF
 						break;
 					case "stream:subscribe":
 						logger.Debug("Subscribed to 3PA stream " + data.ToString());
+						break;
+					case "stream:broadcast":
+						logger.Debug("3PA broadcast message received:" + data.ToString());
 						break;
 					default:
 						logger.Info("Unknown API action field: " + meta.action);
@@ -1552,7 +1560,7 @@ namespace RatTracker_WPF
 
 				foreach (string ratId in ratIdsToGet)
 				{
-					string response = await apworker.QueryApi("rats", new Dictionary<string, string> { { "_id", ratId }, { "limit", "1" } });
+					string response = await apworker.QueryApi("rats", new Dictionary<string, string> { { "id", ratId }, { "limit", "1" } });
 					JObject jsonRepsonse = JObject.Parse(response);
 					List<JToken> tokens = jsonRepsonse["data"].Children().ToList();
 					Rat rat = JsonConvert.DeserializeObject<Rat>(tokens[0].ToString());
@@ -1572,7 +1580,7 @@ namespace RatTracker_WPF
 		{
 			try
 			{ 
-				string response = await apworker.QueryApi("rats", new Dictionary<string, string> { { "_id", ratid }, { "limit", "1" } });
+				string response = await apworker.QueryApi("rats", new Dictionary<string, string> { { "id", ratid }, { "limit", "1" } });
 				JObject jsonRepsonse = JObject.Parse(response);
 				List<JToken> tokens = jsonRepsonse["data"].Children().ToList();
 				Rat rat = JsonConvert.DeserializeObject<Rat>(tokens[0].ToString());
@@ -2265,8 +2273,8 @@ namespace RatTracker_WPF
 			};
 			logger.Debug("Client info loaded:"+MyClient.ClientName+" in "+MyClient.ClientSystem);
 			overlay?.SetCurrentClient(MyClient);
-			//ClientDistance distance = await GetDistanceToClient(MyClient.ClientSystem);
-			ClientDistance distance = new ClientDistance {Distance = 500};
+			ClientDistance distance = await GetDistanceToClient(MyClient.ClientSystem);
+			//ClientDistance distance = new ClientDistance {Distance = 500};
 			AppendStatus("Sending jumps to IRC...");
 			logger.Debug("Constructing TPA message...");
 			var jumpmessage = new TPAMessage();
@@ -2275,22 +2283,14 @@ namespace RatTracker_WPF
 			jumpmessage.applicationId = "0xDEADBEEF";
 			logger.Debug("Set appID");
 			logger.Debug("Constructing TPA for "+myrescue.id+" with "+myplayer.RatId.First());
-			jumpmessage.data = new Dictionary<string, string>();
-			jumpmessage.data["CallJumps"] = "5";
-			logger.Debug("Set jumps");
-			jumpmessage.data["RescueID"] = myrescue.id;
-			logger.Debug("Set rescue ID");
-			jumpmessage.data["RatID"] = myplayer.RatId.FirstOrDefault();
-			logger.Debug("Set RatID");
-			/*{
-					//{"CallJumps", Math.Ceiling(distance.Distance/myplayer.JumpRange).ToString()},
-					{"CallJumps","5" },
+			jumpmessage.data = new Dictionary<string, string> {
+					{"CallJumps", Math.Ceiling(distance.Distance/myplayer.JumpRange).ToString()},
 					{"RescueID", myrescue.id},
 					{"RatID", myplayer.RatId.FirstOrDefault()},
 					{"Lightyears", distance.Distance.ToString()},
-					{"SourceCertainty", "Close"},
-					{"DestinationCertainty", "Far"}
-			};*/
+					{"SourceCertainty", distance.SourceCertainty},
+					{"DestinationCertainty", distance.TargetCertainty}
+			};
 			logger.Debug("Sending TPA message");
 			apworker.SendTpaMessage(jumpmessage);
 		}
