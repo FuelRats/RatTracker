@@ -39,7 +39,7 @@ namespace RatTracker_WPF
 
 			try
 			{
-				const string wsurl = "ws://orthanc.localecho.net:7070/"; //TODO: Remove this hardcoding!
+				const string wsurl = "wss://dev.api.fuelrats.com:443/"; //TODO: Remove this hardcoding! Rewrite URL with ws:// instead of http://
 																   //string wsurl = "ws://dev.api.fuelrats.com/";
 				logger.Info("Connecting to WS at " + wsurl);
 				ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455) {AllowUnstrustedCertificate = true};
@@ -89,8 +89,8 @@ namespace RatTracker_WPF
 
 			APIQuery myquery = new APIQuery
 			{
-				Action = action,
-				Data = data
+				action = action,
+				data = data
 			};
 			string json = JsonConvert.SerializeObject(myquery);
 			logger.Debug("sendWS Serialized to: " + json);
@@ -101,6 +101,13 @@ namespace RatTracker_WPF
 		{
 			string json = JsonConvert.SerializeObject(myquery);
 			logger.Debug("Sent an APIQuery serialized as: " + json);
+			ws.Send(json);
+		}
+
+		public void SendAuth(AuthQuery myauth)
+		{
+			string json = JsonConvert.SerializeObject(myauth);
+			logger.Debug("Sent an API Auth message serialized as: " + json);
 			ws.Send(json);
 		}
 
@@ -123,19 +130,28 @@ namespace RatTracker_WPF
 			if (stopping)
 			{
 				logger.Info("Disconnected from API WS server, stopping...");
+				return;
 			}
 			else
 			{
+				if(ws.State == WebSocketState.Connecting)
+				{
+					logger.Debug("Connection attempt already underway, ignoring reconnect attempt.");
+					return;
+				}
 				if (failing)
 				{
-					logger.Info("API reconnect failed. Waiting...");
-					await Task.Delay(5000);
+					logger.Info("API reconnect still failing. Waiting...");
+					await Task.Delay(20000);
 					OpenWs();
+					return;
 				}
 
-				logger.Info("API WS Connection closed unexpectedly. Reconnecting...");
+				logger.Info("API WS Connection closed unexpectedly. Reconnecting in five seconds...");
 				failing = true;
+				await Task.Delay(5000);
 				OpenWs();
+				return;
 			}
 		}
 
@@ -148,7 +164,7 @@ namespace RatTracker_WPF
 			//TODO: Implement error handling.
 			if (data.errors != null)
 			{
-				logger.Fatal("API error! " + data.data);
+				logger.Fatal("API error when deserializing in APIWorker! " + data.data);
 				return;
 			}
 
@@ -178,14 +194,25 @@ namespace RatTracker_WPF
 		{
 			failing = false;
 			logger.Info("Websocket: Connection to API established.");
-			SubscribeStream("0xDEADBEEF");
-			APIQuery login = new APIQuery
+			if (Properties.Settings.Default.OAuthToken == null)
+				logger.Error("Oops! I am attempting to connect without an OAuth token. That's probably bad.");
+			else
 			{
-				Action = "users:read",
-				Data = new Dictionary<string, string> {{"email", Properties.Settings.Default.APIUsername}}
-			};
-			SendQuery(login);
-			logger.Info("Sent login for " + Properties.Settings.Default.APIUsername);
+				AuthQuery auth = new AuthQuery()
+				{
+					action = "authorization",
+					bearer = Properties.Settings.Default.OAuthToken
+				};
+				SendAuth(auth);
+				SubscribeStream("0xDEADBEEF");
+				APIQuery login = new APIQuery
+				{
+					action = "users:read",
+					data = new Dictionary<string, string> {{"email", Properties.Settings.Default.APIUsername}}
+				};
+				SendQuery(login);
+				logger.Info("Sent login for " + Properties.Settings.Default.APIUsername);
+			}
 			//TODO: Put stream subscription messages here when Mecha goes live. Do we want to listen to ourselves?
 		}
 		public void SubscribeStream(string applicationId)
@@ -248,6 +275,7 @@ namespace RatTracker_WPF
 
 		public static string ConnectApi()
 		{
+			logger.Info("Oauth token is "+Properties.Settings.Default.OAuthToken);
 			if (Properties.Settings.Default.OAuthToken != "")
 			{
 				logger.Info("Authenticating with OAuth token...");
@@ -263,15 +291,18 @@ namespace RatTracker_WPF
 				FileName = Process.GetCurrentProcess().MainModule.FileName,
 				Verb = "runas"
 			};
+			logger.Debug("Requesting identity.");
 			WindowsIdentity identity = WindowsIdentity.GetCurrent();
 			WindowsPrincipal principal = new WindowsPrincipal(identity);
-			if (Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(@"RatTracker\shell\open\command", true) == null)
+			logger.Debug("Checking registry key...");
+			if (Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(@"RatTracker\shell\open\command", false) == null)
 			{
 				logger.Debug("No custom URI configured for RatTracker.");
 			}
 			else
 			{
-				Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(@"RatTracker\shell\open\command", true);
+				logger.Debug("An URI handler is set, checking...");
+				Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(@"RatTracker\shell\open\command", false);
 				string mypath = (string)key.GetValue("");
 				logger.Debug("Have a URI handler registered: " + mypath + " and my procname is "+proc.FileName);
 				if (!mypath.Contains(proc.FileName))
@@ -281,7 +312,7 @@ namespace RatTracker_WPF
 				else
 				{
 					logger.Debug("RatTracker URI is properly configured, launching OAuth authentication process.");
-					var authcontent = new UriBuilder(Path.Combine(Properties.Settings.Default.APIURL + "oauth2/authorise?client_id=RatTracker&scope=*&redirect_uri=rattracker://auth&state=preinit&response_type=code"))
+					var authcontent = new UriBuilder(Path.Combine(Properties.Settings.Default.APIURL + "oauth2/authorise?client_id="+Properties.Settings.Default.ClientID+"&scope=*&redirect_uri=rattracker://auth&state=preinit&response_type=code"))
 					{
 						Port = Properties.Settings.Default.APIPort
 					};
@@ -334,7 +365,7 @@ namespace RatTracker_WPF
 				key.SetValue("", "\"" + Process.GetCurrentProcess().MainModule.FileName + "\" \"%1\"");
 				logger.Debug("Launching authorization process.");
 				var authcontent =
-					new UriBuilder(Path.Combine(Properties.Settings.Default.APIURL +"oauth2/authorise?client_id=RatTracker&scope=*&redirect_uri=rattracker://auth&state=preinit&response_type=code"))
+					new UriBuilder(Path.Combine(Properties.Settings.Default.APIURL +"oauth2/authorise?client_id="+Properties.Settings.Default.ClientID+"&scope=*&redirect_uri=rattracker://auth&state=preinit&response_type=code"))
 					{
 						Port = Properties.Settings.Default.APIPort
 					};
