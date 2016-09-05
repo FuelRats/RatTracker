@@ -44,7 +44,7 @@ namespace RatTracker_WPF.DispatchInterface
 			logindata.Add(new KeyValuePair<string, string>("password", m_PW));
 
 			m_ApiWorker = new ApiWorker();
-			object o = await m_ApiWorker.sendAPI("login", logindata);
+			object o = await m_ApiWorker.SendApi("login", logindata);
 
 			Models.Api.Rat r = JsonConvert.DeserializeObject<Models.Api.Rat>(o.ToString());
 		}

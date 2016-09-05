@@ -4,7 +4,7 @@ namespace RatTracker_WPF.Models.Api
     {
         public string CmdrName { get; set; }
         public string NickName { get; set; }
-		public string createdAt { get; set; }
-		public string updatedAt { get; set; }
+		public string CreatedAt { get; set; }
+		public string UpdatedAt { get; set; }
     }
 }
