@@ -55,7 +55,7 @@ namespace RatTracker_WPF
 		private const string EdsmUrl = "http://www.edsm.net/api-v1/";
 		private bool _oauthProcessing;
 
-		private static readonly ILog Logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog Logger = LogManager.GetLogger(System.Reflection.Assembly.GetCallingAssembly().GetName().Name);
 		private static readonly EdsmCoords FuelumCoords = new EdsmCoords() {X = 52, Y = -52.65625, Z = 49.8125}; // Static coords to Fuelum, saves a EDSM query
 
 		//private readonly SpVoice voice = new SpVoice();
@@ -83,7 +83,8 @@ namespace RatTracker_WPF
 		private Thread _threadLogWatcher; // Holds logwatcher thread.
 		private FileSystemWatcher _watcher; // FSW for the Netlog directory.
 		private EddbData _eddbworker;
-		
+		private FireBird _fbworker;
+
 		// TODO
 #pragma warning disable 649
 		private string _oAuthCode;
@@ -205,6 +206,7 @@ namespace RatTracker_WPF
 			BackgroundWorker apiWorker = new BackgroundWorker();
 			BackgroundWorker eddbWorker = new BackgroundWorker();
 			BackgroundWorker piWorker = new BackgroundWorker();
+			BackgroundWorker fbWorker = new BackgroundWorker();
 
 			if (_oauthProcessing == false)
 			{
@@ -223,10 +225,18 @@ namespace RatTracker_WPF
 					Logger.Debug("Initialize player data...");
 					await InitPlayer();
 				};
+				fbWorker.DoWork += async delegate
+				{
+					Logger.Debug("Initialize Firebird SQL...");
+					AppendStatus("I should be starting FireBird connection now...");
+					await InitFirebird();
 
+				};
+				fbWorker.RunWorkerAsync();
 				eddbWorker.RunWorkerAsync();
 				apiWorker.RunWorkerAsync();
 				piWorker.RunWorkerAsync();
+				
 			}
 			else
 			{
@@ -234,6 +244,21 @@ namespace RatTracker_WPF
 			}
 		}
 
+		public async Task InitFirebird()
+		{
+			if (_eddbworker == null)
+			{
+				Logger.Debug("Firebird is waiting for EDDBworker to finish loading.");
+				Thread.Sleep(5000);
+				InitFirebird();
+				return;
+			}
+			Logger.Debug("EDDB has loaded, initializing FBWorker.");
+			_fbworker = new FireBird();
+			_fbworker.InitDB();
+			_eddbworker.Setworker(ref _fbworker);
+			return;
+		}
 		public async void Reinitialize()
 		{
 			Logger.Debug("Reinitializing application...");
@@ -383,7 +408,7 @@ namespace RatTracker_WPF
 			AppendStatus("Initializing EDDB.");
 			if (_eddbworker == null)
 			{
-				_eddbworker = new EddbData();
+				_eddbworker = new EddbData(ref _fbworker);
 			}
 
 			string status = await _eddbworker.UpdateEddbData();
@@ -1651,44 +1676,49 @@ namespace RatTracker_WPF
 		}
 
 		#region EDSM
-		public async Task<IEnumerable<EdsmSystem>> QueryEdsmSystem(string system)
+		public async Task<List<EdsmSystem>> QueryEdsmSystem(string system)
 		{
-			Logger.Debug("Querying EDSM for system " + system);
-			if (system.Length < 3)
-			{
-				//This would pretty much download the entire EDSM database. Refuse to do it.
-				Logger.Fatal("Too short EDSM query passed to QueryEDSMSystem: " + system);
-				return new List<EdsmSystem>();
-			}
-			try
-			{
-				_tc.TrackEvent("EDSMQuery");
-				using (HttpClient client = new HttpClient())
-				{
-					UriBuilder content = new UriBuilder(EdsmUrl + "systems?sysname=" + system + "&coords=1") {Port = -1};
-					AppendStatus("Querying EDSM for " + system);
-					Logger.Debug("Building query: " + content);
-					NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
-					content.Query = query.ToString();
-					HttpResponseMessage response = await client.GetAsync(content.ToString());
-					response.EnsureSuccessStatusCode();
-					string responseString = response.Content.ReadAsStringAsync().Result;
-					//logger.Debug("Got response: " + responseString[0-100]);
-					if (responseString == "[]")
-					{
-						return new List<EdsmSystem>();
-					}
+			Logger.Debug("Querying EDSM (or rather SQL) for system " + system);
+			AppendStatus("Querying database for " + system);
+			List<EdsmSystem> m = _fbworker.GetSystemAsEdsm(system);
+			return m;
+/*			if (system.Length < 3)
+									{
+										//This would pretty much download the entire EDSM database. Refuse to do it.
+										Logger.Fatal("Too short EDSM query passed to QueryEDSMSystem: " + system);
+										return new List<EdsmSystem>();
+									}
+									try
+									{
+										_tc.TrackEvent("EDSMQuery");
+										using (HttpClient client = new HttpClient())
+										{
+											UriBuilder content = new UriBuilder(EdsmUrl + "systems?sysname=" + system + "&coords=1") {Port = -1};
+											AppendStatus("Querying EDSM for " + system);
+											Logger.Debug("Building query: " + content);
+											NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
+											content.Query = query.ToString();
+											HttpResponseMessage response = await client.GetAsync(content.ToString());
+											response.EnsureSuccessStatusCode();
+											string responseString = response.Content.ReadAsStringAsync().Result;
+											//logger.Debug("Got response: " + responseString[0-100]);
+											if (responseString == "[]")
+											{
+												return new List<EdsmSystem>();
+											}
+						
+											IEnumerable<EdsmSystem> m = JsonConvert.DeserializeObject<IEnumerable<EdsmSystem>>(responseString);
+											return m;
+										}
+									}
+									catch (Exception ex)
+									{
+										Logger.Fatal("Exception in QueryEDSMSystem: " + ex.Message);
+										_tc.TrackException(ex);
+										return new List<EdsmSystem>();
+									}
+									*/
 
-					IEnumerable<EdsmSystem> m = JsonConvert.DeserializeObject<IEnumerable<EdsmSystem>>(responseString);
-					return m;
-				}
-			}
-			catch (Exception ex)
-			{
-				Logger.Fatal("Exception in QueryEDSMSystem: " + ex.Message);
-				_tc.TrackException(ex);
-				return new List<EdsmSystem>();
-			}
 		}
 
 		// TODO: Be less stupid and actually support finding systems that AREN'T procedural. Duh.
@@ -2251,6 +2281,18 @@ namespace RatTracker_WPF
 				}
 			}
 			TriggerSystemChange("Sol");
+			//_fbworker.CreateTables();
+			//Logger.Debug("Ran fbworker createtables");
+			Thread.Sleep(2000);
+			//Logger.Debug("Inserting a test system");
+			//_fbworker.AddSystem(1, "Fuelum", FuelumCoords.X, FuelumCoords.Y, FuelumCoords.Z, "The Fuel Rats", 2000000, "Anarchy",
+			//	"Independent", "Boom", "High", "Fuel", "None", "None", 0, 1368712376, "Fuelum");
+			//Thread.Sleep(3000);
+			//Logger.Debug("Running EDDB insert. This is gonna hurt...");
+			//_eddbworker.Setworker(ref _fbworker);
+			//_eddbworker.ConvertToSql();
+			AppendStatus("EDDB SQL has " + _fbworker.GetSystemCount().ToString() + " systems");
+			List<EdsmSystem> testsystem = _fbworker.GetSystemAsEdsm("Fuelum");
 			/* Start Oauth tests 
 			SentinelClientSettings oauthsettings = new SentinelClientSettings(new Uri("http://orthanc.localecho.net:7070/"), "5706205e361a6bef133f7183", "69d425a37f31b04499f8dcece6f2a5c782dc2f0b8b234975","RatTracker://home",new TimeSpan(300000));
 			SentinelOAuthClient oauthclient = new SentinelOAuthClient(oauthsettings);

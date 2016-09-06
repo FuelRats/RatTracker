@@ -23,7 +23,7 @@ namespace RatTracker_WPF
      */
 	public class ApiWorker
 	{
-		private static readonly ILog Logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog Logger = LogManager.GetLogger(System.Reflection.Assembly.GetCallingAssembly().GetName().Name);
 		private bool _stopping;
 		public WebSocket Ws;
 		private bool _failing;

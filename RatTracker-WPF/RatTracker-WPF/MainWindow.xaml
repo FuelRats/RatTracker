@@ -115,6 +115,10 @@
             </GroupBox>
             <StatusBar Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="30" Margin="0,18,0,0" Grid.Row="2" VerticalAlignment="Top" Width="924">
                 <TextBlock x:Name="connectionStatus" Height="20" TextWrapping="Wrap" Text="TextBlock" Width="213"/>
+                <TextBlock x:Name="dbcounter"  Height="20" TextWrapping="Wrap" Text="{Binding EDDBData.SystemCounter}" Width="101"/>
+                <TextBlock x:Name="separator"  Height="20" TextWrapping="Wrap" Text="/" Width="28"/>
+                <TextBlock x:Name="dbtarget"  Height="20" TextWrapping="Wrap" Text="{Binding EDDBData.SystemCount}" Width="101"/>
+
             </StatusBar>
         </Grid>
         <Grid x:Name="rat2Grid" HorizontalAlignment="Left" Height="61" Margin="676,109,0,0" VerticalAlignment="Top" Width="187" Visibility="{Binding MyClient.Rat2.RatName, Converter={converter:EmptyStringToVisibilityConverter}}">

@@ -19,6 +19,9 @@ namespace RatTracker_WPF.Models.Eddb
         public bool? has_market { get; set; }
         public bool? has_refuel { get; set; }
         public bool? has_repair { get; set; }
+		public bool? has_rearm { get; set; }
+		public bool? has_docking { get; set; }
+		public List<string> prohibited_commodities { get; set; }
         public bool? has_outfitting { get; set; }
         public bool? has_shipyard { get; set; }
         public bool? has_commodities { get; set; }

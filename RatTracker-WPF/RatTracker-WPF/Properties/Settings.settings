@@ -39,7 +39,7 @@
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="OAuthToken" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">98169536e3921871e350d6e177557ff0b9f429ad6c05288ed7fe1ceb4c966918</Value>
     </Setting>
     <Setting Name="AppSecret" Type="System.String" Scope="User">
       <Value Profile="(Default)">0f9b77d273f97cdd2341af31c3cbb373be65229192c4c98d</Value>

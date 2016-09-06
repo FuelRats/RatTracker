@@ -169,7 +169,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("98169536e3921871e350d6e177557ff0b9f429ad6c05288ed7fe1ceb4c966918")]
         public string OAuthToken {
             get {
                 return ((string)(this["OAuthToken"]));
