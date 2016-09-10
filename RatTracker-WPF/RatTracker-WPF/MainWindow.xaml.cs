@@ -83,6 +83,20 @@ namespace RatTracker_WPF
 		private Thread _threadLogWatcher; // Holds logwatcher thread.
 		private FileSystemWatcher _watcher; // FSW for the Netlog directory.
 		private EddbData _eddbworker;
+
+		public EddbData Eddbworker
+		{
+			get
+			{
+				return _eddbworker;
+			}
+			set
+			{
+				_eddbworker = value;
+				NotifyPropertyChanged();
+			}
+		}
+
 		private FireBird _fbworker;
 
 		// TODO
@@ -218,7 +232,7 @@ namespace RatTracker_WPF
 				eddbWorker.DoWork += async delegate
 				{
 					Logger.Debug("Initialize EDDB...");
-					await InitEddb();
+					await InitEddb(false);
 				};
 				piWorker.DoWork += async delegate
 				{
@@ -228,7 +242,6 @@ namespace RatTracker_WPF
 				fbWorker.DoWork += async delegate
 				{
 					Logger.Debug("Initialize Firebird SQL...");
-					AppendStatus("I should be starting FireBird connection now...");
 					await InitFirebird();
 
 				};
@@ -246,17 +259,19 @@ namespace RatTracker_WPF
 
 		public async Task InitFirebird()
 		{
-			if (_eddbworker == null)
+			if (Eddbworker == null)
 			{
-				Logger.Debug("Firebird is waiting for EDDBworker to finish loading.");
+				AppendStatus("Firebird is waiting for EDDB to finish initialization.");
 				Thread.Sleep(5000);
-				InitFirebird();
+				await InitFirebird();
 				return;
 			}
-			Logger.Debug("EDDB has loaded, initializing FBWorker.");
+			AppendStatus("EDDB has loaded, initializing FBWorker.");
 			_fbworker = new FireBird();
 			_fbworker.InitDB();
-			_eddbworker.Setworker(ref _fbworker);
+			// Wait a bit for Firebird to load up...
+			Thread.Sleep(5000);
+			Eddbworker.Setworker(ref _fbworker);
 			return;
 		}
 		public async void Reinitialize()
@@ -272,7 +287,7 @@ namespace RatTracker_WPF
 			}
 
 			InitApi(true); 
-			await InitEddb();
+			await InitEddb(true);
 			await InitPlayer();
 			Logger.Debug("Reinitialization complete.");
 		}
@@ -403,15 +418,18 @@ namespace RatTracker_WPF
 			return Task.FromResult(true);
 		}
 
-		private async Task InitEddb()
+		private async Task InitEddb(bool reinit)
 		{
+			if (reinit == true)
+				return;
 			AppendStatus("Initializing EDDB.");
-			if (_eddbworker == null)
+			if (Eddbworker == null)
 			{
-				_eddbworker = new EddbData(ref _fbworker);
+				Eddbworker = new EddbData(ref _fbworker);
 			}
+			Thread.Sleep(3000);
 
-			string status = await _eddbworker.UpdateEddbData();
+			string status = await Eddbworker.UpdateEddbData();
 			AppendStatus("EDDB: " + status);
 		}
 
@@ -1248,7 +1266,7 @@ namespace RatTracker_WPF
 					disp.BeginInvoke(DispatcherPriority.Normal,
 						(Action)
 							(() =>
-								connectionStatus.Text =
+								ConnectionStatus.Text =
 									"SRTT: " + Conninfo.Srtt + " Jitter: " + Conninfo.Jitter + " Loss: " +
 									Conninfo.Loss + " In: " + Conninfo.Act1 + " Out: " + Conninfo.Act2));
 				}
@@ -1407,7 +1425,7 @@ namespace RatTracker_WPF
 							distance = Math.Round(distance, 2);
 							await
 								disp.BeginInvoke(DispatcherPriority.Normal,
-									(Action) (() => distanceLabel.Content = distance + "LY from Fuelum"));
+									(Action) (() => DistanceLabel.Content = distance + "LY from Fuelum"));
 						}
 					}
 				}
@@ -1562,51 +1580,74 @@ namespace RatTracker_WPF
 
 		private async void RescueGrid_SelectionChanged(object sender, EventArgs e)
 		{
-			try
+			if (RescueGrid.SelectedItem == null)
+				return;
+			/*			BackgroundWorker bgworker = new BackgroundWorker() {WorkerReportsProgress = true};
+						bgworker.DoWork += (s, e2) => {
+							RecalculateJumps();
+						};
+						bgworker.RunWorkerAsync();
+						*/
+			/* The shit I do for you, Marenthyu. Update the grid to show the selection, reset labels and
+			 * manually redraw one frame before the thread goes into background work. Yeesh. :P
+			 */
+			Datum myrow = (Datum)RescueGrid.SelectedItem;
+			//Logger.Debug("Client is " + myrow.Client);
+
+			var rats = Rats.Where(r => myrow.Rats.Contains(r.Key)).Select(r => r.Value.CmdrName).ToList();
+			var count = rats.Count;
+
+			/* TODO: Fix this. Needs to be smrt about figuring out if your own ratID is assigned. */
+			MyClient = new ClientInfo { Rescue = myrow };
+			if (count > 0)
 			{
-				if (RescueGrid.SelectedItem == null)
-					return;
-				Datum myrow = (Datum)RescueGrid.SelectedItem;
-				Logger.Debug("Client is " + myrow.Client);
-
-				var rats = Rats.Where(r => myrow.Rats.Contains(r.Key)).Select(r => r.Value.CmdrName).ToList();
-				var count = rats.Count;
-
-				/* TODO: Fix this. Needs to be smrt about figuring out if your own ratID is assigned. */
-				MyClient = new ClientInfo { Rescue = myrow };
-				if (count > 0)
-				{
-					MyClient.Self.RatName = rats[0]; // Nope! We have no guarantee that the first listed rat in the rescue is ourself.
-				}
-				if (count > 1)
-				{
-					MyClient.Rat2.RatName = rats[1];
-				}
-				if (count > 2)
-				{
-					MyClient.Rat3.RatName = rats[2];
-				}
-
-				DistanceToClient = -1;
-				DistanceToClientString = "Calculating...";
-				JumpsToClient = string.Empty;
-				ClientName.Text = myrow.Client;
-
-				AssignedRats = myrow.Rats.Any()
-					? string.Join(", ", rats)
-					: string.Empty;
-				SystemName.Text = myrow.System;
-				ClientDistance distance = await GetDistanceToClient(myrow.System);
-				DistanceToClient = Math.Round(distance.Distance, 2);
-				JumpsToClient = MyPlayer.JumpRange > 0 ? Math.Ceiling(distance.Distance / MyPlayer.JumpRange).ToString(CultureInfo.InvariantCulture) : string.Empty;
+				MyClient.Self.RatName = rats[0]; // Nope! We have no guarantee that the first listed rat in the rescue is ourself.
 			}
-			catch(Exception ex)
+			if (count > 1)
 			{
-				Logger.Fatal("Exception in RescueGrid_SelectionChanged: " + ex.Message);
-				_tc.TrackException(ex);
+				MyClient.Rat2.RatName = rats[1];
 			}
+			if (count > 2)
+			{
+				MyClient.Rat3.RatName = rats[2];
+			}
+
+			Dispatcher disp = Dispatcher;
+			await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ClientName.Text = myrow.Client));
+			//ClientName.Text = myrow.Client;
+
+			AssignedRats = myrow.Rats.Any()
+				? string.Join(", ", rats)
+				: string.Empty;
+			await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => SystemName.Text = myrow.System));
+			DistanceToClient = -1;
+			DistanceToClientString = "Calculating...";
+			JumpsToClient = string.Empty;
+			DispatcherFrame frame = new DispatcherFrame();
+			await Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new DispatcherOperationCallback(delegate (object parameter) {
+				frame.Continue = false;
+				return null;
+			}), null);
+			Dispatcher.PushFrame(frame);
+			await RecalculateJumps(myrow.System);
 		}
 
+		private async Task RecalculateJumps(string system)
+		{
+			try
+			{
+				ClientDistance distance = await GetDistanceToClient(system);
+				DistanceToClient = Math.Round(distance.Distance, 2);
+				JumpsToClient = MyPlayer.JumpRange > 0
+					? Math.Ceiling(distance.Distance/MyPlayer.JumpRange).ToString(CultureInfo.InvariantCulture)
+					: string.Empty;
+			}
+			catch (Exception ex)
+			{
+				Logger.Fatal("Exception in RecalculateJumps: " + ex.Message);
+			}
+			return;
+		}
 		private async Task GetMissingRats(RootObject localRescues)
 		{
 			try
@@ -1729,10 +1770,9 @@ namespace RatTracker_WPF
 				string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-zA-Z])+(\\d+(?:-\\d+)+?)";
 				Match mymatch = Regex.Match(target, sysmatch, RegexOptions.IgnoreCase);
 				IEnumerable<EdsmSystem> candidates = await QueryEdsmSystem(target.Substring(0, target.IndexOf(mymatch.Groups[3].Value, StringComparison.Ordinal)));
-				IEnumerable<EdsmSystem> edsmSystems = candidates as EdsmSystem[] ?? candidates.ToArray();
-				Logger.Debug("Candidate count is " + edsmSystems.Count() + " from a subgroup of " + mymatch.Groups[3].Value);
-				_tc.TrackMetric("CandidateCount", edsmSystems.Count());
-				var finalcandidates = edsmSystems.Where(x => x.Coords != null).ToList();
+				Logger.Debug("Candidate count is " + candidates.Count() + " from a subgroup of " + mymatch.Groups[3].Value);
+				_tc.TrackMetric("CandidateCount", candidates.Count());
+				var finalcandidates = candidates.Where(x => x.Coords != null).ToList();
 				Logger.Debug("FinalCandidates with coords only is size " + finalcandidates.Count);
 				if (!finalcandidates.Any())
 				{
@@ -1791,21 +1831,20 @@ namespace RatTracker_WPF
 			IEnumerable<EdsmSystem> candidates = await QueryEdsmSystem(target);
 			cd.TargetCertainty = "Exact";
 
-			var edsmSystems = candidates as EdsmSystem[] ?? candidates.ToArray();
-			if (!edsmSystems.Any())
+			if (!candidates.Any())
 			{
 				Logger.Debug("EDSM does not know system '" + target + "'. Widening search...");
 				candidates = await GetCandidateSystems(target);
 				cd.TargetCertainty = "Nearby";
 			}
-			EdsmSystem firstOrDefault = edsmSystems.FirstOrDefault();
+			EdsmSystem firstOrDefault = candidates.FirstOrDefault();
 			if (firstOrDefault != null && firstOrDefault.Coords == null)
 			{
 				Logger.Debug("Known system '" + target + "', but no coords. Widening search...");
 				candidates = await GetCandidateSystems(target);
 				cd.TargetCertainty = "Region";
 			}
-			if (candidates == null || !edsmSystems.Any())
+			if (candidates == null || !candidates.Any())
 			{
 				//Still couldn't find something, abort.
 				AppendStatus("Couldn't find a candidate system, aborting...");
@@ -1814,7 +1853,7 @@ namespace RatTracker_WPF
 
 			Logger.Debug("We have two sets of coords that we can use to find a distance.");
 			Logger.Debug("Finding from coords: " + sourcecoords.X + " " + sourcecoords.Y + " " + sourcecoords.Z + " to " + targetcoords.X + " " + targetcoords.Y + " " + targetcoords.Z);
-			EdsmSystem edsmSystem = edsmSystems.FirstOrDefault();
+			EdsmSystem edsmSystem = candidates.FirstOrDefault();
 			if (edsmSystem != null) targetcoords = edsmSystem.Coords;
 			double deltaX = sourcecoords.X - targetcoords.X;
 			double deltaY = sourcecoords.Y - targetcoords.Y;
@@ -2026,7 +2065,7 @@ namespace RatTracker_WPF
 		/// 
 		private void frButton_Click(object sender, RoutedEventArgs e)
 		{
-			RatState ratState = GetRatStateForButton(sender, FrButton, FrButton_Copy, FrButton_Copy1);
+			RatState ratState = GetRatStateForButton(sender, FrButton, FrButtonCopy, FrButtonCopy1);
 			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
 			if (MyClient?.Rescue != null)
 			{
@@ -2062,7 +2101,7 @@ namespace RatTracker_WPF
 
 		private void wrButton_Click(object sender, RoutedEventArgs e)
 		{
-			RatState ratState = GetRatStateForButton(sender, WrButton, WrButton_Copy, WrButton_Copy1);
+			RatState ratState = GetRatStateForButton(sender, WrButton, WrButtonCopy, WrButtonCopy1);
 			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
 			if (MyClient?.Rescue != null)
 			{
@@ -2098,7 +2137,7 @@ namespace RatTracker_WPF
 
 		private void sysButton_Click(object sender, RoutedEventArgs e)
 		{
-			RatState ratState = GetRatStateForButton(sender, SysButton, SysButton_Copy, SysButton_Copy1);
+			RatState ratState = GetRatStateForButton(sender, SysButton, SysButtonCopy, SysButtonCopy1);
 			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
 			if (MyClient?.Rescue != null)
 			{
@@ -2128,7 +2167,7 @@ namespace RatTracker_WPF
 
 		private void bcnButton_Click(object sender, RoutedEventArgs e)
 		{
-			RatState ratState = GetRatStateForButton(sender, BcnButton, BcnButton_Copy, BcnButton_Copy1);
+			RatState ratState = GetRatStateForButton(sender, BcnButton, BcnButtonCopy, BcnButtonCopy1);
 			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
 			if (MyClient?.Rescue != null)
 			{
@@ -2158,7 +2197,7 @@ namespace RatTracker_WPF
 
 		private void instButton_Click(object sender, RoutedEventArgs e)
 		{
-			RatState ratState = GetRatStateForButton(sender, InstButton, InstButton_Copy, InstButton_Copy1);
+			RatState ratState = GetRatStateForButton(sender, InstButton, InstButtonCopy, InstButtonCopy1);
 			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
 			if (MyClient?.Rescue != null)
 			{
@@ -2388,8 +2427,8 @@ namespace RatTracker_WPF
 			if (edsmSystems.Any())
 			{
 				Logger.Debug("Got a mysys with " + edsmSystems.Count() + " elements");
-				var station = _eddbworker.GetClosestStation(edsmSystems.First().Coords);
-				EddbSystem system = _eddbworker.GetSystemById(station.system_id);
+				var station = Eddbworker.GetClosestStation(edsmSystems.First().Coords);
+				EddbSystem system = Eddbworker.GetSystemById(station.system_id);
 				AppendStatus("Closest populated system to '"+_myplayer.CurrentSystem+"' is '" + system.name+
 							"', closest station to star with known coordinates is '" + station.name + "'.");
 				double distance = await CalculateEdsmDistance(_myplayer.CurrentSystem, edsmSystems.First().Name);

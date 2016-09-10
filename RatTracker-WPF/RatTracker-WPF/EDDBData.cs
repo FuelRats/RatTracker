@@ -15,48 +15,65 @@ namespace RatTracker_WPF
 {
 	public class EddbData : PropertyChangedBase
 	{
-		private const string EddbUrl = "http://eddb.io/archive/v4/";
-		private static readonly ILog Logger = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        public IEnumerable<EddbStation> Stations;
+		public static string EddbUrl { get; } = "http://eddb.io/archive/v4/";
+
+		private static readonly ILog Logger =
+			LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+		public IEnumerable<EddbStation> Stations;
 		public IEnumerable<EddbSystem> Systems;
 		private FireBird _fbworker;
-		public int systemcount;
+		private int _systemcount;
+		private string _status = "Initializing";
+		private List<string> _jsonfiles = new List<string>(){"bubble.json", "alpha_positive.json", "alpha_negative.json", "beta_positive.json", "beta_negative.json",
+			"delta_positive.json", "delta_negative.json", "gamma_positive.json", "gamma_negative.json"};
+		string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+		private string _orthancUrl = "http://orthanc.localecho.net/json/";
+		public string Status
+		{
+			get { return _status; }
+			set
+			{
+				_status = value;
+				NotifyPropertyChanged();
+			}
+		}
 		public int SystemCount
 		{
-			get { return systemcount; }
+			get { return _systemcount; }
 			set
 			{
-				systemcount = value;
+				_systemcount = value;
 				NotifyPropertyChanged();
 			}
 		}
-		public int systemcounter;
+		private int _systemcounter;
 		public int SystemCounter
 		{
-			get { return systemcounter; }
+			get { return _systemcounter; }
 			set
 			{
-				systemcounter = value;
+				_systemcounter = value;
 				NotifyPropertyChanged();
 			}
 		}
-		public int stationcount;
+		private int _stationcount;
 		public int StationCount
 		{
-			get { return stationcount; }
+			get { return _stationcount; }
 			set
 			{
-				stationcount = value;
+				_stationcount = value;
 				NotifyPropertyChanged();
 			}
 		}
-		public int stationcounter;
+		private int _stationcounter;
 		public int StationCounter
 		{
-			get { return stationcounter; }
+			get { return _stationcounter; }
 			set
 			{
-				stationcounter = value;
+				_stationcounter = value;
 				NotifyPropertyChanged();
 			}
 		}
@@ -68,7 +85,60 @@ namespace RatTracker_WPF
 		public void Setworker(ref FireBird fbworker)
 		{
 			_fbworker = fbworker;
-			return;
+		}
+
+		public async Task<string> LoadChunkedJson()
+		{
+			Logger.Info("EDDB has begun loading chunked JSON data.");
+			foreach (string jsonchunk in _jsonfiles)
+			{
+				DateTime filedate = File.Exists(_rtPath + @"\RatTracker\" + jsonchunk)
+					? File.GetLastWriteTime(_rtPath + @"\RatTracker\" + jsonchunk)
+					: new DateTime(1985, 4, 1);
+				if (filedate.AddDays(7) < DateTime.Now)
+				{
+					using (HttpClient client = new HttpClient(new HttpClientHandler
+					{
+						AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+					}))
+					{
+						client.Timeout = TimeSpan.FromMinutes(10);
+						UriBuilder content = new UriBuilder(_orthancUrl + jsonchunk);
+						Logger.Info("Downloading " + content + "...");
+						HttpResponseMessage response = await client.GetAsync(content.ToString());
+						response.EnsureSuccessStatusCode();
+						string responseString = await response.Content.ReadAsStringAsync();
+						using (StreamWriter sw = new StreamWriter(_rtPath + @"\RatTracker\" + jsonchunk))
+						{
+							sw.WriteLine(responseString); // Do not make async, can prevent file from completing before we try to access it for SQLization!
+							Logger.Info("Saved " + jsonchunk + ".");
+						}
+						var temp = JsonConvert.DeserializeObject<List<EddbSystem>>(responseString);
+						if (temp == null)
+						{
+							Logger.Debug("Failed to deserialize " + jsonchunk+". HTTP Response reason: "+response.ReasonPhrase);
+						}
+						else
+						{
+							Logger.Debug("Deserialized systems: " + temp.Count);
+							await InjectSystemsToSql(temp);
+						}
+					}
+				}
+				else
+				{
+					Logger.Info("Found a recent cached "+jsonchunk+", injecting directly.");
+					using (StreamReader sr = new StreamReader(_rtPath + @"\RatTracker\"+jsonchunk))
+					{
+						var loadedfile = sr.ReadLine();
+						var temp = JsonConvert.DeserializeObject<List<EddbSystem>>(loadedfile);
+						await InjectSystemsToSql(temp);
+					}
+				}
+
+			
+			}
+			return "Complete";
 		}
 		public async Task<string> UpdateEddbData()
 		{
@@ -76,16 +146,18 @@ namespace RatTracker_WPF
 			{
 				Logger.Debug("No FbWorker reference in UpdateEddbData. Waiting for SQL to spin up...");
 				Thread.Sleep(5000);
-				UpdateEddbData();
-				return "Waiting for SQL...";
+				await UpdateEddbData();
 			}
-
+			else
+			{
+				Logger.Debug("FbWorker reference has been aquired.");
+			}
 			string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             if (Thread.CurrentThread.Name == null)
             {
                 Thread.CurrentThread.Name = "EDDBWorker";
             }
-
+			/*
             DateTime filedate = File.Exists(rtPath + @"\RatTracker\stations.json") ? File.GetLastWriteTime(rtPath + @"\RatTracker\stations.json") : new DateTime(1985,4,1);
             if (filedate.AddDays(7) < DateTime.Now)
             {
@@ -140,7 +212,7 @@ namespace RatTracker_WPF
                         Systems = JsonConvert.DeserializeObject<IEnumerable<EddbSystem>>(responseString);
 	                    IEnumerable<EddbSystem> eddbSystems = Systems as EddbSystem[] ?? Systems.ToArray();
 	                    Logger.Info("Deserialized systems: " + eddbSystems.Count()+". Converting to SQL...");
-						await ConvertToSql();
+						//await ConvertToSql();
 						return "EDDB data downloaded. " + eddbSystems.Count() + " systems and " + eddbStations.Count() + " stations added.";
                     }
                 }
@@ -170,7 +242,7 @@ namespace RatTracker_WPF
 							loadedfile = sr.ReadLine();
 						}
 						Systems = JsonConvert.DeserializeObject<IEnumerable<EddbSystem>>(loadedfile);
-						await ConvertToSql();
+						//await ConvertToSql();
 						return "Loaded new SQL data from cache!";
 					}
 					
@@ -181,10 +253,54 @@ namespace RatTracker_WPF
 					return "Failed to load EDDB cache!";
 				}
             }
+			*/
+			await LoadChunkedJson();
+			return "Complete.";
 		}
 
-		public async Task ConvertToSql()
+		public async Task InjectSystemsToSql(List<EddbSystem> systems)
 		{
+			if (systems == null)
+			{
+				Logger.Debug("Null system list passed to InjectSystemsToSql!");
+				return;
+			}
+			Logger.Info("Injecting " + systems.Count + " systems to SQL.");
+			try
+			{
+				SystemCount += systems.Count;
+				foreach (EddbSystem system in systems)
+				{
+					SystemCounter++;
+					await _fbworker.AddSystem(system.id, system.name, system.x, system.y, system.z, system.faction, system.population,
+						system.government, system.allegiance, system.state, system.security, system.primary_economy, system.power,
+						system.power_state, Convert.ToInt32(system.needs_permit), Convert.ToInt32(system.updated_at), system.simbad_ref);
+				}
+				Logger.Info("Completed injection.");
+			}
+			catch (Exception ex)
+			{
+				Logger.Debug("Exception in InjectSystemsToSql: " + ex.Message + "@" + ex.Source);
+			}
+		}
+/*		public async Task ConvertToSql()
+		{
+			SystemCount = Stations.Count();
+			Logger.Debug("Inserting " + StationCount + " stations into SQL.");
+			SystemCounter = 0;
+			foreach (EddbStation station in Stations)
+			{
+				SystemCounter++;
+				await
+					_fbworker.AddStation(station.id, station.name, station.system_id, station.max_landing_pad_size,
+						station.distance_to_star, station.faction, station.government, station.allegiance, station.state, station.type_id, station.type,
+						station.has_blackmarket, station.has_market, station.has_refuel, station.has_repair, station.has_rearm, station.has_outfitting,
+						station.has_shipyard, station.has_docking, station.has_commodities, station.import_commodities, station.export_commodities,
+						station.prohibited_commodities, station.economies, station.updated_at, station.shipyard_updated_at, station.outfitting_updated_at,
+						station.market_updated_at, station.is_planetary, station.selling_ships, station.selling_modules);
+			}
+			Logger.Debug("Stations loaded to SQL. Inserting system data.");
+			Stations = null;
 			SystemCount = Systems.Count();
 			Logger.Debug("Attempting to insert "+systemcount+" systems to SQL.");
 
@@ -198,20 +314,11 @@ namespace RatTracker_WPF
 
 
 			}
-			Logger.Debug("Systems loaded to SQL. Inserting station data.");
+			Logger.Debug("Systems loaded to SQL.");
 			Systems = null;
 			Logger.Debug("Cleared Systems JSON from memory.");
-			foreach (EddbStation station in Stations)
-			{
-				await
-					_fbworker.AddStation(station.id, station.name, station.system_id, station.max_landing_pad_size,
-						station.distance_to_star, station.faction, station.government, station.allegiance, station.state, station.type_id, station.type,
-						station.has_blackmarket, station.has_market, station.has_refuel, station.has_repair, station.has_rearm, station.has_outfitting,
-						station.has_shipyard, station.has_docking, station.has_commodities, station.import_commodities, station.export_commodities,
-						station.prohibited_commodities, station.economies, station.updated_at, station.shipyard_updated_at, station.outfitting_updated_at,
-						station.market_updated_at, station.is_planetary, station.selling_ships, station.selling_modules);
-			}
 		}
+		*/
 		public EddbSystem GetSystemById(int id)
 		{
 			return id < 1 ? new EddbSystem() : Systems.FirstOrDefault(sys => sys.id == id);
