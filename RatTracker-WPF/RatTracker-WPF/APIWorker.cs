@@ -162,7 +162,7 @@ namespace RatTracker_WPF
 			//TODO: Implement error handling.
 			if (data.errors != null)
 			{
-				Logger.Fatal("API error when deserializing in APIWorker! " + data.data);
+				Logger.Fatal("The API returned an error when deserializing in APIWorker! " + data);
 				return;
 			}
 
@@ -334,6 +334,7 @@ namespace RatTracker_WPF
 					switch (result)
 					{
 						case MessageBoxResult.Yes:
+                            Thread.Sleep(10000); // Wait for the initializers to finish their business before killing the task.
 							Process.Start(proc);
 							Process.GetCurrentProcess().Kill();  // Die! DIEEE!!!
 							break;
@@ -379,6 +380,7 @@ namespace RatTracker_WPF
 					{
 						Port = Properties.Settings.Default.APIPort
 					};
+                Thread.Sleep(5000);
 				Process.Start(authcontent.ToString());
 				Process.GetCurrentProcess().Kill();
 				return "";

@@ -46,7 +46,7 @@ namespace RatTracker_WPF
 	public partial class MainWindow : INotifyPropertyChanged
 	{
 		#region GlobalVars
-		// private const bool TestingMode = true; // Use the TestingMode bool to point RT to test API endpoints and non-live queries. Set to false when deployed.
+		private const bool TestingMode = true; // Use the TestingMode bool to point RT to test API endpoints and non-live queries. Set to false when deployed.
 		private const string Unknown = "unknown";
 		/* These can not be static readonly. They may be changed by the UI XML pulled from E:D. */
 		public static readonly Brush RatStatusColourPositive = Brushes.LightGreen;
@@ -477,7 +477,13 @@ namespace RatTracker_WPF
 						break;
 					case "users:read":
 						Logger.Info("Parsing login information..." + meta.count + " elements");
-						Logger.Debug("Raw: " + realdata[0]);
+                        if (!realdata)
+                        {
+                            Logger.Debug("Null realdata during login! Data element: "+data.ToString());
+                            AppendStatus("RatTracker failed to get your user data from the API. This makes RatTracker unable to verify your identity for jump calls and messages.");
+                            break;
+                        }
+						//Logger.Debug("Raw: " + realdata[0]);
 
 						AppendStatus("Got user data for " + realdata[0].email);
 						MyPlayer.RatId = new List<string>();
@@ -552,6 +558,9 @@ namespace RatTracker_WPF
 					case "stream:broadcast":
 						Logger.Debug("3PA broadcast message received:" + data.ToString());
 						break;
+                    case "authorization":
+                        Logger.Debug("Authorization callback: " + data.ToString());
+                        break;
 					default:
 						Logger.Info("Unknown API action field: " + meta.action);
 						//tc.TrackMetric("UnknownAPIField", 1, new IDictionary<string,string>["type", meta.action]);
