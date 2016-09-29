@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Threading;
@@ -25,8 +26,7 @@ namespace RatTracker_WPF
 		private FireBird _fbworker;
 		private int _systemcount;
 		private string _status = "Initializing";
-		private List<string> _jsonfiles = new List<string>(){"bubble.json", "alpha_positive.json", "alpha_negative.json", "beta_positive.json", "beta_negative.json",
-			"delta_positive.json", "delta_negative.json", "gamma_positive.json", "gamma_negative.json"};
+		private List<string> _jsonfiles = new List<string>();
 		string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
 		private string _orthancUrl = "http://orthanc.localecho.net/json/";
 		public string Status
@@ -87,22 +87,39 @@ namespace RatTracker_WPF
 			_fbworker = fbworker;
 		}
 
-		public async Task<string> LoadChunkedJson()
+		public async Task<string> LoadChunkedJson(bool forced)
 		{
 			Logger.Info("EDDB has begun loading chunked JSON data.");
+            using (HttpClient client=new HttpClient(new HttpClientHandler { AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate }))
+            {
+                UriBuilder content = new UriBuilder(_orthancUrl + "sysinfo.json");
+                Logger.Info("Downloading sysinfo.json...");
+                HttpResponseMessage response = await client.GetAsync(content.ToString());
+                response.EnsureSuccessStatusCode();
+                string responseString = await response.Content.ReadAsStringAsync();
+                var temp = JsonConvert.DeserializeObject<List<SysInfo>>(responseString);
+                SystemCount = 0;
+                foreach (SysInfo sys in temp)
+                {
+                    Logger.Debug("System chunk " + sys.SectorName +" has "+sys.SectorSize+" systems.");
+                    _jsonfiles.Add(sys.SectorName);
+                    SystemCount += sys.SectorSize;
+                }
+
+            }
 			foreach (string jsonchunk in _jsonfiles)
 			{
 				DateTime filedate = File.Exists(_rtPath + @"\RatTracker\" + jsonchunk)
 					? File.GetLastWriteTime(_rtPath + @"\RatTracker\" + jsonchunk)
 					: new DateTime(1985, 4, 1);
-				if (filedate.AddDays(7) < DateTime.Now)
+				if (filedate.AddDays(30) < DateTime.Now || forced==true)
 				{
 					using (HttpClient client = new HttpClient(new HttpClientHandler
 					{
 						AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
 					}))
 					{
-						client.Timeout = TimeSpan.FromMinutes(10);
+						client.Timeout = TimeSpan.FromMinutes(120);
 						UriBuilder content = new UriBuilder(_orthancUrl + jsonchunk);
 						Logger.Info("Downloading " + content + "...");
 						HttpResponseMessage response = await client.GetAsync(content.ToString());
@@ -138,42 +155,50 @@ namespace RatTracker_WPF
 
 			
 			}
+            _fbworker.CreateIndexes();
+
 			return "Complete";
 		}
-		public async Task<string> UpdateEddbData()
-		{
-			if (_fbworker == null)
-			{
-				Logger.Debug("No FbWorker reference in UpdateEddbData. Waiting for SQL to spin up...");
-				Thread.Sleep(5000);
-				await UpdateEddbData();
-			}
-			else
-			{
-				Logger.Debug("FbWorker reference has been aquired.");
-			}
-			string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+        public async Task<string> UpdateEddbData(bool forced)
+        {
+            if (_fbworker == null)
+            {
+                Logger.Debug("No FbWorker reference in UpdateEddbData. Waiting for SQL to spin up...");
+                Thread.Sleep(5000);
+                await UpdateEddbData(false);
+            }
+            else
+            {
+                Logger.Debug("FbWorker reference has been aquired.");
+            }
+            string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             if (Thread.CurrentThread.Name == null)
             {
                 Thread.CurrentThread.Name = "EDDBWorker";
             }
-			/*
-            DateTime filedate = File.Exists(rtPath + @"\RatTracker\stations.json") ? File.GetLastWriteTime(rtPath + @"\RatTracker\stations.json") : new DateTime(1985,4,1);
+            if (forced == true)
+            {
+                Logger.Debug("Forcing a redownload and reinjection of EDDB systems.");
+                await LoadChunkedJson(true);
+            }
+            if (_fbworker.GetSystemCount() < 1)
+                await LoadChunkedJson(false);
+            DateTime filedate = File.Exists(rtPath + @"\RatTracker\stations.json") ? File.GetLastWriteTime(rtPath + @"\RatTracker\stations.json") : new DateTime(1985, 4, 1);
             if (filedate.AddDays(7) < DateTime.Now)
             {
-                Logger.Info("EDDB cache is older than 7 days, updating...");
+                Logger.Info("EDDB station cache is older than 7 days, updating...");
                 try
                 {
-	                List<EddbStation> eddbStations = new List<EddbStation>();
-	                using (
+                    List<EddbStation> eddbStations = new List<EddbStation>();
+                    using (
                         HttpClient client =
                             new HttpClient(new HttpClientHandler
                             {
                                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
                             }))
                     {
-						client.Timeout = TimeSpan.FromMinutes(10);
-						UriBuilder content = new UriBuilder(EddbUrl + "stations.json") { Port = -1 };
+                        client.Timeout = TimeSpan.FromMinutes(10);
+                        UriBuilder content = new UriBuilder(EddbUrl + "stations.json") { Port = -1 };
                         Logger.Info("Downloading " + content);
                         HttpResponseMessage response = await client.GetAsync(content.ToString());
                         response.EnsureSuccessStatusCode();
@@ -187,78 +212,42 @@ namespace RatTracker_WPF
                         Stations = JsonConvert.DeserializeObject<IEnumerable<EddbStation>>(responseString);
                         Logger.Debug("Deserialized stations: " + eddbStations.Count());
                     }
-                    
-                    using (
-                        HttpClient client =
-                            new HttpClient(new HttpClientHandler
-                            {
-                                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
-                            }))
-                    {
-	                    client.Timeout = TimeSpan.FromMinutes(10);
-                        UriBuilder content = new UriBuilder(EddbUrl + "systems.json") { Port = -1 };
-                        Logger.Debug("Downloading " + content);
-                        HttpResponseMessage response = await client.GetAsync(content.ToString());
-                        response.EnsureSuccessStatusCode();
-                        string responseString = await response.Content.ReadAsStringAsync();
-                        //AppendStatus("Got response: " + responseString);
-                        using (StreamWriter sw = new StreamWriter(rtPath + @"\RatTracker\systems.json"))
-                        {
-                            await sw.WriteLineAsync(responseString);
-                            Logger.Info("Saved systems.json");
-                        }
-						responseString = null;
-
-                        Systems = JsonConvert.DeserializeObject<IEnumerable<EddbSystem>>(responseString);
-	                    IEnumerable<EddbSystem> eddbSystems = Systems as EddbSystem[] ?? Systems.ToArray();
-	                    Logger.Info("Deserialized systems: " + eddbSystems.Count()+". Converting to SQL...");
-						//await ConvertToSql();
-						return "EDDB data downloaded. " + eddbSystems.Count() + " systems and " + eddbStations.Count() + " stations added.";
-                    }
                 }
                 catch (Exception ex)
                 {
-                    Logger.Fatal("Exception in UpdateEDDBData: ", ex);
-                    return "EDDB data download failed!";
+                    Logger.Debug("Exception in Station dechunk: " + ex.Message);
+                    return "Failed!";
                 }
             }
-            else
+            return "Complete.";
+        }
+        public async Task InjectStationsToSql(List<EddbStation> stations)
+        {
+            if (stations == null)
             {
-				try {
-
-					if (_fbworker.GetSystemCount() > 1)
-						return "Cached EDDB data available, using existing SQL database.";
-					else
-					{
-						Logger.Debug("No SQL data, loading to SQL from cached JSON...");
-						string loadedfile;
-						using (StreamReader sr = new StreamReader(rtPath + @"\RatTracker\stations.json"))
-						{
-							loadedfile = sr.ReadLine();
-						}
-						Stations = JsonConvert.DeserializeObject<IEnumerable<EddbStation>>(loadedfile);
-						using (StreamReader sr = new StreamReader(rtPath + @"\RatTracker\systems.json"))
-						{
-							loadedfile = sr.ReadLine();
-						}
-						Systems = JsonConvert.DeserializeObject<IEnumerable<EddbSystem>>(loadedfile);
-						//await ConvertToSql();
-						return "Loaded new SQL data from cache!";
-					}
-					
-				}
-				catch(Exception ex)
-				{
-					Logger.Debug("Exception during load EDDB cached data: " + ex.Message);
-					return "Failed to load EDDB cache!";
-				}
+                Logger.Debug("Null station list passed to InjectStationsToSql!");
+                return;
             }
-			*/
-			await LoadChunkedJson();
-			return "Complete.";
-		}
-
-		public async Task InjectSystemsToSql(List<EddbSystem> systems)
+            Logger.Info("Injecting " + stations.Count + "stations to SQL.");
+            try
+            {
+                foreach(EddbStation station in stations)
+                {
+                    await _fbworker.AddStation(station.id,station.name,station.system_id,station.max_landing_pad_size,station.distance_to_star,station.faction,
+                        station.government,station.allegiance,station.state,station.type_id,station.type,station.has_blackmarket,station.has_market,station.has_refuel,
+                        station.has_repair,station.has_rearm,station.has_outfitting,station.has_shipyard,station.has_docking,station.has_commodities,station.import_commodities,
+                        station.export_commodities,station.prohibited_commodities,station.economies,station.updated_at,station.shipyard_updated_at,station.outfitting_updated_at,
+                        station.market_updated_at,station.is_planetary,station.selling_ships,station.selling_modules);
+                }
+                
+                Logger.Info("Completed Station injection");
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug("Exception in InjectStationsToSql: " + ex.Message + "@" + ex.Source);
+            }
+        }
+        public async Task InjectSystemsToSql(List<EddbSystem> systems)
 		{
 			if (systems == null)
 			{
@@ -268,84 +257,19 @@ namespace RatTracker_WPF
 			Logger.Info("Injecting " + systems.Count + " systems to SQL.");
 			try
 			{
-				SystemCount += systems.Count;
-				foreach (EddbSystem system in systems)
-				{
-					SystemCounter++;
-					await _fbworker.AddSystem(system.id, system.name, system.x, system.y, system.z, system.faction, system.population,
-						system.government, system.allegiance, system.state, system.security, system.primary_economy, system.power,
-						system.power_state, Convert.ToInt32(system.needs_permit), Convert.ToInt32(system.updated_at), system.simbad_ref);
-				}
-				Logger.Info("Completed injection.");
+                await _fbworker.BulkAddSystem(systems);
+                Logger.Info("Completed injection.");
 			}
 			catch (Exception ex)
 			{
 				Logger.Debug("Exception in InjectSystemsToSql: " + ex.Message + "@" + ex.Source);
 			}
 		}
-/*		public async Task ConvertToSql()
-		{
-			SystemCount = Stations.Count();
-			Logger.Debug("Inserting " + StationCount + " stations into SQL.");
-			SystemCounter = 0;
-			foreach (EddbStation station in Stations)
-			{
-				SystemCounter++;
-				await
-					_fbworker.AddStation(station.id, station.name, station.system_id, station.max_landing_pad_size,
-						station.distance_to_star, station.faction, station.government, station.allegiance, station.state, station.type_id, station.type,
-						station.has_blackmarket, station.has_market, station.has_refuel, station.has_repair, station.has_rearm, station.has_outfitting,
-						station.has_shipyard, station.has_docking, station.has_commodities, station.import_commodities, station.export_commodities,
-						station.prohibited_commodities, station.economies, station.updated_at, station.shipyard_updated_at, station.outfitting_updated_at,
-						station.market_updated_at, station.is_planetary, station.selling_ships, station.selling_modules);
-			}
-			Logger.Debug("Stations loaded to SQL. Inserting system data.");
-			Stations = null;
-			SystemCount = Systems.Count();
-			Logger.Debug("Attempting to insert "+systemcount+" systems to SQL.");
-
-			SystemCounter = 0;
-			foreach (EddbSystem system in Systems)
-			{
-				SystemCounter++;
-				await _fbworker.AddSystem(system.id, system.name, system.x, system.y, system.z, system.faction, system.population,
-					system.government, system.allegiance, system.state, system.security, system.primary_economy, system.power,
-					system.power_state, Convert.ToInt32(system.needs_permit), Convert.ToInt32(system.updated_at), system.simbad_ref);
-
-
-			}
-			Logger.Debug("Systems loaded to SQL.");
-			Systems = null;
-			Logger.Debug("Cleared Systems JSON from memory.");
-		}
-		*/
 		public EddbSystem GetSystemById(int id)
 		{
 			return id < 1 ? new EddbSystem() : Systems.FirstOrDefault(sys => sys.id == id);
 		}
 
-		/*
-		public EDDBSystem GetNearestSystem(string systemname)
-		{
-			try
-			{
-				logger.Debug("Searching for system " + systemname);
-				var nearestsystem = systems.Where(mysystem => mysystem.name == systemname).Select(
-					system => new
-					{
-						system.id,
-						system.population,
-						system.name
-					}).OrderBy(mysys => mysys.name).First().id;
-				return nearestsystem;
-			}
-			catch (Exception ex)
-			{
-				logger.Debug("FAIL!");
-				return new EDDBSystem();
-			}
-		}
-		*/
 		public EddbStation GetClosestStation(EdsmCoords coords)
 		{
 			try {
