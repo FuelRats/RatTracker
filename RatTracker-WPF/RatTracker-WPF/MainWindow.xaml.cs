@@ -272,6 +272,7 @@ namespace RatTracker_WPF
 			// Wait a bit for Firebird to load up...
 			Thread.Sleep(5000);
 			Eddbworker.Setworker(ref _fbworker);
+            _fbworker.SetEDDB(ref _eddbworker);
 			return;
 		}
 		public async void Reinitialize()
@@ -429,7 +430,7 @@ namespace RatTracker_WPF
 			}
 			Thread.Sleep(3000);
 
-			string status = await Eddbworker.UpdateEddbData();
+			string status = await Eddbworker.UpdateEddbData(false);
 			AppendStatus("EDDB: " + status);
 		}
 
@@ -598,22 +599,31 @@ namespace RatTracker_WPF
 			string edProductDir = Settings.Default.EDPath + "\\Products";
 			Logger.Debug("Looking for Product dirs in " + Settings.Default.EDPath + "\\Products");
 			try {
-				if (!Directory.Exists(edProductDir))
-				{
-					Logger.Fatal("Couldn't find E:D product directory, looking for Windows 10 installation...");
-					edProductDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\Frontier_Developments\\Products"; //Attempt Windows 10 path.
-					Logger.Debug("Looking in " + edProductDir);
-					if (!Directory.Exists(edProductDir))
-					{
-						Logger.Fatal("Couldn't find E:D product directory. Aborting AppConfig parse. You must set the path manually in settings.");
-						return false;
-					}
+                if (!Directory.Exists(edProductDir))
+                {
+                    Logger.Fatal("Couldn't find E:D product directory, looking for Windows 10 installation...");
+                    edProductDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\Frontier_Developments\\Products"; //Attempt Windows 10 path.
+                    Logger.Debug("Looking in " + edProductDir);
+                    if (!Directory.Exists(edProductDir))
+                    {
+                        Logger.Fatal("Couldn't find E:D product directory. Aborting AppConfig parse. You must set the path manually in settings.");
+                        return false;
+                    }
 
-					Logger.Debug("Found Windows 10 installation. Setting application paths...");
-					Settings.Default.EDPath = edProductDir;
-					Settings.Default.NetLogPath = edProductDir + "\\logs";
-					Settings.Default.Save();
-				}
+                    Logger.Debug("Found Windows 10 installation. Setting application paths...");
+                    Settings.Default.EDPath = edProductDir;
+                    //Settings.Default.NetLogPath = edProductDir + "\\logs";
+                    Settings.Default.Save();
+                }
+                else
+                {
+                    if (!Directory.Exists(Settings.Default.NetLogPath))
+                    {
+                        Logger.Fatal("E:D netlog directory is not set to a valid path!");
+                        AppendStatus("Your E:D netlog directory is set to an invalid path!");
+                    }
+                    Logger.Info("Netlog path is set to " + Settings.Default.NetLogPath);
+                }
 			}
 			catch (Exception ex)
 			{
@@ -1715,9 +1725,15 @@ namespace RatTracker_WPF
 			}
 			AppendStatus("No changes made, not reinitializing.");
 		}
-
-		#region EDSM
-		public async Task<List<EdsmSystem>> QueryEdsmSystem(string system)
+        private async void RefreshEDDBData_Click(object sender, RoutedEventArgs e)
+        {
+            AppendStatus("Forcing full EDDB database refresh. This will take a while.");
+            _fbworker.DropDB();
+            AppendStatus("Starting EDDB database refresh.");
+            await _eddbworker.UpdateEddbData(true);
+        }
+        #region EDSM
+        public async Task<List<EdsmSystem>> QueryEdsmSystem(string system)
 		{
 			Logger.Debug("Querying EDSM (or rather SQL) for system " + system);
 			AppendStatus("Querying database for " + system);
@@ -2319,6 +2335,12 @@ namespace RatTracker_WPF
 					AppendStatus(id);
 				}
 			}
+            else
+            {
+                AppendStatus("My RatID was null, I'll be mecha for this session.");
+                MyPlayer.RatId = new List<string>();
+                MyPlayer.RatId.Add("b8655683-bafe-42f9-9e19-529036719a79");
+            }
 			TriggerSystemChange("Sol");
 			//_fbworker.CreateTables();
 			//Logger.Debug("Ran fbworker createtables");

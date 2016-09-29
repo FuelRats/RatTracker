@@ -37,7 +37,7 @@
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>index.html</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <ApplicationRevision>108</ApplicationRevision>
+    <ApplicationRevision>114</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -216,6 +216,7 @@
     <Compile Include="Models\App\NetworkError.cs" />
     <Compile Include="Models\App\OverlayMessage.cs" />
     <Compile Include="Models\App\PlayerInfo.cs" />
+    <Compile Include="Models\App\SysInfo.cs" />
     <Compile Include="Models\Eddb\EddbStation.cs" />
     <Compile Include="Models\Eddb\EddbSystem.cs" />
     <Compile Include="Models\Edsm\EdsmCoords.cs" />
