@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:RatTracker_WPF"
         xmlns:p="clr-namespace:RatTracker_WPF.Properties"
         mc:Ignorable="d"
-        Title="Settings" Height="294.788" Width="587.645" ResizeMode="NoResize">
+        Title="Settings" Height="310.165" Width="587.645" ResizeMode="NoResize">
     <Grid Margin="0,0,2,0">
         <Label x:Name="label" Content="E:D logs directory" HorizontalAlignment="Left" Height="28" Margin="20,54,0,0" VerticalAlignment="Top" Width="106"/>
         <Label x:Name="label1" Content="FuelRats Username" HorizontalAlignment="Left" Height="25" Margin="20,87,0,0" VerticalAlignment="Top" Width="115"/>
