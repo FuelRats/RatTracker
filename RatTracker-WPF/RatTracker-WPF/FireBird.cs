@@ -8,6 +8,7 @@ using FirebirdSql.Data.FirebirdClient;
 using log4net;
 using RatTracker_WPF.Models.App;
 using RatTracker_WPF.Models.Edsm;
+using RatTracker_WPF.Models.Eddb;
 
 using static System.Windows.MessageBox;
 
@@ -20,6 +21,7 @@ namespace RatTracker_WPF
 			LogManager.GetLogger(System.Reflection.Assembly.GetCallingAssembly().GetName().Name);
 
 		private string _status="Initializing";
+        EddbData _eddbworker;
 
 		public string Status
 		{
@@ -34,6 +36,10 @@ namespace RatTracker_WPF
 			}
 		}
 		private FbConnection con;
+        public void SetEDDB(ref EddbData eddbworker)
+        {
+            _eddbworker = eddbworker;
+        }
 		public void InitDB()
 		{
 			bool newdb = false;
@@ -44,7 +50,7 @@ namespace RatTracker_WPF
 			builder.ServerType = FbServerType.Embedded;
 			if (File.Exists("EDDB.FDB"))
 			{
-				Logger.Debug("EDDB database file found.");
+				Logger.Info("FBworker: EDDB database file found.");
 			}
 			else
 			{
@@ -58,7 +64,7 @@ namespace RatTracker_WPF
 				try
 				{
 					con.Open();
-					Show("I have connected to the DB!");
+					Logger.Info("FBWorker has connected to the database.");
 					Status = "Connected";
 					if (newdb)
 						CreateTables();
@@ -68,7 +74,24 @@ namespace RatTracker_WPF
 					Show(ex.ToString());
 				}
 			}
-
+        public void DropDB()
+        {
+            Logger.Debug("FBWorker is dropping the database due to a refresh command.");
+            using (FbCommand dropTables = con.CreateCommand())
+            {
+                dropTables.CommandText = "DROP INDEX ix_lcname";
+                dropTables.ExecuteNonQuery();
+                dropTables.CommandText = "DROP TABLE eddb_systems";
+                dropTables.ExecuteNonQuery();
+                dropTables.CommandText = "DROP TABLE eddb_stations";
+                dropTables.ExecuteNonQuery();
+                dropTables.CommandText = "DROP DOMAIN BOOLEAN";
+                dropTables.ExecuteNonQuery();
+            }
+            Logger.Debug("Recreating tables.");
+            CreateTables();
+            return;
+        }
 		public void CreateTables()
 		{
 			Logger.Debug("Starting database table creation.");
@@ -87,23 +110,40 @@ namespace RatTracker_WPF
 			using (FbCommand createTable = con.CreateCommand())
 			{
 				createTable.CommandText =
-					"CREATE TABLE eddb_stations (id bigint, name varchar(150), system_id bigint, max_landing_pad_size varchar(5), distance_to_star bigint, faction varchar(150), goverment varchar(120), allegiance varchar(130), " +
+					"CREATE TABLE eddb_stations (id bigint, name varchar(150), system_id bigint, max_landing_pad_size varchar(5), distance_to_star bigint, faction varchar(150), government varchar(120), allegiance varchar(130), " +
 					"state varchar(120), type_id int, type varchar(130), has_blackmarket boolean, has_market boolean, has_refuel boolean, has_repair boolean, has_rearm boolean, has_outfitting boolean, has_shipyard boolean, has_docking boolean, " +
 					"has_commodities boolean, prohibited_commodities varchar(10000), economies varchar(10000), updated_at bigint, shipyard_updated_at bigint, outfitting_updated_at bigint, market_updated_at bigint, is_planetary boolean, " +
 					"selling_ships varchar(20000), selling_modules varchar(20000), lowercase_name varchar(150))";
 				createTable.ExecuteNonQuery();
 			}
-			using (FbCommand createIndex = con.CreateCommand())
+/*
+ * Moved to post inject function. This was slowing down inserts something awful.
+ * 
+ *			using (FbCommand createIndex = con.CreateCommand())
 			{
 				createIndex.CommandText = "CREATE INDEX ix_lcname on eddb_systems (lowercase_name)";
 				createIndex.ExecuteNonQuery();
-			}
-			
-			Logger.Debug("Completed database table creation.");
+			} */
+            using (FbCommand createTable = con.CreateCommand())
+            {
+                createTable.CommandText = "CREATE TABLE eddb_info (sectorname varchar(150), sectorsize bigint, injectedat bigint)";
+                createTable.ExecuteNonQuery();
+            }
+                Logger.Debug("Completed database table creation.");
 			Status = "Initialized";
 
 		}
 
+        public void CreateIndexes()
+        {
+            Logger.Info("Creating indexes...");
+            using (FbCommand createIndex = con.CreateCommand())
+            {
+                createIndex.CommandText = "CREATE INDEX ix_lcname on eddb_systems (lowercase_name)";
+                createIndex.ExecuteNonQuery();
+            }
+            Logger.Info("Indexes created.");
+        }
 		public async Task AddStation(int id, string name, int system_id, string max_landing_pad_size, int? distance_to_star,
 			string faction, string government, string allegiance, string state, int? type_id, string type, bool? has_blackmarket,
 			bool? has_market, bool? has_refuel, bool? has_repair, bool? has_rearm, bool? has_outfitting, bool? has_shipyard, bool? has_docking,
@@ -148,10 +188,153 @@ namespace RatTracker_WPF
 				insertStation.Parameters.AddWithValue("@selling_ships", string.Join(", ",selling_ships.ToArray()));
 				insertStation.Parameters.AddWithValue("@selling_modules", string.Join(", ",selling_modules.ToArray()));
 				insertStation.Parameters.AddWithValue("@lowercase_name", name.ToLower());
-				insertStation.ExecuteNonQuery();
+				await insertStation.ExecuteNonQueryAsync();
 			}
 		}
-		public async Task AddSystem(int id, string name, double x, double y, double z,string faction, long? population, string government, string allegiance, string state, string security, 
+/*
+        public async Task BulkAddStation(List<EddbStation> stations)
+        {
+            if (stations == null)
+            {
+                Logger.Debug("Null system list passed to InjectSystemsToSql!");
+                return;
+            }
+            Logger.Info("Injecting " + systems.Count + " systems to SQL.");
+            FbConnection con2 = new FbConnection(
+            "User=SYSDBA;Password=masterkey;Database=EDDB.FDB;Dialect=3;Charset=UTF8;ServerType=1;");
+            try
+            {
+                con2.Open();
+            }
+            catch (Exception ex)
+            {
+                Show(ex.ToString());
+            }
+            try
+            {
+
+                using (FbCommand insertStation = con2.CreateCommand())
+                {
+                    insertStation.CommandText =
+    "INSERT INTO eddb_systems values (@id, @name, @x, @y, @z, @faction, @population, @government, @allegiance, @state, @security, @primary_economy, @power, @power_state, @needs_permit, @updated_at, @simbad_ref, @lowercase_name)";
+                    insertStation.Parameters.Clear();
+                    insertStation.CommandText =
+                        "INSERT INTO eddb_stations values (@id, @name, @system_id, @max_landing_pad_size, @distance_to_star, @faction, @government, @allegiance, @state, @type_id, @type, @has_blackmarket, @has_market, " +
+                        "@has_refuel, @has_repair, @has_rearm, @has_outfitting, @has_shipyard, @has_docking, @has_commodities, @prohibited_commodities, @economies, @updated_at, @shipyard_updated_at, @outfitting_updated_at, @market_updated_at, " +
+                        "@is_planetary, @selling_ships, @selling_modules, @lowercase_name)";
+                    insertStation.Parameters.Clear();
+                    //id bigint, name varchar(150), system_id bigint, max_landing_pad_size varchar(5), distance_to_star bigint, faction varchar(150), goverment varchar(120), allegiance varchar(130), " +
+                    //"state varchar(120), type_id int, type varchar(130), has_blackmarket boolean, has_market boolean, has_refuel boolean, has_repair boolean, has_rearm boolean, has_outfitting boolean, has_shipyard boolean, has_docking boolean, " +
+                    //"has_commodities boolean, prohibited_commodities varchar(10000), economies varchar(10000), updated_at bigint, shipyard_updated_at bigint, outfitting_updated_at bigint, market_updated_at bigint, is_planetary boolean, " +
+                    //"selling_ships varchar(20000), selling_modules varchar(20000), lowercase_name varchar(150)
+                    insertStation.Parameters.Add("@id", FbDbType.BigInt);
+                    insertStation.Parameters.Add("@name", FbDbType.VarChar,150);
+                    insertStation.Parameters.Add("@system_id", FbDbType.BigInt);
+                    insertStation.Parameters.Add("@max_landing_pad_size", FbDbType.VarChar, 5);
+                    insertStation.Parameters.Add("@distance_to_star", FbDbType.BigInt);
+                    insertStation.Parameters.Add("@faction", FbDbType.VarChar, 150);
+                    insertStation.Parameters.Add("@government", FbDbType.VarChar, 120);
+                    insertStation.Parameters.Add("@allegiance", FbDbType.VarChar, 130);
+                    insertStation.Parameters.Add("@state", FbDbType.VarChar, 120);
+                    insertStation.Parameters.Add("@type_id", FbDbType.Integer);
+                    insertStation.Parameters.Add("@type", FbDbType.VarChar, 130);
+                    insertStation.Parameters.Add("@has_blackmarket", FbDbType.Boolean);
+                    insertStation.Parameters.Add("@has_market", FbDbType.Boolean);
+                    insertStation.Parameters.Add("@has_refuel", FbDbType.Boolean);
+                    insertStation.Parameters.Add("@has_repair", FbDbType.Boolean);
+                    insertStation.Parameters.Add("@has_rearm", FbDbType.Boolean);
+                    insertStation.Parameters.Add("@has_repair",)
+                    insertStation.Parameters.AddWithValue("@faction", faction);
+                    insertStation.Parameters.AddWithValue("@government", government);
+                    insertStation.Parameters.AddWithValue("@allegiance", allegiance);
+                    insertStation.Parameters.AddWithValue("@state", state);
+                    insertStation.Parameters.AddWithValue("@type_id", type_id);
+                    insertStation.Parameters.AddWithValue("@type", type);
+                    insertStation.Parameters.AddWithValue("@has_blackmarket", Convert.ToInt16(has_blackmarket));
+                    insertStation.Parameters.AddWithValue("@has_market", Convert.ToInt16(has_market));
+                    insertStation.Parameters.AddWithValue("@has_refuel", Convert.ToInt16(has_refuel));
+                    insertStation.Parameters.AddWithValue("@has_rearm", Convert.ToInt16(has_rearm));
+                    insertStation.Parameters.AddWithValue("@has_repair", Convert.ToInt16(has_repair));
+                    insertStation.Parameters.AddWithValue("@has_outfitting", Convert.ToInt16(has_outfitting));
+                    insertStation.Parameters.AddWithValue("@has_shipyard", Convert.ToInt16(has_shipyard));
+                    insertStation.Parameters.AddWithValue("@has_docking", Convert.ToInt16(has_docking));
+                    insertStation.Parameters.AddWithValue("@has_commodities", Convert.ToInt16(has_commodities));
+                    insertStation.Parameters.AddWithValue("@prohibited_commodities", string.Join(", ", prohibited_commodities.ToArray()));
+                    insertStation.Parameters.AddWithValue("@economies", string.Join(", ", economies.ToArray()));
+                    insertStation.Parameters.AddWithValue("@updated_at", updated_at);
+                    insertStation.Parameters.AddWithValue("@shipyard_updated_at", shipyard_updated_at);
+                    insertStation.Parameters.AddWithValue("@outfitting_updated_at", outfitting_updated_at);
+                    insertStation.Parameters.AddWithValue("@market_updated_at", market_updated_at);
+                    insertStation.Parameters.AddWithValue("@is_planetary", Convert.ToInt16(is_planetary));
+                    insertStation.Parameters.AddWithValue("@selling_ships", string.Join(", ", selling_ships.ToArray()));
+                    insertStation.Parameters.AddWithValue("@selling_modules", string.Join(", ", selling_modules.ToArray()));
+                    insertStation.Parameters.AddWithValue("@lowercase_name", name.ToLower());
+
+                    insertSystem.Parameters.Add("@id", FbDbType.Integer);
+                    insertSystem.Parameters.Add("@name", FbDbType.VarChar, 150);
+                    insertSystem.Parameters.Add("@x", FbDbType.Double);
+                    insertSystem.Parameters.Add("@y", FbDbType.Double);
+                    insertSystem.Parameters.Add("@z", FbDbType.Double);
+                    insertSystem.Parameters.Add("@faction", FbDbType.VarChar, 150);
+                    insertSystem.Parameters.Add("@population", FbDbType.BigInt);
+                    insertSystem.Parameters.Add("@government", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@allegiance", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@state", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@security", FbDbType.VarChar, 150);
+                    insertSystem.Parameters.Add("@primary_economy", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@power", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@power_state", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@needs_permit", FbDbType.Integer);
+                    insertSystem.Parameters.Add("@updated_at", FbDbType.BigInt);
+                    insertSystem.Parameters.Add("@simbad_ref", FbDbType.VarChar, 150);
+                    insertSystem.Parameters.Add("@lowercase_name", FbDbType.VarChar, 150);
+                    FbTransaction tx = insertSystem.Connection.BeginTransaction();
+                    insertSystem.Transaction = tx;
+                    insertSystem.Prepare();
+                    int i = 0;
+                    foreach (EddbSystem system in systems)
+                    {
+                        if (_eddbworker != null)
+                            _eddbworker.SystemCounter++;
+                        insertSystem.Parameters["@id"].Value = system.id;
+                        insertSystem.Parameters["@name"].Value = system.name;
+                        insertSystem.Parameters["@x"].Value = system.x;
+                        insertSystem.Parameters["@y"].Value = system.y;
+                        insertSystem.Parameters["@z"].Value = system.z;
+                        insertSystem.Parameters["@faction"].Value = system.faction;
+                        insertSystem.Parameters["@population"].Value = system.population;
+                        insertSystem.Parameters["@government"].Value = system.government;
+                        insertSystem.Parameters["@allegiance"].Value = system.allegiance;
+                        insertSystem.Parameters["@state"].Value = system.state;
+                        insertSystem.Parameters["@security"].Value = system.security;
+                        insertSystem.Parameters["@primary_economy"].Value = system.primary_economy;
+                        insertSystem.Parameters["@power"].Value = system.power;
+                        insertSystem.Parameters["@power_state"].Value = system.power_state;
+                        insertSystem.Parameters["@needs_permit"].Value = system.needs_permit;
+                        insertSystem.Parameters["@updated_at"].Value = system.updated_at;
+                        insertSystem.Parameters["@simbad_ref"].Value = system.simbad_ref;
+                        insertSystem.Parameters["@lowercase_name"].Value = system.name.ToLower();
+                        await insertSystem.ExecuteNonQueryAsync();
+                        i++;
+                        if (i % 10000 == 0)
+                        {
+                            tx.Commit();
+                            tx = insertSystem.Connection.BeginTransaction();
+                            insertSystem.Transaction = tx;
+                        }
+                    }
+                    tx.Commit();
+                    con2.Close();
+                }
+                Logger.Info("Completed injection.");
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug("Exception in InjectSystemsToSql: " + ex.Message + "@" + ex.Source);
+            }
+        }
+        */
+        public async Task AddSystem(int id, string name, double x, double y, double z,string faction, long? population, string government, string allegiance, string state, string security, 
 			string primary_economy, string power, string power_state, int needs_permit, int updated_at, string simbad_ref )
 		{
 			//Logger.Debug("Inserting system id " + id + ", " + name);
@@ -178,11 +361,99 @@ namespace RatTracker_WPF
 				insertSystem.Parameters.Add("@updated_at", FbDbType.BigInt).Value = updated_at;
 				insertSystem.Parameters.Add("@simbad_ref", FbDbType.VarChar, 150).Value = simbad_ref;
 				insertSystem.Parameters.Add("@lowercase_name", FbDbType.VarChar, 150).Value = name.ToLower();
-				insertSystem.ExecuteNonQuery();
+				await insertSystem.ExecuteNonQueryAsync();
 			}
 		}
 
-		
+		public async Task BulkAddSystem(List<EddbSystem> systems)
+        {
+            if (systems == null)
+            {
+                Logger.Debug("Null system list passed to InjectSystemsToSql!");
+                return;
+            }
+            Logger.Info("Injecting " + systems.Count + " systems to SQL.");
+            FbConnection con2 = new FbConnection(
+            "User=SYSDBA;Password=masterkey;Database=EDDB.FDB;Dialect=3;Charset=UTF8;ServerType=1;");
+            try
+            {
+                con2.Open();
+            }
+            catch (Exception ex)
+            {
+                Show(ex.ToString());
+            }
+            try
+            {
+
+                using (FbCommand insertSystem = con2.CreateCommand())
+                {
+                    insertSystem.CommandText =
+    "INSERT INTO eddb_systems values (@id, @name, @x, @y, @z, @faction, @population, @government, @allegiance, @state, @security, @primary_economy, @power, @power_state, @needs_permit, @updated_at, @simbad_ref, @lowercase_name)";
+                    insertSystem.Parameters.Clear();
+                    insertSystem.Parameters.Add("@id", FbDbType.Integer);
+                    insertSystem.Parameters.Add("@name", FbDbType.VarChar, 150);
+                    insertSystem.Parameters.Add("@x", FbDbType.Double);
+                    insertSystem.Parameters.Add("@y", FbDbType.Double);
+                    insertSystem.Parameters.Add("@z", FbDbType.Double);
+                    insertSystem.Parameters.Add("@faction", FbDbType.VarChar, 150);
+                    insertSystem.Parameters.Add("@population", FbDbType.BigInt);
+                    insertSystem.Parameters.Add("@government", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@allegiance", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@state", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@security", FbDbType.VarChar, 150);
+                    insertSystem.Parameters.Add("@primary_economy", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@power", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@power_state", FbDbType.VarChar, 130);
+                    insertSystem.Parameters.Add("@needs_permit", FbDbType.Integer);
+                    insertSystem.Parameters.Add("@updated_at", FbDbType.BigInt);
+                    insertSystem.Parameters.Add("@simbad_ref", FbDbType.VarChar, 150);
+                    insertSystem.Parameters.Add("@lowercase_name", FbDbType.VarChar, 150);
+                    FbTransaction tx = insertSystem.Connection.BeginTransaction();
+                    insertSystem.Transaction = tx;
+                    insertSystem.Prepare();
+                    int i = 0;
+                    foreach (EddbSystem system in systems)
+                    {
+                        if (_eddbworker != null)
+                            _eddbworker.SystemCounter++;
+                        insertSystem.Parameters["@id"].Value = system.id;
+                        insertSystem.Parameters["@name"].Value = system.name;
+                        insertSystem.Parameters["@x"].Value = system.x;
+                        insertSystem.Parameters["@y"].Value = system.y;
+                        insertSystem.Parameters["@z"].Value = system.z;
+                        insertSystem.Parameters["@faction"].Value = system.faction;
+                        insertSystem.Parameters["@population"].Value = system.population;
+                        insertSystem.Parameters["@government"].Value = system.government;
+                        insertSystem.Parameters["@allegiance"].Value = system.allegiance;
+                        insertSystem.Parameters["@state"].Value = system.state;
+                        insertSystem.Parameters["@security"].Value = system.security;
+                        insertSystem.Parameters["@primary_economy"].Value = system.primary_economy;
+                        insertSystem.Parameters["@power"].Value = system.power;
+                        insertSystem.Parameters["@power_state"].Value = system.power_state;
+                        insertSystem.Parameters["@needs_permit"].Value = system.needs_permit;
+                        insertSystem.Parameters["@updated_at"].Value = system.updated_at;
+                        insertSystem.Parameters["@simbad_ref"].Value = system.simbad_ref;
+                        insertSystem.Parameters["@lowercase_name"].Value = system.name.ToLower();
+                        await insertSystem.ExecuteNonQueryAsync();
+                        i++;
+                        if (i % 10000 == 0)
+                        {
+                            tx.Commit();
+                            tx = insertSystem.Connection.BeginTransaction();
+                            insertSystem.Transaction = tx;
+                        }
+                    }
+                    tx.Commit();
+                    con2.Close();
+                }
+                Logger.Info("Completed injection.");
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug("Exception in InjectSystemsToSql: " + ex.Message + "@" + ex.Source);
+            }
+        }
 		public void TestInserts()
 		{
 			Logger.Debug("Testing a query for a system.");
@@ -243,7 +514,7 @@ namespace RatTracker_WPF
 			}
 			catch (Exception e)
 			{
-				Logger.Debug("Failed to query system count in SQL, probably no database. Creating.");
+				Logger.Debug("Failed to query system count in SQL, probably no database. Creating. Error was "+e.Message);
 				CreateTables();
 				return 0;
 			}
