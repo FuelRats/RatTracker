@@ -67,6 +67,7 @@ namespace RatTracker_WPF
 		private long _fileOffset; // Current offset in NetLog file
 		private long _fileSize; // Size of current netlog file
 		private string _jumpsToClient; // Bound to UI element
+        private string _xmlparselist; // Buffer for XML since it now arrives in chunks.
 
 		// ReSharper disable once UnusedMember.Local TODO ??
 		private string _logDirectory = Settings.Default.NetLogPath; // TODO: Remove this assignment and pull live from Settings, have the logfile watcher reaquire file if settings are changed.
@@ -559,7 +560,17 @@ namespace RatTracker_WPF
 						Logger.Debug("3PA broadcast message received:" + data.ToString());
 						break;
                     case "authorization":
-                        Logger.Debug("Authorization callback: " + data.ToString());
+                        Logger.Debug("Authorization callback: " + realdata.ToString());
+                        AppendStatus("Got user data for " + realdata.email);
+                        MyPlayer.RatId = new List<string>();
+                        foreach (dynamic cmdrdata in realdata.rats)
+                        {
+                            AppendStatus("RatID " + cmdrdata.id + " added to identity list.");
+                            MyPlayer.RatId.Add(cmdrdata.id.ToString());
+                        }
+                        _myplayer.RatName = await GetRatName(MyPlayer.RatId.FirstOrDefault()); // This will have to be redone when we go WS, as we can't load the variable then.
+                        break;
+
                         break;
 					default:
 						Logger.Info("Unknown API action field: " + meta.action);
@@ -769,8 +780,9 @@ namespace RatTracker_WPF
 		{
 			/* Sanitize the XML, it can break if over 40 friends long or so. */
 			int count = 0;
+            //Logger.Debug("Before xml extract:" + friendsList);
 			string xmlData = friendsList.Substring(friendsList.IndexOf("<", StringComparison.Ordinal) + friendsList.Length);
-			Logger.Debug("Raw xmlData: " + xmlData);
+			Logger.Debug("Parsing XML buffer.");
 			try
 			{
 				XDocument xdoc = XDocument.Parse(friendsList);
@@ -836,7 +848,7 @@ namespace RatTracker_WPF
 					MyClient.Self.FriendRequest = RequestState.Accepted;
 				}
 
-				AppendStatus("Parsed " + count + " friends in FRXML.");
+				//AppendStatus("Parsed " + count + " friends in FRXML."); //Spammy!
 			}
 			catch (XmlException ex)
 			{
@@ -867,7 +879,7 @@ namespace RatTracker_WPF
 						AppendStatus("Wingmember:" + Encoding.UTF8.GetString(byteenc));
 						if (_myrescue != null)
 						{
-							if (Encoding.UTF8.GetString(byteenc) == _myrescue.Client)
+							if (Encoding.UTF8.GetString(byteenc).ToLower() == _myrescue.Client.ToLower())
 							{
 								AppendStatus("This data matches our current client! Storing information...");
 								XElement element = wingdata.Element("id");
@@ -1211,12 +1223,13 @@ namespace RatTracker_WPF
 						return;
 					TriggerSystemChange(match.Groups[2].Value);
 				}
-
 				const string reMatchPlayer = "\\{.+\\} (\\d+) x (\\d+).*\\(\\(([0-9.]+):\\d+\\)\\)Name (.+)$";
 				Match frmatch = Regex.Match(line, reMatchPlayer, RegexOptions.IgnoreCase);
 				if (frmatch.Success)
 				{
-					if (_scState == "Normalspace" && _myrescue!=null)
+                    Logger.Debug("PlayerMatch parsed");
+
+                    if (_scState == "Normalspace" && _myrescue!=null)
 					{
 						AppendStatus("Successful ID match in normal space. Sending good instance.");
 						MyClient.Self.InInstance = true;
@@ -1289,13 +1302,27 @@ namespace RatTracker_WPF
 									"SRTT: " + Conninfo.Srtt + " Jitter: " + Conninfo.Jitter + " Loss: " +
 									Conninfo.Loss + " In: " + Conninfo.Act1 + " Out: " + Conninfo.Act2));
 				}
+                if (line.Contains("</data>"))
+                {
+                    Logger.Debug("End of FriendsXML, send buffer to friendsparser.");
+                    _xmlparselist += line;
+                    ParseFriendsList(_xmlparselist);
+                    return;
+                }
+                if (line.Contains("<item>"))
+                {
+                    Logger.Debug("Appending xml item to parselist.");
+                    _xmlparselist += line;
+                    return;
+                }
 				if (line.Contains("<data>"))
 				{
-					Logger.Debug("Line sent to XML parser");
-					ParseFriendsList(line);
+					Logger.Debug("Startline for FriendsXML, initialize XML buffer");
+                    _xmlparselist = "";
+                    _xmlparselist += line;
+                    return;
 				}
-
-				if (line.Contains("<FriendWingInvite>"))
+ 				if (line.Contains("<FriendWingInvite>"))
 				{
 					Logger.Debug("Wing invite detected, parsing...");
 					ParseWingInvite(line);
@@ -1353,7 +1380,7 @@ namespace RatTracker_WPF
 			}
 			catch (Exception ex)
 			{
-				Logger.Debug("Exception in ParseLine: " + ex.Message);
+				Logger.Debug("Exception in ParseLine: " + ex.Message + "@"+ex.Source +":"+ ex.Data);
 				_tc.TrackException(ex);
 			}
 		}
@@ -1404,6 +1431,7 @@ namespace RatTracker_WPF
 						if (_myrescue.System == value)
 						{
 							AppendStatus("Arrived in client system. Notifying dispatch.");
+                            Logger.Info("Sending 3PA sys+ message!");
 							TPAMessage sysmsg = new TPAMessage
 							{
 								action = "SysArrived:update",
@@ -1495,7 +1523,7 @@ namespace RatTracker_WPF
 						{"currentSystem", MyPlayer.CurrentSystem}
 					}
 				};
-				_apworker.SendTpaMessage(dutymessage);
+				// _apworker.SendTpaMessage(dutymessage); // Disabled while testing, it's spammy.
 			}
 			catch (Exception ex)
 			{
