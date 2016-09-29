@@ -39,7 +39,7 @@ namespace RatTracker_WPF
 
 			try
 			{
-				const string wsurl = "wss://dev.api.fuelrats.com:443/"; //TODO: Remove this hardcoding! Rewrite URL with ws:// instead of http://
+				const string wsurl = "wss://api.fuelrats.com:443/"; //TODO: Remove this hardcoding! Rewrite URL with ws:// instead of http://
 																   //string wsurl = "ws://dev.api.fuelrats.com/";
 				Logger.Info("Connecting to WS at " + wsurl);
 				Ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455) {AllowUnstrustedCertificate = true};
