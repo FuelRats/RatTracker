@@ -216,6 +216,7 @@
     <Compile Include="Models\App\NetworkError.cs" />
     <Compile Include="Models\App\OverlayMessage.cs" />
     <Compile Include="Models\App\PlayerInfo.cs" />
+    <Compile Include="Models\App\RescueData.cs" />
     <Compile Include="Models\App\SysInfo.cs" />
     <Compile Include="Models\Eddb\EddbStation.cs" />
     <Compile Include="Models\Eddb\EddbSystem.cs" />
