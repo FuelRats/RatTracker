@@ -29,6 +29,7 @@ namespace RatTracker_WPF
 		private List<string> _jsonfiles = new List<string>();
 		string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
 		private string _orthancUrl = "http://orthanc.localecho.net/json/";
+        private bool _progressVisibility = false;
 		public string Status
 		{
 			get { return _status; }
@@ -38,7 +39,16 @@ namespace RatTracker_WPF
 				NotifyPropertyChanged();
 			}
 		}
-		public int SystemCount
+        public bool ProgressVisibility
+        {
+            get { return _progressVisibility;  }
+            set
+            {
+                _progressVisibility = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public int SystemCount
 		{
 			get { return _systemcount; }
 			set
@@ -149,6 +159,7 @@ namespace RatTracker_WPF
 				{
 					Logger.Info("Found a recent cached "+jsonchunk+", injecting directly.");
                     Status = "Injecting "+jsonchunk;
+                    ProgressVisibility = true;
                     using (StreamReader sr = new StreamReader(_rtPath + @"\RatTracker\"+jsonchunk))
 					{
 						var loadedfile = sr.ReadLine();
@@ -161,7 +172,7 @@ namespace RatTracker_WPF
 			}
             Status = "Creating Indexes";
             _fbworker.CreateIndexes();
-
+            ProgressVisibility = false;
 			return "Complete";
 		}
         public async Task<string> UpdateEddbData(bool forced)

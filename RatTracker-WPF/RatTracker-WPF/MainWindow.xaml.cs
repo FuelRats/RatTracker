@@ -241,7 +241,7 @@ namespace RatTracker_WPF
 				{
 					Logger.Debug("Initialize API...");
 					InitApi(false);
-				};
+                };
 				eddbWorker.DoWork += async delegate
 				{
 					Logger.Debug("Initialize EDDB...");
@@ -286,6 +286,7 @@ namespace RatTracker_WPF
 			Thread.Sleep(5000);
 			Eddbworker.Setworker(ref _fbworker);
             FbWorker.SetEDDB(ref _eddbworker);
+            InitRescueGrid();
 			return;
 		}
 		public async void Reinitialize()
@@ -1617,7 +1618,8 @@ namespace RatTracker_WPF
 				else
 				{
 					Logger.Info("Fetching rescues from WS API.");
-					APIQuery rescuequery = new APIQuery
+                    RescueGrid.AutoGenerateColumns = false;
+                    APIQuery rescuequery = new APIQuery
 					{
 						action = "rescues:read",
 						data = new Dictionary<string, string> {{"open", "true"}}
@@ -1625,7 +1627,6 @@ namespace RatTracker_WPF
 					_apworker.SendQuery(rescuequery);
 				}
 
-				RescueGrid.AutoGenerateColumns = false;
 				//await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
 				//await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => rescues.Data.ForEach(datum => ItemsSource.Add(datum))));
 				//await GetMissingRats(rescues);
@@ -1681,7 +1682,7 @@ namespace RatTracker_WPF
 			await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => SystemName.Text = myrow.System));
 			DistanceToClient = -1;
 			DistanceToClientString = "Calculating...";
-			JumpsToClient = string.Empty;
+			JumpsToClient = "Calculating...";
 			DispatcherFrame frame = new DispatcherFrame();
 			await Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new DispatcherOperationCallback(delegate (object parameter) {
 				frame.Continue = false;
@@ -1697,9 +1698,8 @@ namespace RatTracker_WPF
 			{
 				ClientDistance distance = await GetDistanceToClient(system);
 				DistanceToClient = Math.Round(distance.Distance, 2);
-				JumpsToClient = MyPlayer.JumpRange > 0
-					? Math.Ceiling(distance.Distance/MyPlayer.JumpRange).ToString(CultureInfo.InvariantCulture)
-					: string.Empty;
+                Logger.Debug("Setting JTC based on jump distance " + MyPlayer.JumpRange + ": " + Math.Ceiling(distance.Distance / MyPlayer.JumpRange).ToString());
+                JumpsToClient = Math.Ceiling(distance.Distance / MyPlayer.JumpRange).ToString(CultureInfo.InvariantCulture);
 			}
 			catch (Exception ex)
 			{
@@ -1869,6 +1869,8 @@ namespace RatTracker_WPF
 			ClientDistance cd = new ClientDistance();
 			EdsmCoords sourcecoords = FuelumCoords;
             EdsmSystem sourceSystem = new EdsmSystem();
+            sourceSystem.Name = "Fuelum";
+            sourceSystem.Coords = FuelumCoords;
 			cd.SourceCertainty = "Fuelum";
 			if (_myTravelLog!=null)
 			{
@@ -2355,23 +2357,19 @@ namespace RatTracker_WPF
 
 		private void Runtests_button_click(object sender, RoutedEventArgs e)
 		{
-			OverlayMessage mymessage = new OverlayMessage
-			{
-				Line1Header = "Nearest station:",
-				Line1Content = "Wollheim Vision, Fuelum (0LY)",
-				Line2Header = "Pad size:",
-				Line2Content = "Large",
-				Line3Header = "Capabilities:",
-				Line3Content = "Refuel, Rearm, Repair"
-			};
+            /*			OverlayMessage mymessage = new OverlayMessage
+                        {
+                            Line1Header = "Nearest station:",
+                            Line1Content = "Wollheim Vision, Fuelum (0LY)",
+                            Line2Header = "Pad size:",
+                            Line2Content = "Large",
+                            Line3Header = "Capabilities:",
+                            Line3Content = "Refuel, Rearm, Repair"
+                        };
 
-			_overlay?.Queue_Message(mymessage, 30);
-			IDictionary<string, string> logindata = new Dictionary<string, string>();
-			logindata.Add(new KeyValuePair<string, string>("open", "true"));
-			//logindata.Add(new KeyValuePair<string, string>("password", "password"));
-			_apworker.SendWs("rescues:read", logindata);
-			//InitRescueGrid(); // We do this from post-API initialization now.
-			if (MyPlayer.RatId != null)
+                        _overlay?.Queue_Message(mymessage, 30);
+                        //InitRescueGrid(); // We do this from post-API initialization now.
+            if (MyPlayer.RatId != null)
 			{
 				AppendStatus("Known RatIDs for self:");
 				foreach (string id in MyPlayer.RatId)
@@ -2385,8 +2383,14 @@ namespace RatTracker_WPF
                 MyPlayer.RatId = new List<string>();
                 MyPlayer.RatId.Add("b8655683-bafe-42f9-9e19-529036719a79");
             }
-			Thread.Sleep(2000);
-			AppendStatus("EDDB SQL has " + _fbworker.GetSystemCount().ToString() + " systems");
+
+            */
+            Logger.Debug("Forcing RescueGrid Update");
+            IDictionary<string, string> logindata = new Dictionary<string, string>();
+            logindata.Add(new KeyValuePair<string, string>("open", "true"));
+            //logindata.Add(new KeyValuePair<string, string>("password", "password"));
+            _apworker.SendWs("rescues:read", logindata);
+
 		}
 
 

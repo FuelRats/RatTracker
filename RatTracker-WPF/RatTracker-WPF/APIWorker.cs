@@ -205,11 +205,11 @@ namespace RatTracker_WPF
 				SubscribeStream("0xDEADBEEF");
 				APIQuery login = new APIQuery
 				{
-					action = "users:read",
-					data = new Dictionary<string, string> {{"email", Properties.Settings.Default.APIUsername}}
+					action = "rescues:read",
+					data = new Dictionary<string, string> {{"open", "true"}}
 				};
 				SendQuery(login);
-				Logger.Info("Sent login for " + Properties.Settings.Default.APIUsername);
+				Logger.Info("Sent RescueGrid Update request.");
 			}
 			//TODO: Put stream subscription messages here when Mecha goes live. Do we want to listen to ourselves?
 		}

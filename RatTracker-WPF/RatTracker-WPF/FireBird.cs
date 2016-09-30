@@ -11,7 +11,7 @@ using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.Eddb;
 
 using static System.Windows.MessageBox;
-
+using System.Threading;
 
 namespace RatTracker_WPF
 {
@@ -49,7 +49,11 @@ namespace RatTracker_WPF
 			builder.UserID = "SYSDBA";
 			builder.Database = "EDDB.FDB";
 			builder.ServerType = FbServerType.Embedded;
-			if (File.Exists("EDDB.FDB"))
+            if (Thread.CurrentThread.Name == null)
+            {
+                Thread.CurrentThread.Name = "FireBirdWorker";
+            }
+            if (File.Exists("EDDB.FDB"))
 			{
 				Logger.Info("FBworker: EDDB database file found.");
 			}
