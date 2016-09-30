@@ -25,7 +25,7 @@ namespace RatTracker_WPF
 		public IEnumerable<EddbSystem> Systems;
 		private FireBird _fbworker;
 		private int _systemcount;
-		private string _status = "Initializing";
+		private string _status = "EDDB: Initializing";
 		private List<string> _jsonfiles = new List<string>();
 		string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
 		private string _orthancUrl = "http://orthanc.localecho.net/json/";
@@ -94,6 +94,7 @@ namespace RatTracker_WPF
             {
                 UriBuilder content = new UriBuilder(_orthancUrl + "sysinfo.json");
                 Logger.Info("Downloading sysinfo.json...");
+                Status = "Downloading SysInfo";
                 HttpResponseMessage response = await client.GetAsync(content.ToString());
                 response.EnsureSuccessStatusCode();
                 string responseString = await response.Content.ReadAsStringAsync();
@@ -122,7 +123,9 @@ namespace RatTracker_WPF
 						client.Timeout = TimeSpan.FromMinutes(120);
 						UriBuilder content = new UriBuilder(_orthancUrl + jsonchunk);
 						Logger.Info("Downloading " + content + "...");
-						HttpResponseMessage response = await client.GetAsync(content.ToString());
+                        Status = "Downloading "+content;
+
+                        HttpResponseMessage response = await client.GetAsync(content.ToString());
 						response.EnsureSuccessStatusCode();
 						string responseString = await response.Content.ReadAsStringAsync();
 						using (StreamWriter sw = new StreamWriter(_rtPath + @"\RatTracker\" + jsonchunk))
@@ -145,7 +148,8 @@ namespace RatTracker_WPF
 				else
 				{
 					Logger.Info("Found a recent cached "+jsonchunk+", injecting directly.");
-					using (StreamReader sr = new StreamReader(_rtPath + @"\RatTracker\"+jsonchunk))
+                    Status = "Injecting "+jsonchunk;
+                    using (StreamReader sr = new StreamReader(_rtPath + @"\RatTracker\"+jsonchunk))
 					{
 						var loadedfile = sr.ReadLine();
 						var temp = JsonConvert.DeserializeObject<List<EddbSystem>>(loadedfile);
@@ -155,6 +159,7 @@ namespace RatTracker_WPF
 
 			
 			}
+            Status = "Creating Indexes";
             _fbworker.CreateIndexes();
 
 			return "Complete";
@@ -164,6 +169,7 @@ namespace RatTracker_WPF
             if (_fbworker == null)
             {
                 Logger.Debug("No FbWorker reference in UpdateEddbData. Waiting for SQL to spin up...");
+                Status = "Waiting for Firebird";
                 Thread.Sleep(5000);
                 await UpdateEddbData(false);
             }
@@ -187,6 +193,7 @@ namespace RatTracker_WPF
             if (filedate.AddDays(7) < DateTime.Now)
             {
                 Logger.Info("EDDB station cache is older than 7 days, updating...");
+                Status = "Downloading Stations";
                 try
                 {
                     List<EddbStation> eddbStations = new List<EddbStation>();
@@ -209,16 +216,21 @@ namespace RatTracker_WPF
                             await sw.WriteLineAsync(responseString);
                             Logger.Info("Saved stations.json");
                         }
-                        Stations = JsonConvert.DeserializeObject<IEnumerable<EddbStation>>(responseString);
+                        Status = "Deserializing Stations";
+                        eddbStations = JsonConvert.DeserializeObject<List<EddbStation>>(responseString);
                         Logger.Debug("Deserialized stations: " + eddbStations.Count());
+                        Status = "Injecting Stations";
+                        await InjectStationsToSql(eddbStations);
                     }
                 }
                 catch (Exception ex)
                 {
                     Logger.Debug("Exception in Station dechunk: " + ex.Message);
+                    Status = "Error during Station dechunk!";
                     return "Failed!";
                 }
             }
+            Status = "EDDB Ready!";
             return "Complete.";
         }
         public async Task InjectStationsToSql(List<EddbStation> stations)

@@ -44,6 +44,7 @@ namespace RatTracker_WPF
 		{
 			bool newdb = false;
 			Logger.Debug("Starting FbConnection");
+            Status = "Connecting";
 			FbConnectionStringBuilder builder = new FbConnectionStringBuilder();
 			builder.UserID = "SYSDBA";
 			builder.Database = "EDDB.FDB";
@@ -55,6 +56,7 @@ namespace RatTracker_WPF
 			else
 			{
 				Logger.Debug("Creating Database!");
+                Status = "Creating Database";
 				FbConnection.CreateDatabase(builder.ConnectionString);
 				newdb = true;
 			}
@@ -95,6 +97,7 @@ namespace RatTracker_WPF
 		public void CreateTables()
 		{
 			Logger.Debug("Starting database table creation.");
+            Status = "Creating Tables";
 			using (FbCommand createDomain = con.CreateCommand())
 			{
 				createDomain.CommandText = "CREATE DOMAIN BOOLEAN AS SMALLINT CHECK (value is null or value in (0, 1))";
@@ -136,6 +139,7 @@ namespace RatTracker_WPF
 
         public void CreateIndexes()
         {
+            Status = "Creating Indexes";
             Logger.Info("Creating indexes...");
             using (FbCommand createIndex = con.CreateCommand())
             {
@@ -143,6 +147,7 @@ namespace RatTracker_WPF
                 createIndex.ExecuteNonQuery();
             }
             Logger.Info("Indexes created.");
+            Status = "Ready";
         }
 		public async Task AddStation(int id, string name, int system_id, string max_landing_pad_size, int? distance_to_star,
 			string faction, string government, string allegiance, string state, int? type_id, string type, bool? has_blackmarket,
@@ -151,6 +156,7 @@ namespace RatTracker_WPF
 			List<string> economies, int? updated_at, int? shipyard_updated_at, int? outfitting_updated_at, int? market_updated_at,
 			bool is_planetary, List<string> selling_ships, List<int> selling_modules)
 		{
+            Status = "Inserting";
 			using (FbCommand insertStation = con.CreateCommand())
 			{
 				insertStation.CommandText =
@@ -190,6 +196,7 @@ namespace RatTracker_WPF
 				insertStation.Parameters.AddWithValue("@lowercase_name", name.ToLower());
 				await insertStation.ExecuteNonQueryAsync();
 			}
+            Status = "Ready!";
 		}
 /*
         public async Task BulkAddStation(List<EddbStation> stations)
@@ -337,7 +344,8 @@ namespace RatTracker_WPF
         public async Task AddSystem(int id, string name, double x, double y, double z,string faction, long? population, string government, string allegiance, string state, string security, 
 			string primary_economy, string power, string power_state, int needs_permit, int updated_at, string simbad_ref )
 		{
-			//Logger.Debug("Inserting system id " + id + ", " + name);
+            //Logger.Debug("Inserting system id " + id + ", " + name);
+            Status = "Inserting";
 			using (FbCommand insertSystem = con.CreateCommand())
 			{
 				insertSystem.CommandText =
@@ -363,6 +371,7 @@ namespace RatTracker_WPF
 				insertSystem.Parameters.Add("@lowercase_name", FbDbType.VarChar, 150).Value = name.ToLower();
 				await insertSystem.ExecuteNonQueryAsync();
 			}
+            Status="Ready!";
 		}
 
 		public async Task BulkAddSystem(List<EddbSystem> systems)
@@ -373,6 +382,7 @@ namespace RatTracker_WPF
                 return;
             }
             Logger.Info("Injecting " + systems.Count + " systems to SQL.");
+            Status = "Bulk inserting...";
             FbConnection con2 = new FbConnection(
             "User=SYSDBA;Password=masterkey;Database=EDDB.FDB;Dialect=3;Charset=UTF8;ServerType=1;");
             try
@@ -444,10 +454,12 @@ namespace RatTracker_WPF
                             insertSystem.Transaction = tx;
                         }
                     }
+                    Status = "Committing transaction...";
                     tx.Commit();
                     con2.Close();
                 }
                 Logger.Info("Completed injection.");
+                Status = "Ready!";
             }
             catch (Exception ex)
             {
@@ -473,7 +485,7 @@ namespace RatTracker_WPF
 		public List<EdsmSystem> GetSystemAsEdsm(string systemname)
 		{
 			List<EdsmSystem> systemResult = new List<EdsmSystem>();
-
+            Status = "Working...";
 			using (FbCommand getSystem = con.CreateCommand())
 			{
 				getSystem.CommandText = "SELECT FIRST 10 name,id,x,y,z FROM eddb_systems WHERE lowercase_name LIKE '%" + systemname.ToLower() + "%'";
@@ -493,11 +505,13 @@ namespace RatTracker_WPF
 				}
 
 			}
+            Status = "Ready!";
 			return systemResult;
 		}
 		public int GetSystemCount()
 		{
 			Logger.Debug("Counting systems...");
+            Status = "Working...";
 			try
 			{
 				using (FbCommand querySystemCount = con.CreateCommand())
@@ -507,6 +521,7 @@ namespace RatTracker_WPF
 					{
 						while (r.Read())
 						{
+                            Status = "Ready!";
 							return r.GetInt32(0);
 						}
 					}
