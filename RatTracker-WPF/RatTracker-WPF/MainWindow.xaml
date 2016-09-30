@@ -59,7 +59,7 @@
                         <Label x:Name="Label3Copy" Content="Assigned Rats" Height="26" Margin="0,116.65,164.01,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="103" Foreground="{DynamicResource brushEliteOrange}" d:LayoutOverrides="HorizontalAlignment, VerticalAlignment"/>
                         <TextBlock x:Name="AssignedRatsLabel" HorizontalAlignment="Left" Height="17" Margin="313.979,142.65,0,0" TextWrapping="Wrap" Text="{Binding AssignedRats}" VerticalAlignment="Top" Width="212" d:LayoutOverrides="VerticalAlignment"/>
                         <Label x:Name="label" Content="Distance to client" HorizontalAlignment="Left" Height="23" Margin="313.979,159.65,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
-                        <Label x:Name="LabelCopy" Content="Jumps (Approx)" HorizontalAlignment="Left" Height="23" Margin="431.979,159.65,0,0" VerticalAlignment="Top" Width="129"/>
+                        <Label x:Name="LabelCopy" Content="Jumps (Approx)" HorizontalAlignment="Left" Height="23" Margin="431.979,159.65,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
                         <Button x:Name="Button1" Content="Call jumps" HorizontalAlignment="Left" Height="24" Margin="431.979,209.65,0,0" VerticalAlignment="Top" Width="74" Click="button1_Click" Foreground="{DynamicResource brushEliteOrange}" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}"/>
                         <Label x:Name="ClientDistanceLabel" Content="{Binding DistanceToClientString}" HorizontalAlignment="Left" Height="23" Margin="313.979,181.65,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
                         <Label x:Name="LabelCopy2" Content="{Binding JumpsToClient}" HorizontalAlignment="Left" Height="23" Margin="431.979,181.65,0,0" VerticalAlignment="Top" Width="129"/>
@@ -127,11 +127,18 @@
                 </Grid>
             </GroupBox>
             <StatusBar Grid.ColumnSpan="2" Grid.Column="0" HorizontalAlignment="Left" Height="30" Margin="0,18,0,0" Grid.Row="2" VerticalAlignment="Top" Width="924" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}">
-                <TextBlock x:Name="ConnectionStatus" Height="20" TextWrapping="Wrap" Text="TextBlock" Width="213"/>
-                <TextBlock x:Name="Dbcounter"  Height="20" TextWrapping="Wrap" Text="{Binding Eddbworker.SystemCounter}" Width="101" HorizontalAlignment="Right"/>
-                <TextBlock x:Name="Separator"  Height="20" TextWrapping="Wrap" Text="/" Width="28"/>
-                <TextBlock x:Name="Dbtarget"  Height="20" TextWrapping="Wrap" Text="{Binding Eddbworker.SystemCount}" Width="101" HorizontalAlignment="Left"/>
-                <ProgressBar x:Name="Dbprogress" Height="20" Width="150" Maximum="{Binding Eddbworker.SystemCount}" Value="{Binding Eddbworker.SystemCounter}" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" />
+                <TextBlock x:Name="ConnectionStatus" Height="20" TextWrapping="Wrap" Text="{Binding Eddbworker.Status}" Width="213"/>
+                <TextBlock x:Name="Dbcounter"  Height="20" TextWrapping="Wrap" Width="101" HorizontalAlignment="Right">
+                    <TextBlock.Text>
+                    <MultiBinding StringFormat="{}{0} / {1}">
+                        <Binding Path="Eddbworker.SystemCounter" />
+                        <Binding Path="Eddbworker.SystemCount" />
+                    </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <TextBlock x:Name="Separator"  Height="20" TextWrapping="Wrap" Text="" Width="28"/>
+                <TextBlock x:Name="Dbtarget"  Height="20" TextWrapping="Wrap" Text="{Binding FbWorker.Status}" Width="101" HorizontalAlignment="Left"/>
+                <ProgressBar x:Name="Dbprogress" Height="20" Width="150" Maximum="{Binding Eddbworker.SystemCount}" Value="{Binding Eddbworker.SystemCounter}" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}"/>
             </StatusBar>
         </Grid>
         <Grid x:Name="Rat2Grid" HorizontalAlignment="Left" Margin="33.767,297.355,0,244.331" Width="187" Visibility="{Binding MyClient.Rat2.RatName, Converter={converter:EmptyStringToVisibilityConverter}}" d:LayoutOverrides="HorizontalAlignment">

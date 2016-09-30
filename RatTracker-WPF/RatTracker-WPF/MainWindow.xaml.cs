@@ -100,6 +100,18 @@ namespace RatTracker_WPF
 
 		private FireBird _fbworker;
 
+        public FireBird FbWorker
+        {
+            get
+            {
+                return _fbworker;
+            }
+            set
+            {
+                _fbworker = value;
+                NotifyPropertyChanged();
+            }
+        }
 		// TODO
 #pragma warning disable 649
 		private string _oAuthCode;
@@ -268,12 +280,12 @@ namespace RatTracker_WPF
 				return;
 			}
 			AppendStatus("EDDB has loaded, initializing FBWorker.");
-			_fbworker = new FireBird();
-			_fbworker.InitDB();
+			FbWorker = new FireBird();
+			FbWorker.InitDB();
 			// Wait a bit for Firebird to load up...
 			Thread.Sleep(5000);
 			Eddbworker.Setworker(ref _fbworker);
-            _fbworker.SetEDDB(ref _eddbworker);
+            FbWorker.SetEDDB(ref _eddbworker);
 			return;
 		}
 		public async void Reinitialize()
@@ -1818,7 +1830,7 @@ namespace RatTracker_WPF
 		// TODO: Be less stupid and actually support finding systems that AREN'T procedural. Duh.
 		public async Task<IEnumerable<EdsmSystem>> GetCandidateSystems(string target)
 		{
-			Logger.Debug("Finding candidate systems for " + target);
+			Logger.Debug("(GetCandidateSystems) Finding candidate systems for " + target);
 			try {
 				string sysmatch = "([A-Z][A-Z]-[A-z]+) ([a-zA-Z])+(\\d+(?:-\\d+)+?)";
 				Match mymatch = Regex.Match(target, sysmatch, RegexOptions.IgnoreCase);
@@ -1839,7 +1851,7 @@ namespace RatTracker_WPF
 						finalcandidates = candidates.Where(x => x.Coords != null).ToList();
 					}
 				}
-
+                Logger.Debug("Final count before return from GetCandidateSystems is " + finalcandidates.Count());
 				return finalcandidates;
 			}
 			catch(Exception ex)
@@ -1856,6 +1868,7 @@ namespace RatTracker_WPF
 			EdsmCoords targetcoords =new EdsmCoords();
 			ClientDistance cd = new ClientDistance();
 			EdsmCoords sourcecoords = FuelumCoords;
+            EdsmSystem sourceSystem = new EdsmSystem();
 			cd.SourceCertainty = "Fuelum";
 			if (_myTravelLog!=null)
 			{
@@ -1872,11 +1885,14 @@ namespace RatTracker_WPF
 						if (logdepth == 0)
 						{
 							cd.SourceCertainty = "Exact";
+                            sourceSystem = mysource.System;
+                            break;
 						}
 						else
 						{
 							cd.SourceCertainty = logdepth.ToString();
-							break;
+                            sourceSystem = mysource.System;
+                            break;
 						}
 					}
 				}
@@ -1905,9 +1921,14 @@ namespace RatTracker_WPF
 			}
 
 			Logger.Debug("We have two sets of coords that we can use to find a distance.");
-			Logger.Debug("Finding from coords: " + sourcecoords.X + " " + sourcecoords.Y + " " + sourcecoords.Z + " to " + targetcoords.X + " " + targetcoords.Y + " " + targetcoords.Z);
-			EdsmSystem edsmSystem = candidates.FirstOrDefault();
-			if (edsmSystem != null) targetcoords = edsmSystem.Coords;
+            EdsmSystem edsmSystem = candidates.FirstOrDefault();
+            if (edsmSystem != null) targetcoords = edsmSystem.Coords;
+            if(sourceSystem == null || sourceSystem.Name==null)
+            {
+                Logger.Debug("Err... Source system (or its name) is null, that shouldn't happen at this point. Bailing!");
+                return new ClientDistance();
+            }
+            Logger.Debug("Finding from coords: " + sourcecoords.X + " " + sourcecoords.Y + " " + sourcecoords.Z + " ("+sourceSystem.Name+") to " + targetcoords.X + " " + targetcoords.Y + " " + targetcoords.Z+" ("+edsmSystem.Name+")");
 			double deltaX = sourcecoords.X - targetcoords.X;
 			double deltaY = sourcecoords.Y - targetcoords.Y;
 			double deltaZ = sourcecoords.Z - targetcoords.Z;
@@ -2044,10 +2065,10 @@ namespace RatTracker_WPF
 							_overlay.Topmost = true;
 							Logger.Debug("Overlay coordinates set to " + _overlay.Left + " x " + _overlay.Top);
 							HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)PresentationSource.FromVisual(Application.Current.MainWindow));
-							hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
-							hotKeyHost.AddHotKey(new CustomHotKey("CopyClientSystemname", Key.C, ModifierKeys.Control | ModifierKeys.Alt, true));
-							hotKeyHost.HotKeyPressed += HandleHotkeyPress;
-
+							//hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt , true));
+							//hotKeyHost.AddHotKey(new CustomHotKey("CopyClientSystemname", Key.C, ModifierKeys.Control | ModifierKeys.Alt , true));
+							//hotKeyHost.HotKeyPressed += HandleHotkeyPress;
+                            // Broken all of a sudden? May require recode.
 						}
 					}
 				}
@@ -2304,6 +2325,12 @@ namespace RatTracker_WPF
 
 		private void fueledButton_Click(object sender, RoutedEventArgs e)
 		{
+            if (MyClient.Rescue == null || MyPlayer.RatId.FirstOrDefault()==null)
+            {
+                Logger.Debug("Null rescue or RatID, not doin' nothing.");
+                return;
+            }
+
 			TPAMessage fuelmsg = new TPAMessage {action = "Fueled:update"};
 			fuelmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
 			fuelmsg.data.Add("RescueID", MyClient.Rescue.id);
@@ -2328,14 +2355,6 @@ namespace RatTracker_WPF
 
 		private void Runtests_button_click(object sender, RoutedEventArgs e)
 		{
-			//TriggerSystemChange("Lave");
-			//TriggerSystemChange("Blaa Hypai AI-I b26-1");
-			//DateTime testdate = DateTime.Now;
-			/*            myTravelLog.Add(new TravelLog{ system=new EDSMSystem(){ name = "Sol" }, lastvisited=testdate});
-                        myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name = "Fuelum" }, lastvisited = testdate});
-                        myTravelLog.Add(new TravelLog { system = new EDSMSystem() { name= "Leesti" }, lastvisited = testdate}); */
-			//AppendStatus("Travellog now contains " + myTravelLog.Count() + " systems. Timestamp of first is " + myTravelLog.First().lastvisited +" name "+myTravelLog.First().system.name);
-			//CalculateEDSMDistance("Sol", SystemName.Text);
 			OverlayMessage mymessage = new OverlayMessage
 			{
 				Line1Header = "Nearest station:",
@@ -2347,18 +2366,6 @@ namespace RatTracker_WPF
 			};
 
 			_overlay?.Queue_Message(mymessage, 30);
-			/*
-            EDDBData edworker = new EDDBData();
-            string status = await edworker.UpdateEDDBData();
-            AppendStatus("EDDB: " + status);
-
-            EDDBSystem eddbSystem = edworker.systems.First(s => s.name == "Fuelum");
-            var station = edworker.GetClosestStation(fuelumCoords);
-            AppendStatus("Closest system to 'Fuelum' is '" + eddbSystem.name +
-                        "', closest station to star with known coordinates (should be 'Wollheim Vision') is '" + station.name + "'.");
-            MyPlayer.CurrentSystem = "Fuelum";
-            MyPlayer.JumpRange = float.Parse("31.24");
-            */
 			IDictionary<string, string> logindata = new Dictionary<string, string>();
 			logindata.Add(new KeyValuePair<string, string>("open", "true"));
 			//logindata.Add(new KeyValuePair<string, string>("password", "password"));
@@ -2378,41 +2385,11 @@ namespace RatTracker_WPF
                 MyPlayer.RatId = new List<string>();
                 MyPlayer.RatId.Add("b8655683-bafe-42f9-9e19-529036719a79");
             }
-			TriggerSystemChange("Sol");
-			//_fbworker.CreateTables();
-			//Logger.Debug("Ran fbworker createtables");
 			Thread.Sleep(2000);
-			//Logger.Debug("Inserting a test system");
-			//_fbworker.AddSystem(1, "Fuelum", FuelumCoords.X, FuelumCoords.Y, FuelumCoords.Z, "The Fuel Rats", 2000000, "Anarchy",
-			//	"Independent", "Boom", "High", "Fuel", "None", "None", 0, 1368712376, "Fuelum");
-			//Thread.Sleep(3000);
-			//Logger.Debug("Running EDDB insert. This is gonna hurt...");
-			//_eddbworker.Setworker(ref _fbworker);
-			//_eddbworker.ConvertToSql();
 			AppendStatus("EDDB SQL has " + _fbworker.GetSystemCount().ToString() + " systems");
-			List<EdsmSystem> testsystem = _fbworker.GetSystemAsEdsm("Fuelum");
-			/* Start Oauth tests 
-			SentinelClientSettings oauthsettings = new SentinelClientSettings(new Uri("http://orthanc.localecho.net:7070/"), "5706205e361a6bef133f7183", "69d425a37f31b04499f8dcece6f2a5c782dc2f0b8b234975","RatTracker://home",new TimeSpan(300000));
-			SentinelOAuthClient oauthclient = new SentinelOAuthClient(oauthsettings);
-			AccessTokenResponse res=await oauthclient.Authenticate();
-			UserAgentClient o2c = new UserAgentClient()
-
-			AppendStatus("Got token: "+res.AccessToken+" + "+res.IdToken+", type "+res.TokenType);
-			*/
 		}
 
 
-	/*	private InMemoryTokenManager GetAccessTokenFromOwnAuthSrv()
-		{
-			var server = new AuthorizationServerDescription();
-			server.TokenEndpoint = new Uri("http://orthanc.localecho.net:7070/oauth2/token");
-			server.ProtocolVersion = DotNetOpenAuth.OAuth2.ProtocolVersion.V20;
-
-			var client = new UserAgentClient(server, clientIdentifier: "RatTracker");
-			client.ClientCredentialApplicator = ClientCredentialApplicator.PostParameter("data!");
-			var token = client.ExchangeUserCredentialForToken("kenneaal@gmail.com", "794aayp", new[] { "rattracker://main" });
-			return token;
-		} */
 
 		// ReSharper disable once UnusedParameter.Global TODO ??
 		public void CompleteRescueUpdate(string json)
