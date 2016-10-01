@@ -36,7 +36,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net.Http.Headers;
 using Microsoft.ApplicationInsights.DataContracts;
-
+using System.Configuration;
+using System.Diagnostics;
 
 namespace RatTracker_WPF
 {
@@ -121,6 +122,7 @@ namespace RatTracker_WPF
 		public MainWindow()
 		{
 			Logger.Info("---Starting RatTracker---");
+            Logger.Info("OAuth stored token is " + Settings.Default.OAuthToken);
 			try
 			{
 				foreach (string arg in Environment.GetCommandLineArgs())
@@ -142,7 +144,27 @@ namespace RatTracker_WPF
 							Logger.Debug("Failed to match token?!!");
 						}
 					}
-				}
+                    else
+                    {
+                        Logger.Debug("Normal startup.");
+                        _tc.Context.Session.Id = Guid.NewGuid().ToString();
+                        _tc.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
+                        _tc.Context.User.Id = Environment.UserName;
+                        _tc.Context.Component.Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                        _tc.TrackPageView("MainWindow");
+                        InitializeComponent();
+                        Loaded += Window_Loaded;
+                        Logger.Debug("Parsing AppConfig...");
+                        if (ParseEdAppConfig())
+                        {
+                            CheckLogDirectory();
+                        }
+                        else
+                        {
+                            AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
+                        }
+                    }
+                }
 			}
 			catch(Exception ex)
 			{
@@ -150,22 +172,6 @@ namespace RatTracker_WPF
 				return;
 			}
 
-			_tc.Context.Session.Id = Guid.NewGuid().ToString();
-			_tc.Context.Device.OperatingSystem = Environment.OSVersion.ToString();
-			_tc.Context.User.Id = Environment.UserName;
-			_tc.Context.Component.Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-			_tc.TrackPageView("MainWindow");
-			InitializeComponent();
-			Loaded += Window_Loaded;
-			Logger.Debug("Parsing AppConfig...");
-			if (ParseEdAppConfig())
-			{
-				CheckLogDirectory();
-			}
-			else
-			{
-				AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
-			}
 		}
 
 		private async void OAuth_Authorize(string code)
@@ -188,8 +194,9 @@ namespace RatTracker_WPF
 						Port = Settings.Default.APIPort
 					};
 					Logger.Debug("Passing code: " + code);
+                    string clientauthheader = ConfigurationManager.AppSettings["ClientID"]+":"+ConfigurationManager.AppSettings["ClientSecret"];
 					hc.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes(
-						"4eace3e0-6564-4d41-87d4-bae2e2d2f6df:0f9b77d273f97cdd2341af31c3cbb373be65229192c4c98d")));
+						clientauthheader)));
 					Logger.Debug("Built query string:" + content);
 					var formenc = new FormUrlEncodedContent(new[]
 					{
@@ -210,10 +217,15 @@ namespace RatTracker_WPF
 						Settings.Default.OAuthToken = token.access_token;
 						Settings.Default.Save();
 						Logger.Debug("Access token saved.");
-						AppendStatus("OAuth authentication transaction successful, bearer token stored. Initializing RatTracker.");
-						_oauthProcessing = false;
-						DoInitialize();
-					}
+						AppendStatus("OAuth authentication transaction successful, bearer token stored. Please exit RatTracker and start it again.");
+                        MessageBox.Show("RatTracker has successfully completed OAuth authentication. Please close and restart RatTracker to complete the process.");
+                        //The fact that I have to cheat this way is FUCKING ANNOYING!
+                        string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+                        System.IO.File.WriteAllText(_rtPath + @"\RatTracker\OAuthToken.tmp", token.access_token);
+                        Logger.Debug("Saved CheatyFile.");
+                        //_oauthProcessing = false;
+                        //DoInitialize();  // We can't actually do initialization at this point, because the app gets called by the webbrowser and has a stupid run path.
+                    }
 					else
 					{
 						Logger.Debug("No access token in data response!");
@@ -574,14 +586,33 @@ namespace RatTracker_WPF
 						break;
                     case "authorization":
                         Logger.Debug("Authorization callback: " + realdata.ToString());
-                        AppendStatus("Got user data for " + realdata.email);
-                        MyPlayer.RatId = new List<string>();
-                        foreach (dynamic cmdrdata in realdata.rats)
+                        if (realdata.errors)
                         {
-                            AppendStatus("RatID " + cmdrdata.id + " added to identity list.");
-                            MyPlayer.RatId.Add(cmdrdata.id.ToString());
+                            AppendStatus("Error during WS Authentication: " + realdata.errors.code + ": " + realdata.errors.detail);
+                            Logger.Error("Error during WS Authentication: " + realdata.errors.code + ": " + realdata.errors.detail);
+                            MessageBoxResult reauth = MessageBox.Show("RatTracker has failed to authenticate with WebSocket. This is usually caused by an invalid OAuth token. If you would like to retry the OAuth process, press OK. To leave the OAuth token intact, press cancel.");
+                            if (reauth==MessageBoxResult.Yes)
+                            {
+                                Logger.Info("Clearing OAuth keys...");
+                                Settings.Default.OAuthToken = "";
+                                Settings.Default.Save();
+                                string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+                                if (File.Exists(_rtPath + @"\RatTracker\OAuthToken.tmp"))
+                                    File.Delete(_rtPath+@"\RatTracker\OAuthToken.tmp");
+                                AppendStatus("OAuth information cleared. Please restart RatTracker to reauthenticate it.");
+                            }
                         }
-                        _myplayer.RatName = await GetRatName(MyPlayer.RatId.FirstOrDefault()); // This will have to be redone when we go WS, as we can't load the variable then.
+                        else if (realdata.email)
+                        {
+                            AppendStatus("Got user data for " + realdata.email);
+                            MyPlayer.RatId = new List<string>();
+                            foreach (dynamic cmdrdata in realdata.rats)
+                            {
+                                AppendStatus("RatID " + cmdrdata.id + " added to identity list.");
+                                MyPlayer.RatId.Add(cmdrdata.id.ToString());
+                            }
+                            _myplayer.RatName = await GetRatName(MyPlayer.RatId.FirstOrDefault());
+                        }
                         break;
 
                         break;
