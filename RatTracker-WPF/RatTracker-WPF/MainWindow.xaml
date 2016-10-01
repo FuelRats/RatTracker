@@ -21,12 +21,16 @@
             <Style.Triggers>
                 <DataTrigger Binding="{Binding CodeRed}" Value="True">
                     <Setter Property="Background" Value="Red" />
+                    <Setter Property="Foreground" Value="White"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Active}" Value="False">
                     <Setter Property="Foreground" Value="Gray"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding CodeRed}" Value="False">
                     <Setter Property="Background" Value="Transparent"></Setter>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Platform}" Value="xb">
+                    <Setter Property="Visibility" Value="Hidden"></Setter>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -37,7 +41,7 @@
                 <MenuItem/>
             </MenuItem>
         </Menu>
-        <Grid Background="{DynamicResource {x:Static SystemColors.DesktopBrushKey}}">
+        <Grid Background="Black">
             <Grid.RowDefinitions>
                 <RowDefinition Height="142*"/>
                 <RowDefinition Height="147*"/>
@@ -111,6 +115,10 @@
                     <DataGrid.Resources>
                         <Style TargetType="{x:Type DataGridColumnHeader}">
                             <Setter Property="Background" Value="{DynamicResource brushTransparent}" />
+                        </Style>
+                        <Style TargetType="ScrollBar">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="Foreground" Value="{DynamicResource brushEliteOrange}"></Setter>
                         </Style>
                     </DataGrid.Resources>
                     <DataGrid.Columns>
