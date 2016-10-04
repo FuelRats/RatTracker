@@ -196,6 +196,11 @@
     <Compile Include="ErrorReporter.xaml.cs">
       <DependentUpon>ErrorReporter.xaml</DependentUpon>
     </Compile>
+    <Compile Include="EventHandlers\ConnInfo.cs" />
+    <Compile Include="EventHandlers\FriendRequest.cs" />
+    <Compile Include="EventHandlers\InstanceChange.cs" />
+    <Compile Include="EventHandlers\StatusUpdate.cs" />
+    <Compile Include="EventHandlers\SystemChange.cs" />
     <Compile Include="FireBird.cs" />
     <Compile Include="GlobalHotkey.cs" />
     <Compile Include="Models\Api\AccessToken.cs" />
