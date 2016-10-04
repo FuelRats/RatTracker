@@ -37,7 +37,7 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using Microsoft.ApplicationInsights.DataContracts;
 using System.Configuration;
-using System.Diagnostics;
+using RatTracker_WPF.EventHandlers;
 
 namespace RatTracker_WPF
 {
@@ -69,6 +69,7 @@ namespace RatTracker_WPF
 		private long _fileSize; // Size of current netlog file
 		private string _jumpsToClient; // Bound to UI element
         private string _xmlparselist; // Buffer for XML since it now arrives in chunks.
+	    private NetLogParser _netlogparser = new NetLogParser();
 
 		// ReSharper disable once UnusedMember.Local TODO ??
 		private string _logDirectory = Settings.Default.NetLogPath; // TODO: Remove this assignment and pull live from Settings, have the logfile watcher reaquire file if settings are changed.
@@ -169,7 +170,6 @@ namespace RatTracker_WPF
 			catch(Exception ex)
 			{
 				Logger.Debug("Exception in token parse: "+ex.Message);
-				return;
 			}
 
 		}
@@ -178,7 +178,7 @@ namespace RatTracker_WPF
 		{
 			if (code.Length > 0)
 			{
-				Logger.Debug("A code was passed to connectAPI, attempting token exchange.");
+				Logger.Debug("A code was passed to connectAPI, attempting token exchange: "+code);
 				using (HttpClient hc = new HttpClient())
 				{
 					Auth myauth = new Auth
@@ -186,18 +186,16 @@ namespace RatTracker_WPF
 						code = code,
 						grant_type = "authorization_code",
 						redirect_url = "rattracker://auth"
-					};
-					string json = JsonConvert.SerializeObject(myauth);
-					Logger.Debug("Passing auth JSON: " + json);
+                    };
 					var content = new UriBuilder(Path.Combine(Settings.Default.APIURL + "oauth2/token"))
 					{
 						Port = Settings.Default.APIPort
 					};
-					Logger.Debug("Passing code: " + code);
-                    string clientauthheader = ConfigurationManager.AppSettings["ClientID"]+":"+ConfigurationManager.AppSettings["ClientSecret"];
+                    string clientauthheader = Settings.Default.ClientID+":"+Settings.Default.AppSecret;
+				    Logger.Debug("Attempting auth with CID: " + Properties.Settings.Default.ClientID + " and AS " +
+				                 Settings.Default.AppSecret);
 					hc.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes(
 						clientauthheader)));
-					Logger.Debug("Built query string:" + content);
 					var formenc = new FormUrlEncodedContent(new[]
 					{
 						new KeyValuePair<string,string>("code",code),
@@ -205,30 +203,27 @@ namespace RatTracker_WPF
 						new KeyValuePair<string,string>("redirect_uri","rattracker://auth")
 					});
 					HttpResponseMessage response = await hc.PostAsync(content.ToString(), formenc).ConfigureAwait(false);
-					Logger.Debug("AsyncPost sent with ConfigureAwait false.");
 					HttpContent mycontent = response.Content;
 					string data = mycontent.ReadAsStringAsync().Result;
-					Logger.Debug("Got data: " + data);
+					Logger.Debug("OAuth token exchange data: " + data);
 					if (data.Contains("access_token"))
 					{
-						Logger.Debug("In access token true.");
 						var token = JsonConvert.DeserializeObject<TokenResponse>(data);
 						Logger.Debug("Access token received: " + token.access_token);
 						Settings.Default.OAuthToken = token.access_token;
 						Settings.Default.Save();
-						Logger.Debug("Access token saved.");
 						AppendStatus("OAuth authentication transaction successful, bearer token stored. Please exit RatTracker and start it again.");
                         MessageBox.Show("RatTracker has successfully completed OAuth authentication. Please close and restart RatTracker to complete the process.");
                         //The fact that I have to cheat this way is FUCKING ANNOYING!
-                        string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                        System.IO.File.WriteAllText(_rtPath + @"\RatTracker\OAuthToken.tmp", token.access_token);
+                        string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+                        File.WriteAllText(rtPath + @"\RatTracker\OAuthToken.tmp", token.access_token);
                         Logger.Debug("Saved CheatyFile.");
                         //_oauthProcessing = false;
                         //DoInitialize();  // We can't actually do initialization at this point, because the app gets called by the webbrowser and has a stupid run path.
                     }
 					else
 					{
-						Logger.Debug("No access token in data response!");
+						Logger.Debug("No access token in data response! Data:"+data.ToString());
 						AppendStatus("OAuth authentication failed. Please restart RatTracker to retry the operation.");
 					}
 				}
@@ -274,7 +269,7 @@ namespace RatTracker_WPF
 				eddbWorker.RunWorkerAsync();
 				apiWorker.RunWorkerAsync();
 				piWorker.RunWorkerAsync();
-				
+			    _netlogparser.StatusUpdateEvent += DoStatusUpdate;
 			}
 			else
 			{
@@ -282,7 +277,13 @@ namespace RatTracker_WPF
 			}
 		}
 
-		public async Task InitFirebird()
+	    private void DoStatusUpdate(object sender, StatusUpdateArgs args)
+	    {
+	        AppendStatus(args.StatusMessage);
+	    }
+
+
+	    public async Task InitFirebird()
 		{
 			if (Eddbworker == null)
 			{
@@ -299,7 +300,6 @@ namespace RatTracker_WPF
 			Eddbworker.Setworker(ref _fbworker);
             FbWorker.SetEDDB(ref _eddbworker);
             InitRescueGrid();
-			return;
 		}
 		public async void Reinitialize()
 		{
@@ -447,14 +447,14 @@ namespace RatTracker_WPF
 
 		private async Task InitEddb(bool reinit)
 		{
-			if (reinit == true)
+			if (reinit)
 				return;
 			AppendStatus("Initializing EDDB.");
 			if (Eddbworker == null)
 			{
 				Eddbworker = new EddbData(ref _fbworker);
 			}
-			Thread.Sleep(3000);
+			Thread.Sleep(5000);
 
 			string status = await Eddbworker.UpdateEddbData(false);
 			AppendStatus("EDDB: " + status);
@@ -491,11 +491,11 @@ namespace RatTracker_WPF
 						}
 						Logger.Debug("Got a list of rescues: " + realdata);
 						_rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
-						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
+                        await GetMissingRats(_rescues);
+                        await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
 						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => _rescues.Data.ForEach(datum => ItemsSource.Add(datum))));
 						//await disp.BeginInvoke(DispatcherPriority.Normal,
 						//	(Action)(() => RescueGrid.ItemsSource = rescues.Data));
-						await GetMissingRats(_rescues);
 						break;
 					case "message:send":
 						/* We got a message broadcast on our channel. */
@@ -524,7 +524,6 @@ namespace RatTracker_WPF
 						Logger.Info("Received rat identification: " + meta.count + " elements");
 						Logger.Debug("Raw: " + realdata[0]);
 						break;
-
 					case "rescue:updated":
 						Datum updrescue = realdata.ToObject<Datum>();
 						if (updrescue == null)
@@ -549,12 +548,53 @@ namespace RatTracker_WPF
 						{
 							AppendStatus("Rescue closed: " + updrescue.Client);
 							Logger.Debug("Rescue closed: " + updrescue.Client);
+                            if (updrescue.id == MyClient.ClientId)
+                            {
+                                Logger.Debug("Our active rescue was closed.");
+
+                            }
 							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Remove(myRescue)));
 						}
 						else
 						{
 							_rescues.Data[_rescues.Data.IndexOf(myRescue)] = updrescue;
-							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource[ItemsSource.IndexOf(myRescue)] = updrescue));
+                            if (updrescue.id == MyClient.ClientId)
+                            {
+                                Logger.Debug("Our active rescue was updated!");
+                                if (_myrescue.Rats != null)
+                                {
+                                    Logger.Debug("Non-null myrescue rats. Parsing");
+                                    int trackedrats = 0;
+                                    foreach (string ratid in _myrescue.Rats)
+                                    {
+                                        Logger.Debug("Processing id " + ratid);
+                                        if (MyPlayer.RatId.Contains(ratid))
+                                        {
+                                            Logger.Debug("Found own rat in selected rescue, we're assigned");
+                                        }
+                                        else
+                                        {
+                                            if (trackedrats > 1)
+                                            {
+                                                Logger.Debug("More than two rats in addition to ourselves, not added.");
+
+                                            }
+                                            else if (trackedrats == 0)
+                                            {
+                                                Logger.Debug("Rat2 set.");
+                                                MyClient.Rat2.RatName = await GetRatName(ratid);
+                                                trackedrats++;
+                                            }
+                                            else
+                                            {
+                                                Logger.Debug("Rat3 set.");
+                                                MyClient.Rat3.RatName = await GetRatName(ratid);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource[ItemsSource.IndexOf(myRescue)] = updrescue));
 							Logger.Debug("Rescue updated: " + updrescue.Client);
 						}
 						break;
@@ -575,8 +615,7 @@ namespace RatTracker_WPF
 						{
 							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => _overlay.Queue_Message(nr, 30)));
 						}
-
-						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Add(newrescue))); 
+                        await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Add(newrescue))); 
 						break;
 					case "stream:subscribe":
 						Logger.Debug("Subscribed to 3PA stream " + data.ToString());
@@ -596,9 +635,9 @@ namespace RatTracker_WPF
                                 Logger.Info("Clearing OAuth keys...");
                                 Settings.Default.OAuthToken = "";
                                 Settings.Default.Save();
-                                string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                                if (File.Exists(_rtPath + @"\RatTracker\OAuthToken.tmp"))
-                                    File.Delete(_rtPath+@"\RatTracker\OAuthToken.tmp");
+                                string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+                                if (File.Exists(rtPath + @"\RatTracker\OAuthToken.tmp"))
+                                    File.Delete(rtPath+@"\RatTracker\OAuthToken.tmp");
                                 AppendStatus("OAuth information cleared. Please restart RatTracker to reauthenticate it.");
                             }
                         }
@@ -613,9 +652,8 @@ namespace RatTracker_WPF
                             }
                             _myplayer.RatName = await GetRatName(MyPlayer.RatId.FirstOrDefault());
                         }
-                        break;
 
-                        break;
+				        break;
 					default:
 						Logger.Info("Unknown API action field: " + meta.action);
 						//tc.TrackMetric("UnknownAPIField", 1, new IDictionary<string,string>["type", meta.action]);
@@ -806,165 +844,12 @@ namespace RatTracker_WPF
 		/*
 		 * Converter for E:Ds UTF encoded CMDR names. Seen in NetLog.
 		 */
-		public static byte[] StringToByteArray(string hex)
-		{
-			return Enumerable.Range(0, hex.Length)
-				.Where(x => x%2 == 0)
-				.Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
-				.ToArray();
-		}
 
 		private void OnRenamed(object source, RenamedEventArgs e)
 		{
 			/* Stop watching the renamed file, look for new onChanged. */
 		}
 
-
-		private void ParseFriendsList(string friendsList)
-		{
-			/* Sanitize the XML, it can break if over 40 friends long or so. */
-			int count = 0;
-            //Logger.Debug("Before xml extract:" + friendsList);
-			string xmlData = friendsList.Substring(friendsList.IndexOf("<", StringComparison.Ordinal) + friendsList.Length);
-			Logger.Debug("Parsing XML buffer.");
-			try
-			{
-				XDocument xdoc = XDocument.Parse(friendsList);
-				Logger.Debug("Successful XML parse.");
-				XElement rettest = xdoc.Element("OK");
-				if (rettest != null)
-				{
-					XElement xElement = xdoc.Element("OK");
-					if (xElement != null) Logger.Debug("Last friendslist action: " + xElement.Value);
-				}
-
-				IEnumerable<XElement> friends = xdoc.Descendants("item");
-				foreach (XElement friend in friends)
-				{
-					/* string preencode = Regex.Replace(friend.Element("name").Value, ".{2}", "\\x$0"); */
-					XElement xElement = friend.Element("name");
-					if (xElement != null)
-					{
-						byte[] byteenc = StringToByteArray(xElement.Value);
-						//appendStatus("Friend:" + System.Text.Encoding.UTF8.GetString(byteenc));
-						count++;
-						XElement element = friend.Element("pending");
-						if (element != null && element.Value == "1")
-						{
-							AppendStatus("Pending invite from CMDR " + Encoding.UTF8.GetString(byteenc) + "detected!");
-							if (Encoding.UTF8.GetString(byteenc) == MyClient.ClientName)
-							{
-								MyClient.Self.FriendRequest = RequestState.Recieved;
-								AppendStatus("FR is from our client. Notifying Dispatch.");
-								TPAMessage frmsg = new TPAMessage
-								{
-									action = "FriendRequest:update",
-									data = new Dictionary<string, string>
-									{
-										{"FRReceived", "true"},
-										{"RatID", "abcdef1234567890"},
-										{"RescueID", "abcdef1234567890"}
-									}
-								};
-								_apworker.SendTpaMessage(frmsg);
-							}
-						}
-					}
-				}
-
-				/* Check the OK status field, which can contain useful information on successful FRs. */
-				foreach (XElement element in xdoc.Descendants())
-				{
-					if (element.Name != "OK") continue;
-					XElement xElement1 = xdoc.Element("data");
-					if (xElement1 != null)
-					{
-						XElement element1 = xElement1.Element("OK");
-						if (element1 != null) Logger.Debug("Return code: " + element1.Value);
-					}
-					var xElement = xdoc.Element("data");
-					if (xElement != null)
-					{
-						var o = xElement.Element("OK");
-						if (o != null && (!o.Value.Contains("Invitation accepted"))) continue;
-					}
-					AppendStatus("Friend request accepted.");
-					MyClient.Self.FriendRequest = RequestState.Accepted;
-				}
-
-				//AppendStatus("Parsed " + count + " friends in FRXML."); //Spammy!
-			}
-			catch (XmlException ex)
-			{
-				Logger.Fatal("XML Parsing exception - Probably netlog overflow. " + ex.Message);
-			}
-			catch (Exception ex)
-			{
-				Logger.Fatal("XML Parsing exception:" + ex.Message);
-				_tc.TrackException(ex);
-			}
-		}
-
-		private void ParseWingInvite(string wingInvite)
-		{
-			Logger.Debug("Raw xmlData: " + wingInvite);
-			try
-			{
-				XDocument xdoc = XDocument.Parse(wingInvite);
-				Logger.Debug("Successful XML parse.");
-				//voice.Speak("Wing invite detected.");
-				IEnumerable<XElement> wing = xdoc.Descendants("commander");
-				foreach (XElement wingdata in wing)
-				{
-					XElement xElement = wingdata.Element("name");
-					if (xElement != null)
-					{
-						byte[] byteenc = StringToByteArray(xElement.Value);
-						AppendStatus("Wingmember:" + Encoding.UTF8.GetString(byteenc));
-						if (_myrescue != null)
-						{
-							if (Encoding.UTF8.GetString(byteenc).ToLower() == _myrescue.Client.ToLower())
-							{
-								AppendStatus("This data matches our current client! Storing information...");
-								XElement element = wingdata.Element("id");
-								if (element != null) MyClient.ClientId = element.Value;
-								AppendStatus("Wingmember IP data:" + xdoc.Element("connectionDetails"));
-								string wingIPPattern = "IP4NAT:([0-9.]+):\\d+\\,";
-								Match wingMatch = Regex.Match(wingInvite, wingIPPattern, RegexOptions.IgnoreCase);
-								if (wingMatch.Success)
-								{
-									AppendStatus("Successful IP data match: " + wingMatch.Groups[1]);
-									MyClient.ClientIp = wingMatch.Groups[1].Value;
-								}
-
-								/* If the friend request matches the client name, store his session ID. */
-								XElement o = wingdata.Element("commander_id");
-								if (o != null) MyClient.ClientId = o.Value;
-								XElement xElement1 = wingdata.Element("session_runid");
-								if (xElement1 != null) MyClient.SessionId = xElement1.Value;
-								MyClient.Self.WingRequest = RequestState.Recieved;
-								TPAMessage wrmsg = new TPAMessage
-								{
-									action = "WingRequest:update",
-									data = new Dictionary<string, string>
-									{
-										{"WRReceived", "true"},
-										{"RatID", "abcdef1234567890"},
-										{"RescueID", "abcdef1234567890"}
-									}
-								};
-								_apworker.SendTpaMessage(wrmsg);
-							}
-						}
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				Logger.Fatal("Error in parseWingInvite: " + ex.Message);
-				_tc.TrackException(ex);
-			}
-		}
 
 		private void MainWindow_Closing(object sender, CancelEventArgs e)
 		{
@@ -1019,7 +904,7 @@ namespace RatTracker_WPF
 				AppendStatus("Started watching file " + _logFile.FullName);
 				Logger.Debug("Watching file: " + _logFile.FullName);
 				CheckClientConn(_logFile.FullName);
-				ReadLogfile(_logFile.FullName);
+                _netlogparser.ReadLogfile(_logFile.FullName);
 				_myTravelLog = new Collection<TravelLog>();
 			}
 			catch (Exception ex)
@@ -1197,237 +1082,6 @@ namespace RatTracker_WPF
 			}
 		}
 
-		private void ReadLogfile(string lf)
-		{
-			if (!File.Exists(lf))
-			{
-				AppendStatus("RatTracker tried to read a logfile that does not exist. Are you sure your path settings are correct?");
-				return;
-			}
-			try
-			{
-				using (
-					StreamReader sr =
-						new StreamReader(new FileStream(lf, FileMode.Open, FileAccess.Read,
-							FileShare.ReadWrite | FileShare.Delete)))
-				{
-					if (_fileOffset == 0L)
-					{
-						Logger.Debug("First peek...");
-						if (sr.BaseStream.Length > 5000)
-						{
-							sr.BaseStream.Seek(-5000, SeekOrigin.End);
-							/* First peek into the file, rewind a bit and scan from there. */
-						}
-					}
-					else
-					{
-						sr.BaseStream.Seek(_fileOffset, SeekOrigin.Begin);
-					}
-
-					while (sr.Peek() != -1)
-					{
-						string line = sr.ReadLine();
-						if (string.IsNullOrEmpty(line))
-						{
-							Logger.Error("Empty line while attempting to read a log line!");
-						}
-						else
-						{
-							ParseLine(line);
-						}
-					}
-
-					//appendStatus("Parsed " + count + " new lines. Old fileOffset was "+fileOffset+" and length was "+logFile.Length);
-				}
-			}
-			catch (Exception ex)
-			{
-				Logger.Fatal("Exception in readLogFile: ", ex);
-				Logger.Debug("StackTrace: "+ ex.StackTrace);
-				_tc.TrackException(ex);
-			}
-		}
-
-		private void ParseLine(string line)
-		{
-			try
-			{
-				if (string.IsNullOrEmpty(line))
-				{
-					Logger.Error("ParseLine was passed a null or empty line. This should not happen!");
-					return;
-				}
-				// string reMatchSystem = ".*?(System:).*?\\(((?:[^)]+)).*?\\)"; // Pre-1.6/2.1 style
-				const string reMatchSystem = ".*?(System:)\"(.*)?\".*?\\(((?:[^)]+)).*?\\)";
-				Match match = Regex.Match(line, reMatchSystem, RegexOptions.IgnoreCase);
-				if (match.Success)
-				{
-					if (match.Groups[2].Value == _myplayer.CurrentSystem)
-						return;
-					TriggerSystemChange(match.Groups[2].Value);
-				}
-				const string reMatchPlayer = "\\{.+\\} (\\d+) x (\\d+).*\\(\\(([0-9.]+):\\d+\\)\\)Name (.+)$";
-				Match frmatch = Regex.Match(line, reMatchPlayer, RegexOptions.IgnoreCase);
-				if (frmatch.Success)
-				{
-                    Logger.Debug("PlayerMatch parsed");
-
-                    if (_scState == "Normalspace" && _myrescue!=null)
-					{
-						AppendStatus("Successful ID match in normal space. Sending good instance.");
-						MyClient.Self.InInstance = true;
-						TPAMessage instmsg = new TPAMessage
-						{
-							action = "InstanceSuccessful:update",
-							data = new Dictionary<string, string>
-							{
-								{"RatID", _myplayer.RatId.ToString()},
-								{"InstanceSuccessful", "true"},
-								{"RescueID", _myrescue.id}
-							}
-						};
-						_apworker.SendTpaMessage(instmsg);
-					}
-					AppendStatus("Successful identity match! ID: " + frmatch.Groups[1] + " IP:" + frmatch.Groups[3]);
-				}
-
-				const string reMatchNat = @"RxRoute:(\d+)+ Comp:(\d)\[IP4NAT:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})+:(\d{1,5}),(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})+:(\d{1,5}),(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})+:(\d{1,5}),(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})+:(\d{1,5}),(\d),(\d),(\d),(\d{1,4})\]\[Relay:";
-				Match natmatch = Regex.Match(line, reMatchNat, RegexOptions.IgnoreCase);
-				if (natmatch.Success)
-				{
-					Logger.Debug("Found NAT datapoint for runID " + natmatch.Groups[1] + ": " + natmatch.Groups[11]);
-					NatType clientnat = (NatType) Enum.Parse(typeof (NatType), match.Groups[11].Value);
-					switch (clientnat)
-					{
-						case NatType.Blocked:
-							_tc.TrackMetric("ClientNATBlocked", 1);
-							break;
-						case NatType.Unknown:
-							_tc.TrackMetric("ClientNATUnknown", 1);
-							break;
-						case NatType.Open:
-							_tc.TrackMetric("ClientNATOpen", 1);
-							break;
-						case NatType.FullCone:
-							_tc.TrackMetric("ClientNATFullCone", 1);
-							break;
-						case NatType.Failed:
-							_tc.TrackMetric("ClientNATFailed", 1);
-							break;
-						case NatType.SymmetricUdp:
-							_tc.TrackMetric("ClientNATSymmetricUDP", 1);
-							break;
-						case NatType.Restricted:
-							_tc.TrackMetric("ClientNATRestricted", 1);
-							break;
-						case NatType.Symmetric:
-							_tc.TrackMetric("ClientNATSymmetric", 1);
-							break;
-					}
-					_tc.Flush();
-				}
-
-				const string reMatchStats = "machines=(\\d+)&numturnlinks=(\\d+)&backlogtotal=(\\d+)&backlogmax=(\\d+)&avgsrtt=(\\d+)&loss=([0-9]*(?:\\.[0-9]*)+)&&jit=([0-9]*(?:\\.[0-9]*)+)&act1=([0-9]*(?:\\.[0-9]*)+)&act2=([0-9]*(?:\\.[0-9]*)+)";
-				Match statmatch = Regex.Match(line, reMatchStats, RegexOptions.IgnoreCase);
-				if (statmatch.Success)
-				{
-					Logger.Info("Updating connection statistics.");
-					ConnInfo.Srtt = int.Parse(statmatch.Groups[5].Value);
-					ConnInfo.Loss = float.Parse(statmatch.Groups[6].Value);
-					ConnInfo.Jitter = float.Parse(statmatch.Groups[7].Value);
-					ConnInfo.Act1 = float.Parse(statmatch.Groups[8].Value);
-					ConnInfo.Act2 = float.Parse(statmatch.Groups[9].Value);
-					Dispatcher disp = Dispatcher;
-					disp.BeginInvoke(DispatcherPriority.Normal,
-						(Action)
-							(() =>
-								ConnectionStatus.Text =
-									"SRTT: " + Conninfo.Srtt + " Jitter: " + Conninfo.Jitter + " Loss: " +
-									Conninfo.Loss + " In: " + Conninfo.Act1 + " Out: " + Conninfo.Act2));
-				}
-                if (line.Contains("</data>"))
-                {
-                    Logger.Debug("End of FriendsXML, send buffer to friendsparser.");
-                    _xmlparselist += line;
-                    ParseFriendsList(_xmlparselist);
-                    return;
-                }
-                if (line.Contains("<item>"))
-                {
-                    Logger.Debug("Appending xml item to parselist.");
-                    _xmlparselist += line;
-                    return;
-                }
-				if (line.Contains("<data>"))
-				{
-					Logger.Debug("Startline for FriendsXML, initialize XML buffer");
-                    _xmlparselist = "";
-                    _xmlparselist += line;
-                    return;
-				}
- 				if (line.Contains("<FriendWingInvite>"))
-				{
-					Logger.Debug("Wing invite detected, parsing...");
-					ParseWingInvite(line);
-				}
-
-				if (line.Contains("JoinSession:WingSession:") && line.Contains(MyClient.ClientIp))
-				{
-					Logger.Debug("Prewing communication underway...");
-				}
-
-				if (line.Contains("TalkChannelManager::OpenOutgoingChannelTo") && line.Contains(MyClient.ClientIp))
-				{
-					AppendStatus("Wing established, opening voice comms.");
-					//voice.Speak("Wing established.");
-					MyClient.Self.WingRequest = RequestState.Accepted;
-				}
-
-				if (line.Contains("ListenResponse->Listening (SUCCESS: User has responded via local talkchannel)"))
-				{
-					AppendStatus("Voice communications established.");
-				}
-
-				if (line.Contains("NormalFlight") && _scState == "Supercruise")
-				{
-					_scState = "Normalspace";
-					Logger.Debug("Drop to normal space detected.");
-					//voice.Speak("Dropping to normal space.");
-				}
-
-				if (line.Contains("Supercruise") && _scState == "Normalspace")
-				{
-					_scState = "Supercruise";
-					Logger.Debug("Entering supercruise.");
-					//voice.Speak("Entering supercruise.");
-				}
-				if (line.Contains("JoinSession:BeaconSession") && line.Contains(MyClient.ClientIp))
-				{
-					AppendStatus("Client's Beacon in sight.");
-					MyClient.Self.Beacon = true;
-					if (_myrescue != null)
-					{
-						TPAMessage bcnmsg = new TPAMessage
-						{
-							action = "BeaconSpotted:update",
-							data = new Dictionary<string, string>
-							{
-								{"BeaconSpotted", "true"},
-								{"RatID", _myplayer.RatId.ToString()},
-								{"RescueID", _myrescue.id}
-							}
-						};
-						_apworker.SendTpaMessage(bcnmsg);
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				Logger.Debug("Exception in ParseLine: " + ex.Message + "@"+ex.Source +":"+ ex.Data);
-				_tc.TrackException(ex);
-			}
-		}
 
 		private async void TriggerSystemChange(string value)
 		{
@@ -1544,7 +1198,7 @@ namespace RatTracker_WPF
 				AppendStatus("Started watching for events in netlog.");
 				Button.Background = Brushes.Green;
 				StopNetLog = false;
-				_threadLogWatcher = new Thread(NetLogWatcher) {Name = "Netlog watcher"};
+				_threadLogWatcher = new Thread(_netlogparser.NetLogWatcher) {Name = "Netlog watcher"};
 				_threadLogWatcher.Start();
 			}
 			else
@@ -1576,30 +1230,6 @@ namespace RatTracker_WPF
 			}
 		}
 
-		private void NetLogWatcher()
-		{
-			AppendStatus("Netlogwatcher started.");
-			try
-			{
-				while (!StopNetLog)
-				{
-					Thread.Sleep(2000);
-
-					FileInfo fi = new FileInfo(_logFile.FullName);
-					if (fi.Length != _fileSize)
-					{
-						ReadLogfile(fi.FullName); /* Maybe a poke on the FS is enough to wake watcher? */
-						_fileOffset = fi.Length;
-						_fileSize = fi.Length;
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				Logger.Debug("Netlog exception: " + ex.Message);
-				_tc.TrackException(ex);
-			}
-		}
 
 		private void Main_Menu_Click(object sender, RoutedEventArgs e)
 		{
@@ -1715,7 +1345,8 @@ namespace RatTracker_WPF
 			DistanceToClientString = "Calculating...";
 			JumpsToClient = "Calculating...";
 			DispatcherFrame frame = new DispatcherFrame();
-			await Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new DispatcherOperationCallback(delegate (object parameter) {
+			await Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, new DispatcherOperationCallback(delegate
+			{
 				frame.Continue = false;
 				return null;
 			}), null);
@@ -1729,14 +1360,13 @@ namespace RatTracker_WPF
 			{
 				ClientDistance distance = await GetDistanceToClient(system);
 				DistanceToClient = Math.Round(distance.Distance, 2);
-                Logger.Debug("Setting JTC based on jump distance " + MyPlayer.JumpRange + ": " + Math.Ceiling(distance.Distance / MyPlayer.JumpRange).ToString());
+                Logger.Debug("Setting JTC based on jump distance " + MyPlayer.JumpRange + ": " + Math.Ceiling(distance.Distance / MyPlayer.JumpRange).ToString(CultureInfo.InvariantCulture));
                 JumpsToClient = Math.Ceiling(distance.Distance / MyPlayer.JumpRange).ToString(CultureInfo.InvariantCulture);
 			}
 			catch (Exception ex)
 			{
 				Logger.Fatal("Exception in RecalculateJumps: " + ex.Message);
 			}
-			return;
 		}
 		private async Task GetMissingRats(RootObject localRescues)
 		{
@@ -1817,7 +1447,7 @@ namespace RatTracker_WPF
 		{
 			Logger.Debug("Querying EDSM (or rather SQL) for system " + system);
 			AppendStatus("Querying database for " + system);
-			List<EdsmSystem> m = _fbworker.GetSystemAsEdsm(system);
+			List<EdsmSystem> m = await _fbworker.GetSystemAsEdsm(system);
 			return m;
 /*			if (system.Length < 3)
 									{
@@ -1946,7 +1576,8 @@ namespace RatTracker_WPF
 				candidates = await GetCandidateSystems(target);
 				cd.TargetCertainty = "Region";
 			}
-			if (candidates == null || !candidates.Any())
+		    var edsmSystems = candidates as EdsmSystem[] ?? candidates.ToArray();
+		    if (!edsmSystems.Any())
 			{
 				//Still couldn't find something, abort.
 				AppendStatus("Couldn't find a candidate system, aborting...");
@@ -1954,21 +1585,31 @@ namespace RatTracker_WPF
 			}
 
 			Logger.Debug("We have two sets of coords that we can use to find a distance.");
-            EdsmSystem edsmSystem = candidates.FirstOrDefault();
+            EdsmSystem edsmSystem = edsmSystems.FirstOrDefault();
             if (edsmSystem != null) targetcoords = edsmSystem.Coords;
-            if(sourceSystem == null || sourceSystem.Name==null)
+            if(sourceSystem?.Name == null)
             {
                 Logger.Debug("Err... Source system (or its name) is null, that shouldn't happen at this point. Bailing!");
                 return new ClientDistance();
             }
-            Logger.Debug("Finding from coords: " + sourcecoords.X + " " + sourcecoords.Y + " " + sourcecoords.Z + " ("+sourceSystem.Name+") to " + targetcoords.X + " " + targetcoords.Y + " " + targetcoords.Z+" ("+edsmSystem.Name+")");
-			double deltaX = sourcecoords.X - targetcoords.X;
-			double deltaY = sourcecoords.Y - targetcoords.Y;
-			double deltaZ = sourcecoords.Z - targetcoords.Z;
-			double distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
-			Logger.Debug("Distance should be " + distance);
-			cd.Distance = distance;
-			return cd;
+		    if (edsmSystem != null)
+		    {
+		        Logger.Debug("Finding from coords: " + sourcecoords.X + " " + sourcecoords.Y + " " + sourcecoords.Z + " (" +
+		                     sourceSystem.Name + ") to " + targetcoords.X + " " + targetcoords.Y + " " + targetcoords.Z + " (" +
+		                     edsmSystem.Name + ")");
+		        double deltaX = sourcecoords.X - targetcoords.X;
+		        double deltaY = sourcecoords.Y - targetcoords.Y;
+		        double deltaZ = sourcecoords.Z - targetcoords.Z;
+		        double distance = Math.Sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
+		        Logger.Debug("Distance should be " + distance);
+		        cd.Distance = distance;
+		    }
+		    else
+		    {
+		        Logger.Debug("System was null in GetDistanceToClient. Returning blank.");
+		        return new ClientDistance();
+		    }
+		    return cd;
 		}
 
 		/* Attempts to calculate a distance in lightyears between two given systems.
@@ -2014,7 +1655,7 @@ namespace RatTracker_WPF
 				}
 
 				candidates = await QueryEdsmSystem(target);
-				var edsmSystems = candidates as EdsmSystem[] ?? candidates.ToArray();
+				var edsmSystems = candidates.ToArray();
 				if (!edsmSystems.Any())
 				{
 					Logger.Debug("EDSM does not know system '" + target + "'. Widening search...");
@@ -2093,15 +1734,27 @@ namespace RatTracker_WPF
 					{
 						if (mymonitor.Name == Settings.Default.OverlayMonitor)
 						{
-							_overlay.Left = mymonitor.Bounds.Right - _overlay.Width;
+							_overlay.Left = mymonitor.Bounds.Right - _overlay.Width - 50;
 							_overlay.Top = mymonitor.Bounds.Top;
 							_overlay.Topmost = true;
 							Logger.Debug("Overlay coordinates set to " + _overlay.Left + " x " + _overlay.Top);
-							HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)PresentationSource.FromVisual(Application.Current.MainWindow));
-							//hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt , true));
-							//hotKeyHost.AddHotKey(new CustomHotKey("CopyClientSystemname", Key.C, ModifierKeys.Control | ModifierKeys.Alt , true));
-							//hotKeyHost.HotKeyPressed += HandleHotkeyPress;
-                            // Broken all of a sudden? May require recode.
+						    try
+						    {
+						        HotKeyHost hotKeyHost =
+						            new HotKeyHost((HwndSource) PresentationSource.FromVisual(Application.Current.MainWindow));
+						        hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt,
+						            true));
+						        hotKeyHost.AddHotKey(new CustomHotKey("CopyClientSystemname", Key.C,
+						            ModifierKeys.Control | ModifierKeys.Alt, true));
+						        hotKeyHost.AddHotKey(new CustomHotKey("CallJumpsToIRC", Key.J, ModifierKeys.Control | ModifierKeys.Alt,
+						            true));
+						        hotKeyHost.HotKeyPressed += HandleHotkeyPress;
+						    }
+						    catch (Exception ex)
+						    {
+						        Logger.Debug("Exception while installing hotkeys: " + ex.Message + "@" + ex.Source);
+						    }
+						    // Broken all of a sudden? May require recode.
 						}
 					}
 				}
@@ -2112,16 +1765,28 @@ namespace RatTracker_WPF
 						Logger.Debug("Monitor ID: " + mymonitor.Name);
 						if (mymonitor.IsPrimary)
 						{
-							_overlay.Left = mymonitor.Bounds.Right - _overlay.Width;
+							_overlay.Left = mymonitor.Bounds.Right - _overlay.Width -50;
 							_overlay.Top = mymonitor.Bounds.Top;
 						}
 					}
 					_overlay.Topmost = true;
-					HotKeyHost hotKeyHost = new HotKeyHost((HwndSource)PresentationSource.FromVisual(Application.Current.MainWindow));
-					hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt, true));
-					hotKeyHost.AddHotKey(new CustomHotKey("CopyClientSystemname", Key.C, ModifierKeys.Control | ModifierKeys.Alt, true));
-					hotKeyHost.HotKeyPressed += HandleHotkeyPress;
-				}
+                    try
+                    {
+                        HotKeyHost hotKeyHost =
+                            new HotKeyHost((HwndSource)PresentationSource.FromVisual(Application.Current.MainWindow));
+                        hotKeyHost.AddHotKey(new CustomHotKey("ToggleOverlay", Key.O, ModifierKeys.Control | ModifierKeys.Alt,
+                            true));
+                        hotKeyHost.AddHotKey(new CustomHotKey("CopyClientSystemname", Key.C,
+                            ModifierKeys.Control | ModifierKeys.Alt, true));
+                        hotKeyHost.AddHotKey(new CustomHotKey("CallJumpsToIRC", Key.J, ModifierKeys.Control | ModifierKeys.Alt,
+                            true));
+                        hotKeyHost.HotKeyPressed += HandleHotkeyPress;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Debug("Exception while installing hotkeys: " + ex.Message + "@" + ex.Source);
+                    }
+                }
 			}
 			else {
 				_overlay.Close();
@@ -2148,6 +1813,10 @@ namespace RatTracker_WPF
 					AppendStatus("No active rescue, copy to clipboard aborted.");
 				}
 			}
+		    if (e.HotKey.Key == Key.J)
+		    {
+		        AppendStatus("Sending jump count to IRC due to hotkey press.");
+		    }
 		}
 
 		// ReSharper disable once UnusedMember.Local TODO ??
@@ -2364,7 +2033,8 @@ namespace RatTracker_WPF
                 return;
             }
 
-			TPAMessage fuelmsg = new TPAMessage {action = "Fueled:update"};
+			TPAMessage fuelmsg = new TPAMessage { data = new Dictionary<string, string>() };
+            fuelmsg.action = "fueled:update";
 			fuelmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
 			fuelmsg.data.Add("RescueID", MyClient.Rescue.id);
 
@@ -2465,6 +2135,38 @@ namespace RatTracker_WPF
 				Rescue = _myrescue,
 				ClientSystem = _myrescue.System
 			};
+            if(_myrescue.Rats != null)
+            {
+                Logger.Debug("Non-null myrescue rats. Parsing");
+                int trackedrats = 0;
+                foreach(string ratid in _myrescue.Rats)
+                {
+                    Logger.Debug("Processing id " + ratid);
+                    if (MyPlayer.RatId.Contains(ratid))
+                    {
+                        Logger.Debug("Found own rat in selected rescue, we're assigned");
+                    }
+                    else
+                    {
+                        if (trackedrats > 1)
+                        {
+                            Logger.Debug("More than two rats in addition to ourselves, not added.");
+
+                        }
+                        else if (trackedrats == 0)
+                        {
+                            Logger.Debug("Rat2 set.");
+                            MyClient.Rat2.RatName = await GetRatName(ratid);
+                            trackedrats++;
+                        }
+                        else
+                        {
+                            Logger.Debug("Rat3 set.");
+                            MyClient.Rat3.RatName = await GetRatName(ratid);
+                        }
+                    }
+                }
+            }
 			Logger.Debug("Client info loaded:"+MyClient.ClientName+" in "+MyClient.ClientSystem);
 			_overlay?.SetCurrentClient(MyClient);
 			ClientDistance distance = await GetDistanceToClient(MyClient.ClientSystem);
@@ -2494,7 +2196,7 @@ namespace RatTracker_WPF
 		{
 			Logger.Debug("Querying EDDB for closest station to " + _myplayer.CurrentSystem);
 			IEnumerable<EdsmSystem> mysys = await QueryEdsmSystem(_myplayer.CurrentSystem);
-			var edsmSystems = mysys as EdsmSystem[] ?? mysys.ToArray();
+			var edsmSystems = mysys.ToArray();
 			if (edsmSystems.Any())
 			{
 				Logger.Debug("Got a mysys with " + edsmSystems.Count() + " elements");

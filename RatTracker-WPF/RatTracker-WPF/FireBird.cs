@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -554,27 +555,27 @@ namespace RatTracker_WPF
 			}
 		}
 
-		public List<EdsmSystem> GetSystemAsEdsm(string systemname)
+		public async Task<List<EdsmSystem>> GetSystemAsEdsm(string systemname)
 		{
 			List<EdsmSystem> systemResult = new List<EdsmSystem>();
             Status = "Working...";
 			using (FbCommand getSystem = con.CreateCommand())
 			{
-				getSystem.CommandText = "SELECT FIRST 10 name,id,x,y,z FROM eddb_systems WHERE lowercase_name LIKE '%" + systemname.ToLower() + "%'";
-				using (FbDataReader r = getSystem.ExecuteReader())
-				{
-					while (r.Read())
-					{
-						EdsmSystem tmpsys = new EdsmSystem();
-						tmpsys.Coords = new EdsmCoords();
-						tmpsys.Name = r.GetString(0);
-						tmpsys.Coords.X = r.GetDouble(r.GetOrdinal("X"));
-						tmpsys.Coords.Y = r.GetDouble(r.GetOrdinal("Y"));
-						tmpsys.Coords.Z = r.GetDouble(r.GetOrdinal("Z"));
-						systemResult.Add(tmpsys);
-						Logger.Debug("GetSystemEDSM added: " + r.GetString(0) + ": " + r.GetString(1) +" X: "+r.GetString(2)+" Y: "+ r.GetString(3)+" Z: "+r.GetString(4));
-					}
-				}
+				getSystem.CommandText = "SELECT FIRST 50 name,id,x,y,z FROM eddb_systems WHERE lowercase_name LIKE '%" + systemname.ToLower() + "%'";
+                using (DbDataReader r = await getSystem.ExecuteReaderAsync())
+                {
+                    while (r.Read())
+                    {
+                        EdsmSystem tmpsys = new EdsmSystem();
+                        tmpsys.Coords = new EdsmCoords();
+                        tmpsys.Name = r.GetString(0);
+                        tmpsys.Coords.X = r.GetDouble(r.GetOrdinal("X"));
+                        tmpsys.Coords.Y = r.GetDouble(r.GetOrdinal("Y"));
+                        tmpsys.Coords.Z = r.GetDouble(r.GetOrdinal("Z"));
+                        systemResult.Add(tmpsys);
+                        Logger.Debug("GetSystemEDSM added: " + r.GetString(0) + ": " + r.GetString(1) + " X: " + r.GetString(2) + " Y: " + r.GetString(3) + " Z: " + r.GetString(4));
+                    }
+                }
 
 			}
             Status = "Ready!";

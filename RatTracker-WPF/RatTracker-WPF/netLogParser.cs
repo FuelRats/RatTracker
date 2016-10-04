@@ -55,7 +55,7 @@ namespace RatTracker_WPF
 
         public void NetLogWatcher()
         {
-            AppendStatus("Netlogwatcher started.");
+            AppendStatus("From NetLogParser - Netlogwatcher started.");
             try
             {
                 while (!StopNetLog)
@@ -145,9 +145,7 @@ namespace RatTracker_WPF
                 Match match = Regex.Match(line, reMatchSystem, RegexOptions.IgnoreCase);
                 if (match.Success)
                 {
-                    if (match.Groups[2].Value == _myplayer.CurrentSystem)
-                        return;
-                    TriggerSystemChange(match.Groups[2].Value);
+                    //TriggerSystemChange(match.Groups[2].Value);
                 }
                 const string reMatchPlayer = "\\{.+\\} (\\d+) x (\\d+).*\\(\\(([0-9.]+):\\d+\\)\\)Name (.+)$";
                 Match frmatch = Regex.Match(line, reMatchPlayer, RegexOptions.IgnoreCase);
@@ -155,22 +153,6 @@ namespace RatTracker_WPF
                 {
                     Logger.Debug("PlayerMatch parsed");
 
-                    if (_scState == "Normalspace" && _myrescue != null)
-                    {
-                        AppendStatus("Successful ID match in normal space. Sending good instance.");
-                        MyClient.Self.InInstance = true;
-                        TPAMessage instmsg = new TPAMessage
-                        {
-                            action = "InstanceSuccessful:update",
-                            data = new Dictionary<string, string>
-                            {
-                                {"RatID", _myplayer.RatId.ToString()},
-                                {"InstanceSuccessful", "true"},
-                                {"RescueID", _myrescue.id}
-                            }
-                        };
-                        _apworker.SendTpaMessage(instmsg);
-                    }
                     AppendStatus("Successful identity match! ID: " + frmatch.Groups[1] + " IP:" + frmatch.Groups[3]);
                 }
 
@@ -215,11 +197,13 @@ namespace RatTracker_WPF
                 if (statmatch.Success)
                 {
                     Logger.Info("Updating connection statistics.");
-                    ConnInfo.Srtt = int.Parse(statmatch.Groups[5].Value);
+/*                    ConnInfo.Srtt = int.Parse(statmatch.Groups[5].Value);
+>>>>>>> master
                     ConnInfo.Loss = float.Parse(statmatch.Groups[6].Value);
                     ConnInfo.Jitter = float.Parse(statmatch.Groups[7].Value);
                     ConnInfo.Act1 = float.Parse(statmatch.Groups[8].Value);
                     ConnInfo.Act2 = float.Parse(statmatch.Groups[9].Value);
+<<<<<<< HEAD
                     Dispatcher disp = Dispatcher;
                     disp.BeginInvoke(DispatcherPriority.Normal,
                         (Action)
@@ -227,6 +211,8 @@ namespace RatTracker_WPF
                                 ConnectionStatus.Text =
                                     "SRTT: " + Conninfo.Srtt + " Jitter: " + Conninfo.Jitter + " Loss: " +
                                     Conninfo.Loss + " In: " + Conninfo.Act1 + " Out: " + Conninfo.Act2));
+=======
+                    */
                 }
                 if (line.Contains("</data>"))
                 {
@@ -254,18 +240,6 @@ namespace RatTracker_WPF
                     ParseWingInvite(line);
                 }
 
-                if (line.Contains("JoinSession:WingSession:") && line.Contains(MyClient.ClientIp))
-                {
-                    Logger.Debug("Prewing communication underway...");
-                }
-
-                if (line.Contains("TalkChannelManager::OpenOutgoingChannelTo") && line.Contains(MyClient.ClientIp))
-                {
-                    AppendStatus("Wing established, opening voice comms.");
-                    //voice.Speak("Wing established.");
-                    MyClient.Self.WingRequest = RequestState.Accepted;
-                }
-
                 if (line.Contains("ListenResponse->Listening (SUCCESS: User has responded via local talkchannel)"))
                 {
                     AppendStatus("Voice communications established.");
@@ -283,25 +257,6 @@ namespace RatTracker_WPF
                     _scState = "Supercruise";
                     Logger.Debug("Entering supercruise.");
                     //voice.Speak("Entering supercruise.");
-                }
-                if (line.Contains("JoinSession:BeaconSession") && line.Contains(MyClient.ClientIp))
-                {
-                    AppendStatus("Client's Beacon in sight.");
-                    MyClient.Self.Beacon = true;
-                    if (_myrescue != null)
-                    {
-                        TPAMessage bcnmsg = new TPAMessage
-                        {
-                            action = "BeaconSpotted:update",
-                            data = new Dictionary<string, string>
-                            {
-                                {"BeaconSpotted", "true"},
-                                {"RatID", _myplayer.RatId.ToString()},
-                                {"RescueID", _myrescue.id}
-                            }
-                        };
-                        _apworker.SendTpaMessage(bcnmsg);
-                    }
                 }
             }
             catch (Exception ex)
@@ -342,6 +297,8 @@ namespace RatTracker_WPF
                         if (element != null && element.Value == "1")
                         {
                             AppendStatus("Pending invite from CMDR " + Encoding.UTF8.GetString(byteenc) + "detected!");
+                            /*
+>>>>>>> master
                             if (Encoding.UTF8.GetString(byteenc) == MyClient.ClientName)
                             {
                                 MyClient.Self.FriendRequest = RequestState.Recieved;
@@ -358,6 +315,9 @@ namespace RatTracker_WPF
                                 };
                                 _apworker.SendTpaMessage(frmsg);
                             }
+<<<<<<< HEAD
+=======
+                            */
                         }
                     }
                 }
@@ -379,7 +339,7 @@ namespace RatTracker_WPF
                         if (o != null && (!o.Value.Contains("Invitation accepted"))) continue;
                     }
                     AppendStatus("Friend request accepted.");
-                    MyClient.Self.FriendRequest = RequestState.Accepted;
+                    //MyClient.Self.FriendRequest = RequestState.Accepted;
                 }
 
                 //AppendStatus("Parsed " + count + " friends in FRXML."); //Spammy!
@@ -410,21 +370,25 @@ namespace RatTracker_WPF
                     if (xElement == null) continue;
                     byte[] byteenc = StringToByteArray(xElement.Value);
                     AppendStatus("Wingmember:" + Encoding.UTF8.GetString(byteenc));
-                    if (_myrescue == null) continue;
-                    if (!string.Equals(Encoding.UTF8.GetString(byteenc), _myrescue.Client, StringComparison.CurrentCultureIgnoreCase)) continue;
-                    AppendStatus("This data matches our current client! Storing information...");
-                    XElement element = wingdata.Element("id");
-                    if (element != null) MyClient.ClientId = element.Value;
-                    AppendStatus("Wingmember IP data:" + xdoc.Element("connectionDetails"));
-                    const string wingIpPattern = "IP4NAT:([0-9.]+):\\d+\\,";
-                    Match wingMatch = Regex.Match(wingInvite, wingIpPattern, RegexOptions.IgnoreCase);
-                    if (wingMatch.Success)
-                    {
-                        AppendStatus("Successful IP data match: " + wingMatch.Groups[1]);
-                        MyClient.ClientIp = wingMatch.Groups[1].Value;
-                    }
 
                     /* If the friend request matches the client name, store his session ID. */
+                    /*
+                                        if (_myrescue == null) continue;
+                                        if (!string.Equals(Encoding.UTF8.GetString(byteenc), _myrescue.Client, StringComparison.CurrentCultureIgnoreCase)) continue;
+                                        AppendStatus("This data matches our current client! Storing information...");
+                                        XElement element = wingdata.Element("id");
+                                        if (element != null) MyClient.ClientId = element.Value;
+                                        AppendStatus("Wingmember IP data:" + xdoc.Element("connectionDetails"));
+                                        const string wingIpPattern = "IP4NAT:([0-9.]+):\\d+\\,";
+                                        Match wingMatch = Regex.Match(wingInvite, wingIpPattern, RegexOptions.IgnoreCase);
+                                        if (wingMatch.Success)
+                                        {
+                                            AppendStatus("Successful IP data match: " + wingMatch.Groups[1]);
+                                            MyClient.ClientIp = wingMatch.Groups[1].Value;
+                                        }
+
+                                        /* If the friend request matches the client name, store his session ID. */
+                                        /*
                     XElement o = wingdata.Element("commander_id");
                     if (o != null) MyClient.ClientId = o.Value;
                     XElement xElement1 = wingdata.Element("session_runid");
@@ -442,6 +406,10 @@ namespace RatTracker_WPF
                     };
                     _apworker.SendTpaMessage(wrmsg);
                 }
+=======
+                    }; */
+                }
+
             }
             catch (Exception ex)
             {

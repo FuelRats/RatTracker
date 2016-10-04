@@ -14,6 +14,7 @@ using log4net;
 using RatTracker_WPF.Models.Api;
 using System.Security.Principal;
 using System.Windows;
+using RatTracker_WPF.Properties;
 
 namespace RatTracker_WPF
 {
@@ -273,13 +274,21 @@ namespace RatTracker_WPF
 
 		public static string ConnectApi()
 		{
-			Logger.Info("Oauth token is "+Properties.Settings.Default.OAuthToken);
-			if (Properties.Settings.Default.OAuthToken != "")
+			Logger.Info("Oauth token is "+Settings.Default.OAuthToken);
+			if (Settings.Default.OAuthToken != "")
 			{
 				Logger.Info("Authenticating with OAuth token...");
 				return "";
 			}
-
+            string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            if (File.Exists(_rtPath + @"\RatTracker\OAuthToken.tmp"))
+            {
+                Logger.Debug("Cheaty McCheatyFile detected.");
+                string token=System.IO.File.ReadAllText(_rtPath + @"\RatTracker\OauthToken.tmp");
+                Settings.Default.OAuthToken = token;
+                Settings.Default.Save();
+                return "";
+            }
 			/* Connect to the API here. */
 			Logger.Debug("No OAuth token stored, attempting to authorize app.");
 			ProcessStartInfo proc = new ProcessStartInfo

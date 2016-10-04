@@ -64,49 +64,49 @@ namespace RatTracker_WPF
         }
 
 
-        private Key key;
+        private Key _key;
         /// <summary>
         /// The Key. Must not be null when registering to an HotKeyHost.
         /// </summary>
         public Key Key
         {
-            get { return key; }
+            get { return _key; }
             set
             {
-                if (key != value)
+                if (_key != value)
                 {
-                    key = value;
+                    _key = value;
                     OnPropertyChanged("Key");
                 }
             }
         }
 
-        private ModifierKeys modifiers;
+        private ModifierKeys _modifiers;
         /// <summary>
         /// The modifier. Multiple modifiers can be combined with or.
         /// </summary>
         public ModifierKeys Modifiers
         {
-            get { return modifiers; }
+            get { return _modifiers; }
             set
             {
-                if (modifiers != value)
+                if (_modifiers != value)
                 {
-                    modifiers = value;
+                    _modifiers = value;
                     OnPropertyChanged("Modifiers");
                 }
             }
         }
 
-        private bool enabled;
+        private bool _enabled;
         public bool Enabled
         {
-            get { return enabled; }
+            get { return _enabled; }
             set
             {
-                if (value != enabled)
+                if (value != _enabled)
                 {
-                    enabled = value;
+                    _enabled = value;
                     OnPropertyChanged("Enabled");
                 }
             }
@@ -116,8 +116,7 @@ namespace RatTracker_WPF
 
         protected virtual void OnPropertyChanged(string propertyName)
         {
-            if (PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
 
@@ -142,7 +141,7 @@ namespace RatTracker_WPF
 
         public override string ToString()
         {
-            return string.Format("{0} + {1} ({2}Enabled)", Key, Modifiers, Enabled ? "" : "Not ");
+            return $"{Key} + {Modifiers} ({(Enabled ? "" : "Not ")}Enabled)";
         }
 
         /// <summary>
@@ -152,8 +151,7 @@ namespace RatTracker_WPF
 
         protected virtual void OnHotKeyPress()
         {
-            if (HotKeyPressed != null)
-                HotKeyPressed(this, new HotKeyEventArgs(this));
+            HotKeyPressed?.Invoke(this, new HotKeyEventArgs(this));
         }
 
         internal void RaiseOnHotKeyPressed()
@@ -189,16 +187,16 @@ namespace RatTracker_WPF
         public HotKeyHost(HwndSource hwndSource)
         {
             if (hwndSource == null)
-                throw new ArgumentNullException("hwndSource");
+                throw new ArgumentNullException(nameof(hwndSource));
 
-            this.hook = new HwndSourceHook(WndProc);
-            this.hwndSource = hwndSource;
-            hwndSource.AddHook(hook);
+            this._hook = new HwndSourceHook(WndProc);
+            this._hwndSource = hwndSource;
+            hwndSource.AddHook(_hook);
         }
 
         #region HotKey Interop
 
-        private const int WM_HotKey = 786;
+        private const int WmHotKey = 786;
 
         [DllImport("user32", CharSet = CharSet.Ansi,
                    SetLastError = true, ExactSpelling = true)]
@@ -213,14 +211,14 @@ namespace RatTracker_WPF
 
         #region Interop-Encapsulation
 
-        private HwndSourceHook hook;
-        private HwndSource hwndSource;
+        private HwndSourceHook _hook;
+        private HwndSource _hwndSource;
 
         private void RegisterHotKey(int id, HotKey hotKey)
         {
-            if ((int)hwndSource.Handle != 0)
+            if ((int)_hwndSource.Handle != 0)
             {
-                RegisterHotKey(hwndSource.Handle, id, (int)hotKey.Modifiers, KeyInterop.VirtualKeyFromKey(hotKey.Key));
+                RegisterHotKey(_hwndSource.Handle, id, (int)hotKey.Modifiers, KeyInterop.VirtualKeyFromKey(hotKey.Key));
                 int error = Marshal.GetLastWin32Error();
                 if (error != 0)
                 {
@@ -238,9 +236,9 @@ namespace RatTracker_WPF
 
         private void UnregisterHotKey(int id)
         {
-            if ((int)hwndSource.Handle != 0)
+            if ((int)_hwndSource.Handle != 0)
             {
-                UnregisterHotKey(hwndSource.Handle, id);
+                UnregisterHotKey(_hwndSource.Handle, id);
                 int error = Marshal.GetLastWin32Error();
                 if (error != 0)
                     throw new Win32Exception(error);
@@ -256,14 +254,13 @@ namespace RatTracker_WPF
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            if (msg == WM_HotKey)
+            if (msg == WmHotKey)
             {
-                if (hotKeys.ContainsKey((int)wParam))
+                if (_hotKeys.ContainsKey((int)wParam))
                 {
-                    HotKey h = hotKeys[(int)wParam];
+                    HotKey h = _hotKeys[(int)wParam];
                     h.RaiseOnHotKeyPressed();
-                    if (HotKeyPressed != null)
-                        HotKeyPressed(this, new HotKeyEventArgs(h));
+                    HotKeyPressed?.Invoke(this, new HotKeyEventArgs(h));
                 }
             }
 
@@ -273,7 +270,7 @@ namespace RatTracker_WPF
 
         void hotKey_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            var kvPair = hotKeys.FirstOrDefault(h => h.Value == sender);
+            var kvPair = _hotKeys.FirstOrDefault(h => Equals(h.Value, sender));
             if (kvPair.Value != null)
             {
                 if (e.PropertyName == "Enabled")
@@ -295,7 +292,7 @@ namespace RatTracker_WPF
         }
 
 
-        private Dictionary<int, HotKey> hotKeys = new Dictionary<int, HotKey>();
+        private Dictionary<int, HotKey> _hotKeys = new Dictionary<int, HotKey>();
 
 
         public class SerialCounter
@@ -316,10 +313,10 @@ namespace RatTracker_WPF
         /// <summary>
         /// All registered hotKeys
         /// </summary>
-        public IEnumerable<HotKey> HotKeys { get { return hotKeys.Values; } }
+        public IEnumerable<HotKey> HotKeys => _hotKeys.Values;
 
 
-        private static readonly SerialCounter idGen = new SerialCounter(1); //Annotation: Can be replaced with "Random"-class
+        private static readonly SerialCounter IdGen = new SerialCounter(1); //Annotation: Can be replaced with "Random"-class
 
         /// <summary>
         /// Adds an hotKey.
@@ -331,14 +328,14 @@ namespace RatTracker_WPF
                 throw new ArgumentNullException("value");
             if (hotKey.Key == 0)
                 throw new ArgumentNullException("value.Key");
-            if (hotKeys.ContainsValue(hotKey))
+            if (_hotKeys.ContainsValue(hotKey))
                 throw new HotKeyAlreadyRegisteredException("HotKey already registered!", hotKey);
 
-            int id = idGen.Next();
+            int id = IdGen.Next();
             if (hotKey.Enabled)
                 RegisterHotKey(id, hotKey);
             hotKey.PropertyChanged += hotKey_PropertyChanged;
-            hotKeys[id] = hotKey;
+            _hotKeys[id] = hotKey;
         }
 
         /// <summary>
@@ -348,13 +345,13 @@ namespace RatTracker_WPF
         /// <returns>True if success, otherwise false</returns>
         public bool RemoveHotKey(HotKey hotKey)
         {
-            var kvPair = hotKeys.FirstOrDefault(h => h.Value == hotKey);
+            var kvPair = _hotKeys.FirstOrDefault(h => Equals(h.Value, hotKey));
             if (kvPair.Value != null)
             {
                 kvPair.Value.PropertyChanged -= hotKey_PropertyChanged;
                 if (kvPair.Value.Enabled)
                     UnregisterHotKey(kvPair.Key);
-                return hotKeys.Remove(kvPair.Key);
+                return _hotKeys.Remove(kvPair.Key);
             }
             return false;
         }
@@ -362,25 +359,25 @@ namespace RatTracker_WPF
 
         #region Destructor
 
-        private bool disposed;
+        private bool _disposed;
 
         private void Dispose(bool disposing)
         {
-            if (disposed)
+            if (_disposed)
                 return;
 
             if (disposing)
             {
-                hwndSource.RemoveHook(hook);
+                _hwndSource.RemoveHook(_hook);
             }
 
-            for (int i = hotKeys.Count - 1; i >= 0; i--)
+            for (int i = _hotKeys.Count - 1; i >= 0; i--)
             {
-                RemoveHotKey(hotKeys.Values.ElementAt(i));
+                RemoveHotKey(_hotKeys.Values.ElementAt(i));
             }
 
 
-            disposed = true;
+            _disposed = true;
         }
 
         public void Dispose()
