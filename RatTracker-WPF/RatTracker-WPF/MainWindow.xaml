@@ -51,29 +51,27 @@
                 <ColumnDefinition Width="163*"/>
                 <ColumnDefinition Width="299*"/>
             </Grid.ColumnDefinitions>
-            <GroupBox x:Name="YourRescueBox" Header="Your Rescue" Height="341" Margin="10,194,324.667,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" Grid.ColumnSpan="2" Grid.RowSpan="2">
+            <GroupBox x:Name="YourRescueBox" Header="Your Rescue" Height="346" Margin="10,225,325,0" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" Grid.ColumnSpan="2" Grid.RowSpan="3">
                 <Grid Margin="1,0,-2,0.009">
                     <Grid Height="320.341" VerticalAlignment="Top">
                         <Button x:Name="RatButton" Content="Rats" Height="19" Margin="10,291.341,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="35"/>
                         <Button x:Name="FueledButton" Content="Fueled" Height="19" Margin="0,291.341,10,0" VerticalAlignment="Top" Background="Red" Click="fueledButton_Click" HorizontalAlignment="Right" Width="44"/>
-                        <GroupBox x:Name="ActiveCaseBox" Header="Active Case" HorizontalAlignment="Left" Height="235" Margin="1119.492,72.65,-824.503,0" VerticalAlignment="Top" Width="284" Foreground="{DynamicResource brushEliteOrange}" BorderBrush="{DynamicResource brushEliteOrange}">
-                            <Grid Margin="0,-10,-2,-12"/>
-                        </GroupBox>
-                        <Label x:Name="Label2" Content="Client" Height="26" Margin="0,18.65,208.01,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="59" Foreground="{DynamicResource brushEliteOrange}" d:LayoutOverrides="HorizontalAlignment"/>
-                        <TextBox x:Name="ClientName" Height="19" Margin="0,44.65,55.01,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" HorizontalAlignment="Right" Width="212" Foreground="{DynamicResource brushEliteOrange}" Background="{DynamicResource brushTransparent}" d:LayoutOverrides="HorizontalAlignment"/>
-                        <Label x:Name="Label3" Content="System" Height="26" Margin="0,68.65,216.01,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="51" Foreground="{DynamicResource brushEliteOrange}" d:LayoutOverrides="HorizontalAlignment"/>
-                        <TextBox x:Name="SystemName" Height="17" Margin="0,94.65,53.01,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" HorizontalAlignment="Right" Width="214" Background="{DynamicResource brushTransparent}" Foreground="{DynamicResource brushEliteOrange}" d:LayoutOverrides="HorizontalAlignment"/>
-                        <Button x:Name="StartButton" Content="Start" HorizontalAlignment="Right" Height="23" Margin="0,41.65,18.01,0" VerticalAlignment="Top" Width="32" Click="StartButton_Click" Background="{DynamicResource brushTransparent}" Foreground="{DynamicResource brushEliteOrange}" BorderBrush="{DynamicResource brushEliteOrange}"/>
-                        <Button x:Name="UpdateButton" Content="Upd" HorizontalAlignment="Right" Height="17" Margin="0,81.65,11.01,0" VerticalAlignment="Top" Width="37" Click="UpdateButton_Click" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}"/>
-                        <Button x:Name="CurrentButton" Content="CUR" HorizontalAlignment="Right" Height="18" Margin="0,98.65,11.01,0" VerticalAlignment="Top" Width="37" Click="currentButton_Click" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}"/>
-                        <Label x:Name="Label3Copy" Content="Assigned Rats" Height="26" Margin="0,116.65,164.01,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="103" Foreground="{DynamicResource brushEliteOrange}" d:LayoutOverrides="HorizontalAlignment, VerticalAlignment"/>
-                        <TextBlock x:Name="AssignedRatsLabel" HorizontalAlignment="Left" Height="17" Margin="313.979,142.65,0,0" TextWrapping="Wrap" Text="{Binding AssignedRats}" VerticalAlignment="Top" Width="212" d:LayoutOverrides="VerticalAlignment"/>
-                        <Label x:Name="label" Content="Distance to client" HorizontalAlignment="Left" Height="23" Margin="313.979,159.65,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
-                        <Label x:Name="LabelCopy" Content="Jumps (Approx)" HorizontalAlignment="Left" Height="23" Margin="431.979,159.65,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
-                        <Button x:Name="Button1" Content="Call jumps" HorizontalAlignment="Left" Height="24" Margin="431.979,209.65,0,0" VerticalAlignment="Top" Width="74" Click="button1_Click" Foreground="{DynamicResource brushEliteOrange}" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}"/>
-                        <Label x:Name="ClientDistanceLabel" Content="{Binding DistanceToClientString}" HorizontalAlignment="Left" Height="23" Margin="313.979,181.65,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
-                        <Label x:Name="LabelCopy2" Content="{Binding JumpsToClient}" HorizontalAlignment="Left" Height="23" Margin="431.979,181.65,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
-                        <Button x:Name="Button2" Content="Closest Station" Height="24" Margin="0,209.65,164.01,0" VerticalAlignment="Top" Click="Button2_Click" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Right" Width="101"/>
+                        <Label x:Name="Label2" Content="Client" Height="26" Margin="0,62,212,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="59" Foreground="{DynamicResource brushEliteOrange}"/>
+                        <TextBox x:Name="ClientName" Height="19" Margin="0,88,59,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" HorizontalAlignment="Right" Width="212" Foreground="{DynamicResource brushEliteOrange}" Background="{DynamicResource brushTransparent}"/>
+                        <Label x:Name="Label3" Content="System" Height="26" Margin="0,112,220,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="51" Foreground="{DynamicResource brushEliteOrange}"/>
+                        <TextBox x:Name="SystemName" Height="17" Margin="0,138,57,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" HorizontalAlignment="Right" Width="214" Background="{DynamicResource brushTransparent}" Foreground="{DynamicResource brushEliteOrange}"/>
+                        <Button x:Name="StartButton" Content="Start" HorizontalAlignment="Right" Height="23" Margin="0,85,22,0" VerticalAlignment="Top" Width="32" Click="StartButton_Click" Background="{DynamicResource brushTransparent}" Foreground="{DynamicResource brushEliteOrange}" BorderBrush="{DynamicResource brushEliteOrange}"/>
+                        <Button x:Name="UpdateButton" Content="Upd" HorizontalAlignment="Right" Height="17" Margin="0,125,15,0" VerticalAlignment="Top" Width="37" Click="UpdateButton_Click" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}"/>
+                        <Button x:Name="CurrentButton" Content="CUR" HorizontalAlignment="Right" Height="18" Margin="0,142,15,0" VerticalAlignment="Top" Width="37" Click="currentButton_Click" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}"/>
+                        <Label x:Name="Label3Copy" Content="Assigned Rats" Height="26" Margin="0,160,168,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="103" Foreground="{DynamicResource brushEliteOrange}"/>
+                        <TextBlock x:Name="AssignedRatsLabel" HorizontalAlignment="Left" Height="17" Margin="311,186,0,0" TextWrapping="Wrap" Text="{Binding AssignedRats}" VerticalAlignment="Top" Width="212"/>
+                        <Label x:Name="label" Content="Distance to client" HorizontalAlignment="Left" Height="23" Margin="310,203,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
+                        <Label x:Name="LabelCopy" Content="Jumps (Approx)" HorizontalAlignment="Left" Height="23" Margin="428,203,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
+                        <Button x:Name="Button1" Content="Call jumps" HorizontalAlignment="Left" Height="24" Margin="428,286,0,0" VerticalAlignment="Top" Width="74" Click="button1_Click" Foreground="{DynamicResource brushEliteOrange}" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}"/>
+                        <Label x:Name="ClientDistanceLabel" Content="{Binding DistanceToClientString}" HorizontalAlignment="Left" Height="23" Margin="310,225,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
+                        <Label x:Name="LabelCopy2" Content="{Binding JumpsToClient}" HorizontalAlignment="Left" Height="23" Margin="428,225,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
+                        <Button x:Name="Button2" Content="Closest Station" Height="24" Margin="0,286,169,0" VerticalAlignment="Top" Click="Button2_Click" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}" Foreground="{DynamicResource brushEliteOrange}" HorizontalAlignment="Right" Width="101"/>
+                        <Label x:Name="label_DestinationSystem" Content="Destination System" HorizontalAlignment="Left" Height="23" Margin="309,253,0,0" VerticalAlignment="Top" Width="129" Foreground="{DynamicResource brushEliteOrange}"/>
                     </Grid>
                 </Grid>
             </GroupBox>
@@ -88,10 +86,6 @@
                 <MenuItem Header="DispatchInterface" Click="MenuItem_Click_1" Visibility="Collapsed"/>
                 <MenuItem x:Name="OverlayMenu" Header="Overlay" Click="OverlayMenu_Click"/>
             </Menu>
-            <Image x:Name="StatusImage" Margin="10,261.667,287,40.667" Source="Resources/green_light.png" Panel.ZIndex="10" Grid.Row="1" Grid.RowSpan="2"
-                   Grid.Column="0" />
-            <Label x:Name="Label" Content="Online" Margin="44,261.667,211,40.667" Grid.Row="1" Grid.RowSpan="2"
-                   Grid.Column="0" Foreground="{DynamicResource brushEliteOrange}" />
             <GroupBox x:Name="ConnectionInfoBox" Header="Connection Information" Margin="279,0,9.667,34.667" Grid.Column="1" Grid.Row="1" Background="{DynamicResource brushTransparent}" Foreground="{DynamicResource brushEliteOrange}" BorderBrush="{DynamicResource brushEliteOrange}" Height="128" VerticalAlignment="Bottom" Grid.RowSpan="2">
                 <Grid HorizontalAlignment="Right" Margin="0,10,1,0" Width="237" Height="95" VerticalAlignment="Top">
                     <Label x:Name="Label5" Content="Connection:" Height="28" VerticalAlignment="Top" HorizontalAlignment="Left" Width="105" Margin="-49.944,0,0,0" Background="{DynamicResource brushTransparent}" Foreground="{DynamicResource brushEliteOrange}" BorderBrush="{DynamicResource brushEliteOrange}"/>
@@ -106,7 +100,7 @@
                     <Button x:Name="SyncButton" Content="SYNC" Margin="97.056,68,103.944,0" Background="{DynamicResource brushTransparent}" Height="17" VerticalAlignment="Top" Foreground="{DynamicResource brushEliteOrange}" BorderBrush="{DynamicResource brushEliteOrange}"/>
                 </Grid>
             </GroupBox>
-            <GroupBox x:Name="GroupBox1" Header="Active Rescues" Height="150" Margin="10,27,324.667,0" VerticalAlignment="Top"
+            <GroupBox x:Name="GroupBox1" Header="Active Rescues" Height="198" Margin="10,27,325,0" VerticalAlignment="Top"
                       Grid.Row="0" Foreground="{DynamicResource brushEliteOrange}" BorderBrush="{DynamicResource brushEliteOrange}" Grid.ColumnSpan="2">
                 <GroupBox.Effect>
                     <DropShadowEffect/>
@@ -167,7 +161,7 @@
                 <ProgressBar x:Name="Dbprogress" Height="20" Width="150" Maximum="{Binding Eddbworker.SystemCount}" Value="{Binding Eddbworker.SystemCounter}" Background="{DynamicResource brushTransparent}" BorderBrush="{DynamicResource brushEliteOrange}"/>
             </StatusBar>
         </Grid>
-        <Grid x:Name="Rat2Grid" HorizontalAlignment="Left" Margin="33.767,297.355,0,244.331" Width="187" Visibility="{Binding MyClient.Rat2.RatName, Converter={converter:EmptyStringToVisibilityConverter}}" d:LayoutOverrides="HorizontalAlignment">
+        <Grid x:Name="Rat2Grid" HorizontalAlignment="Left" Margin="34,390,0,152" Width="187" Visibility="{Binding MyClient.Rat2.RatName, Converter={converter:EmptyStringToVisibilityConverter}}">
             <Button x:Name="FrButtonCopy" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="{Binding MyClient.Rat2.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="frButton_Click" Foreground="{DynamicResource brushEliteOrange}"/>
             <Button x:Name="WrButtonCopy" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat2.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579" Foreground="{DynamicResource brushEliteOrange}"/>
             <Button x:Name="SysButtonCopy" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat2.InSystem, Converter={StaticResource BooleanToColourConverter}}" Click="sysButton_Click" Foreground="{DynamicResource brushEliteOrange}"/>
@@ -175,7 +169,7 @@
             <Button x:Name="InstButtonCopy" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat2.InInstance, Converter={StaticResource BooleanToColourConverter}}" Click="instButton_Click" Foreground="{DynamicResource brushEliteOrange}"/>
             <Label x:Name="Label4Copy" Content="Rat2" Height="26" Margin="0,0,55,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="122" Foreground="{DynamicResource brushEliteOrange}"/>
         </Grid>
-        <Grid x:Name="Rat3Grid" HorizontalAlignment="Left" Height="61" Margin="33.767,0,0,178.331" VerticalAlignment="Bottom" Width="187" Visibility="{Binding MyClient.Rat3.RatName, Converter={converter:EmptyStringToVisibilityConverter}}" d:LayoutOverrides="HorizontalAlignment">
+        <Grid x:Name="Rat3Grid" HorizontalAlignment="Left" Height="61" Margin="34,0,0,86" VerticalAlignment="Bottom" Width="187" Visibility="{Binding MyClient.Rat3.RatName, Converter={converter:EmptyStringToVisibilityConverter}}">
             <Button x:Name="FrButtonCopy1" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="{Binding MyClient.Rat3.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="frButton_Click" Foreground="{DynamicResource brushEliteOrange}"/>
             <Button x:Name="WrButtonCopy1" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat3.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579" Foreground="{DynamicResource brushEliteOrange}"/>
             <Button x:Name="SysButtonCopy1" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat3.InSystem, Converter={StaticResource BooleanToColourConverter}}" Click="sysButton_Click" Foreground="{DynamicResource brushEliteOrange}"/>
@@ -183,7 +177,7 @@
             <Button x:Name="InstButtonCopy1" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Rat3.InInstance, Converter={StaticResource BooleanToColourConverter}}" Click="instButton_Click" Foreground="{DynamicResource brushEliteOrange}"/>
             <Label x:Name="Label4Copy1" Content="Rat3" Height="26" Margin="0,0,55,0" RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="122" Foreground="{DynamicResource brushEliteOrange}"/>
         </Grid>
-        <Grid x:Name="SelfRatGrid" HorizontalAlignment="Left" Height="61" Margin="33.767,231.355,0,0" VerticalAlignment="Top" Width="187" d:LayoutOverrides="HorizontalAlignment">
+        <Grid x:Name="SelfRatGrid" HorizontalAlignment="Left" Height="61" Margin="34,324,0,0" VerticalAlignment="Top" Width="187">
             <Button x:Name="FrButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0" VerticalAlignment="Top" Width="30" Background="{Binding MyClient.Self.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="frButton_Click" Foreground="{DynamicResource brushEliteOrange}"/>
             <Button x:Name="WrButton" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Self.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" Click="wrButton_Click" RenderTransformOrigin="0.086,0.579" Foreground="{DynamicResource brushEliteOrange}"/>
             <Button x:Name="SysButton" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0" VerticalAlignment="Top" Width="32" Background="{Binding MyClient.Self.InSystem, Converter={StaticResource BooleanToColourConverter}}" Click="sysButton_Click" Foreground="{DynamicResource brushEliteOrange}"/>
