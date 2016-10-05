@@ -65,10 +65,7 @@ namespace RatTracker_WPF
 		public ConnectionInfo Conninfo = new ConnectionInfo(); // The rat's connection information
 		private double _distanceToClient; // Bound to UI element
 		private string _distanceToClientString; // Bound to UI element
-		private long _fileOffset; // Current offset in NetLog file
-		private long _fileSize; // Size of current netlog file
 		private string _jumpsToClient; // Bound to UI element
-        private string _xmlparselist; // Buffer for XML since it now arrives in chunks.
 	    private NetLogParser _netlogparser = new NetLogParser();
 
 		// ReSharper disable once UnusedMember.Local TODO ??
@@ -80,7 +77,6 @@ namespace RatTracker_WPF
 		private ICollection<TravelLog> _myTravelLog; // Log of recently visited systems.
 		private Overlay _overlay; // Pointer to UI overlay
 		private RootObject _rescues; // Current rescues. Source for items in rescues datagrid
-		private string _scState; // Supercruise state.
 		public bool StopNetLog; // Used to terminate netlog reader thread.
 		private readonly TelemetryClient _tc = new TelemetryClient(); 
 		private Thread _threadLogWatcher; // Holds logwatcher thread.
@@ -158,7 +154,7 @@ namespace RatTracker_WPF
                         Logger.Debug("Parsing AppConfig...");
                         if (ParseEdAppConfig())
                         {
-                            CheckLogDirectory();
+                            _netlogparser.CheckLogDirectory();
                         }
                         else
                         {
@@ -306,7 +302,7 @@ namespace RatTracker_WPF
 			Logger.Debug("Reinitializing application...");
 			if (ParseEdAppConfig())
 			{
-				CheckLogDirectory();
+				_netlogparser.CheckLogDirectory();
 			}
 			else
 			{
@@ -845,10 +841,6 @@ namespace RatTracker_WPF
 		 * Converter for E:Ds UTF encoded CMDR names. Seen in NetLog.
 		 */
 
-		private void OnRenamed(object source, RenamedEventArgs e)
-		{
-			/* Stop watching the renamed file, look for new onChanged. */
-		}
 
 
 		private void MainWindow_Closing(object sender, CancelEventArgs e)
@@ -860,227 +852,7 @@ namespace RatTracker_WPF
 			Application.Current.Shutdown();
 		}
 
-		private void CheckLogDirectory()
-		{
-			Logger.Debug("Checking log directories.");
-			try {
-				if (Thread.CurrentThread.Name == null)
-				{
-					Thread.CurrentThread.Name = "MainThread";
-				}
 
-				if (Settings.Default.NetLogPath == null | Settings.Default.NetLogPath == "")
-				{
-					MessageBox.Show("Error: No log directory is specified, please do so before attempting to go on duty.");
-					return;
-				}
-
-				if (!Directory.Exists(Settings.Default.NetLogPath))
-				{
-					MessageBox.Show("Error: Couldn't find E:D Netlog directory: " + Settings.Default.NetLogPath +
-									". Please ensure that it is correct in Settings.");
-					return;
-				}
-
-				AppendStatus("Beginning to watch " + Settings.Default.NetLogPath + " for changes...");
-				if (_watcher == null)
-				{
-					_watcher = new FileSystemWatcher
-					{
-						Path = Settings.Default.NetLogPath,
-						NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName |
-										NotifyFilters.DirectoryName | NotifyFilters.Size,
-						Filter = "*.log"
-					};
-					_watcher.Changed += OnChanged;
-					_watcher.Created += OnChanged;
-					_watcher.Deleted += OnChanged;
-					_watcher.Renamed += OnRenamed;
-					_watcher.EnableRaisingEvents = true;
-				}
-
-				DirectoryInfo tempDir = new DirectoryInfo(Settings.Default.NetLogPath);
-				_logFile = (from f in tempDir.GetFiles("netLog*.log") orderby f.LastWriteTime descending select f).First();
-				AppendStatus("Started watching file " + _logFile.FullName);
-				Logger.Debug("Watching file: " + _logFile.FullName);
-				CheckClientConn(_logFile.FullName);
-                _netlogparser.ReadLogfile(_logFile.FullName);
-				_myTravelLog = new Collection<TravelLog>();
-			}
-			catch (Exception ex)
-			{
-				Logger.Debug("Exception in CheckLogDirectory! " + ex.Message);
-				_tc.TrackException(ex);
-			}
-		}
-
-		private void CheckClientConn(string lf)
-		{
-			bool stopSnooping = false;
-			AppendStatus("Detecting your connectivity...");
-			try
-			{
-				using (
-					StreamReader sr =
-						new StreamReader(new FileStream(lf, FileMode.Open, FileAccess.Read,
-							FileShare.ReadWrite | FileShare.Delete)))
-				{
-					int count = 0;
-					while (stopSnooping != true && sr.Peek() != -1 && count < 10000)
-					{
-						count++;
-						string line = sr.ReadLine();
-						// TODO: Populate WAN, STUN and Turn server labels. Make cleaner TURN detection.
-						if (line != null && line.Contains("Local machine is"))
-						{
-							Logger.Info("My RunID: " + line.Substring(line.IndexOf("is ", StringComparison.Ordinal)));
-							ConnInfo.RunId = line.Substring(line.IndexOf("is ", StringComparison.Ordinal));
-						}
-						if (line != null && line.Contains("RxRoute"))
-						{
-							// Yes, this early in the netlog, I figure we can just parse the RxRoute without checking for ID. Don't do this later though.
-							const string rxpattern = "IP4NAT:(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})+:(\\d{1,5}),(\\d),(\\d),(\\d),(\\d{1,4})";
-							Match match = Regex.Match(line, rxpattern, RegexOptions.IgnoreCase);
-							if (match.Success)
-							{
-								Logger.Info("Route info: WAN:" + match.Groups[1].Value + " port " + match.Groups[2].Value + ", LAN:" +
-											match.Groups[3].Value + " port " + match.Groups[4].Value + ", STUN: " + match.Groups[5].Value + ":" +
-											match.Groups[6].Value + ", TURN: " + match.Groups[7].Value + ":" + match.Groups[8].Value +
-											" MTU: " + match.Groups[12].Value + " NAT type: " + match.Groups[9].Value + " uPnP: " +
-											match.Groups[10].Value + " MultiNAT: " + match.Groups[11].Value);
-								ConnInfo.WanAddress = match.Groups[1].Value + ":" + match.Groups[2].Value;
-								ConnInfo.Mtu = int.Parse(match.Groups[12].Value);
-								_tc.TrackMetric("Rat_Detected_MTU", ConnInfo.Mtu);
-								ConnInfo.NatType = (NatType) Enum.Parse(typeof (NatType), match.Groups[9].Value);
-								if (match.Groups[2].Value == match.Groups[4].Value && match.Groups[10].Value == "0")
-								{
-									Logger.Debug("Probably using static portmapping, source and destination port matches and uPnP disabled.");
-									ConnInfo.PortMapped = true;
-								}
-								/*
-                                 * This is not detecting properly. Why? 
-                                 *
-                                if (match.Groups[11].Value == "0")
-                                {
-                                    AppendStatus("Warning: E:D thinks you have multiple levels of NAT! This is VERY bad for instancing. If possible, ensure you have only one NAT device between your computer and the internet.");
-                                    tc.TrackMetric("MultipleNAT", 1);
-                                }
-                                */
-								ConnInfo.TurnServer = match.Groups[7].Value + ":" + match.Groups[8].Value;
-							}
-						}
-						if (line != null && line.Contains("failed to initialise upnp"))
-						{
-							AppendStatus(
-								"CRITICAL: E:D has failed to establish a upnp port mapping, but E:D is configured to use upnp. Disable upnp in netlog if you have a router that can't do UPnP, and forward ports manually.");
-						}
-						if (line != null && line.Contains("Sync Established"))
-						{
-							AppendStatus("Sync Established.");
-						}
-
-						if (line != null && line.Contains("ConnectToServerActivity:StartRescueServer"))
-						{
-							AppendStatus(
-								"Client connectivity parsing complete.");
-							stopSnooping = true;
-						}
-					}
-
-					AppendStatus("Parsed " + count + " lines to derive client info.");
-					switch (ConnInfo.NatType)
-					{
-						case NatType.Blocked:
-							AppendStatus(
-								"WARNING: E:D reports that your network port appears to be blocked! This will prevent you from instancing with other players!");
-							ConnTypeLabel.Content = "Blocked!";
-							ConnTypeLabel.Foreground = Brushes.Red;
-							_tc.TrackMetric("NATBlocked", 1);
-							break;
-						case NatType.Unknown:
-							if (ConnInfo.PortMapped != true)
-							{
-								AppendStatus(
-									"WARNING: E:D is unable to determine the status of your network port. This may be indicative of a condition that may cause instancing problems!");
-								ConnTypeLabel.Content = "Unknown";
-								_tc.TrackMetric("NATUnknown", 1);
-							}
-							else
-							{
-								AppendStatus("Unable to determine NAT type, but you seem to have a statically mapped port forward.");
-								_tc.TrackMetric("ManualPortMap", 1);
-							}
-							break;
-						case NatType.Open:
-							ConnTypeLabel.Content = "Open";
-							_tc.TrackMetric("NATOpen", 1);
-							break;
-						case NatType.FullCone:
-							ConnTypeLabel.Content = "Full cone NAT";
-							_tc.TrackMetric("NATFullCone", 1);
-							break;
-						case NatType.Failed:
-							AppendStatus("WARNING: E:D failed to detect your NAT type. This might be problematic for instancing.");
-							ConnTypeLabel.Content = "Failed to detect!";
-							_tc.TrackMetric("NATFailed", 1);
-							break;
-						case NatType.SymmetricUdp:
-							if (ConnInfo.PortMapped != true)
-							{
-								AppendStatus(
-									"WARNING: Symmetric NAT detected! Although your NAT allows UDP, this may cause SEVERE problems when instancing!");
-								ConnTypeLabel.Content = "Symmetric UDP";
-								_tc.TrackMetric("NATSymmetricUDP", 1);
-							}
-
-							else
-							{
-								AppendStatus("Symmetric UDP NAT with static port mapping detected.");
-								_tc.TrackMetric("ManualPortMap", 1);
-							}
-
-							break;
-						case NatType.Restricted:
-							if (ConnInfo.PortMapped != true)
-							{
-								AppendStatus("WARNING: Port restricted NAT detected. This may cause instancing problems!");
-								ConnTypeLabel.Content = "Port restricted NAT";
-								_tc.TrackMetric("NATRestricted", 1);
-							}
-							else
-							{
-								AppendStatus("Port restricted NAT with static port mapping detected.");
-								_tc.TrackMetric("ManualPortMap", 1);
-							}
-							break;
-						case NatType.Symmetric:
-							if (ConnInfo.PortMapped != true)
-							{
-								AppendStatus(
-									"WARNING: Symmetric NAT detected. This is usually VERY BAD for instancing. If you do not have a manual port mapping set up, you should consider changing your network configuration.");
-								_tc.TrackMetric("NATSymmetric", 1);
-							}
-							else
-							{
-								AppendStatus("Symmetric NAT with static port mapping detected.");
-								_tc.TrackMetric("ManualPortMap", 1);
-							}
-							break;
-					}
-					if (stopSnooping == false)
-					{
-						AppendStatus(
-							"Client connectivity detection complete.");
-					}
-					_tc.Flush();
-				}
-			}
-			catch (Exception ex)
-			{
-				Logger.Fatal("Exception in checkClientConn:" + ex.Message);
-				_tc.TrackException(ex);
-			}
-		}
 
 
 		private async void TriggerSystemChange(string value)
@@ -1182,11 +954,6 @@ namespace RatTracker_WPF
 			}
 		}
 
-		private void OnChanged(object source, FileSystemEventArgs e)
-		{
-			_logFile = new FileInfo(e.FullPath);
-			/* Handle changed events */
-		}
 
 		private void DutyButton_Click(object sender, RoutedEventArgs e)
 		{
