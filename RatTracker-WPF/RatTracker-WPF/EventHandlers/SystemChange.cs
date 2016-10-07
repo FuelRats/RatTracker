@@ -7,7 +7,7 @@ using RatTracker_WPF.Models.Edsm;
 
 namespace RatTracker_WPF.EventHandlers
 {
-    class SystemChange
+    public class SystemChangeArgs : EventArgs
     {
         public string SystemName { get; set; }
         public EdsmCoords Coords { get; set; }

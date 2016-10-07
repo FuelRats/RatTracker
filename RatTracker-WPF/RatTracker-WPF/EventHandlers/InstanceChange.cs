@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RatTracker_WPF.EventHandlers
 {
-    class InstanceChange
+    public class InstanceChangeArgs : EventArgs
     {
         public string IslandName { get; set; }
         public List<string> IslandMembers { get; set; }

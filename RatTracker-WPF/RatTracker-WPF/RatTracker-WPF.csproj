@@ -197,6 +197,7 @@
       <DependentUpon>ErrorReporter.xaml</DependentUpon>
     </Compile>
     <Compile Include="EventHandlers\ConnInfo.cs" />
+    <Compile Include="EventHandlers\FireBirdLoaded.cs" />
     <Compile Include="EventHandlers\FriendRequest.cs" />
     <Compile Include="EventHandlers\InstanceChange.cs" />
     <Compile Include="EventHandlers\StatusUpdate.cs" />

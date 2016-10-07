@@ -10,17 +10,22 @@ using log4net;
 using RatTracker_WPF.Models.App;
 using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.Eddb;
-
+using RatTracker_WPF.EventHandlers;
 using static System.Windows.MessageBox;
 using System.Threading;
 
 namespace RatTracker_WPF
 {
-	public class FireBird : PropertyChangedBase
+    public delegate void FireBirdLoadedEvent(object sender, FireBirdLoadedArgs args);
+    public class FireBird : PropertyChangedBase
 	{
+
+
+	    public event FireBirdLoadedEvent FireBirdLoadedEvent;
+
 		private static readonly ILog Logger =
 			LogManager.GetLogger(System.Reflection.Assembly.GetCallingAssembly().GetName().Name);
-
+        
 		private string _status="Initializing";
         private bool _dbReady = false;
         string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
@@ -98,6 +103,7 @@ namespace RatTracker_WPF
 					Status = "Connected";
 					if (newdb)
 						CreateTables();
+				    FireBirdLoadedEvent?.Invoke(this, new FireBirdLoadedArgs());
 				}
 				catch (Exception ex)
 				{

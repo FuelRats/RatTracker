@@ -6,12 +6,7 @@ using System.Threading.Tasks;
 
 namespace RatTracker_WPF.EventHandlers
 {
-    public class FriendRequestArgs : EventArgs
+    public class FireBirdLoadedArgs : EventArgs
     {
-        public string FriendName
-        {
-            get;
-            set;
-        }
     }
 }

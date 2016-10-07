@@ -3,15 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RatTracker_WPF.Models.App;
 
 namespace RatTracker_WPF.EventHandlers
 {
-    class ConnInfo
+    public class ConnInfoArgs
     {
-        public float Srtt { get; set; }
-        public float Loss { get; set; }
-        public float Jitter { get; set; }
-        public float Act1 { get; set; }
-        public float Act2 { get; set; }
+        public ConnectionInfo ConnInfo { get; set; }
     }
 }

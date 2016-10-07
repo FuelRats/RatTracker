@@ -41,10 +41,11 @@ using RatTracker_WPF.EventHandlers;
 
 namespace RatTracker_WPF
 {
-	/// <summary>
-	///     Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow : INotifyPropertyChanged
+    public delegate void GlobalHeartbeatEvent(object sender, EventArgs args);
+    /// <summary>
+    ///     Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : INotifyPropertyChanged
 	{
 		#region GlobalVars
 		private const bool TestingMode = true; // Use the TestingMode bool to point RT to test API endpoints and non-live queries. Set to false when deployed.
@@ -70,7 +71,6 @@ namespace RatTracker_WPF
 
 		// ReSharper disable once UnusedMember.Local TODO ??
 		private string _logDirectory = Settings.Default.NetLogPath; // TODO: Remove this assignment and pull live from Settings, have the logfile watcher reaquire file if settings are changed.
-		private FileInfo _logFile; // Pointed to the live netLog file.
 		private ClientInfo _myClient = new ClientInfo(); // Semi-redundant UI bound data model. Somewhat duplicates myrescue, needs revision.
 		private PlayerInfo _myplayer = new PlayerInfo(); // Playerinfo, bound to various UI elements
 		private Datum _myrescue; // TODO: See myClient - must be refactored.
@@ -80,8 +80,10 @@ namespace RatTracker_WPF
 		public bool StopNetLog; // Used to terminate netlog reader thread.
 		private readonly TelemetryClient _tc = new TelemetryClient(); 
 		private Thread _threadLogWatcher; // Holds logwatcher thread.
-		private FileSystemWatcher _watcher; // FSW for the Netlog directory.
 		private EddbData _eddbworker;
+        private bool _heartbeat_stopping = false;
+
+	    public event GlobalHeartbeatEvent GlobalHeartbeatEvent;
 
 		public EddbData Eddbworker
 		{
@@ -151,6 +153,7 @@ namespace RatTracker_WPF
                         _tc.TrackPageView("MainWindow");
                         InitializeComponent();
                         Loaded += Window_Loaded;
+                        _netlogparser.StatusUpdateEvent += DoStatusUpdate;
                         Logger.Debug("Parsing AppConfig...");
                         if (ParseEdAppConfig())
                         {
@@ -237,6 +240,7 @@ namespace RatTracker_WPF
 			BackgroundWorker eddbWorker = new BackgroundWorker();
 			BackgroundWorker piWorker = new BackgroundWorker();
 			BackgroundWorker fbWorker = new BackgroundWorker();
+		    BackgroundWorker hbWorker = new BackgroundWorker();
 
 			if (_oauthProcessing == false)
 			{
@@ -259,13 +263,18 @@ namespace RatTracker_WPF
 				{
 					Logger.Debug("Initialize Firebird SQL...");
 					await InitFirebird();
+				    _fbworker.FireBirdLoadedEvent += FireBirdLoaded;
 
 				};
+			    hbWorker.DoWork += async delegate
+			    {
+			        HeartBeat(false);
+			    };
 				fbWorker.RunWorkerAsync();
 				eddbWorker.RunWorkerAsync();
 				apiWorker.RunWorkerAsync();
 				piWorker.RunWorkerAsync();
-			    _netlogparser.StatusUpdateEvent += DoStatusUpdate;
+			    hbWorker.RunWorkerAsync();
 			}
 			else
 			{
@@ -273,8 +282,18 @@ namespace RatTracker_WPF
 			}
 		}
 
+	    private void FireBirdLoaded(object sender, FireBirdLoadedArgs args)
+	    {
+	        Logger.Debug("Starting EDDB, as FireBird has completed loading.");
+	    }
+
+	    private void EDDBLoaded(object sender, FireBirdLoadedArgs args)
+	    {
+	        Logger.Debug("EDDB has loaded.");
+	    }
 	    private void DoStatusUpdate(object sender, StatusUpdateArgs args)
 	    {
+	        Logger.Debug("DSU from Netlogwatcher: " + args.StatusMessage);
 	        AppendStatus(args.StatusMessage);
 	    }
 
@@ -458,6 +477,22 @@ namespace RatTracker_WPF
 
 		#endregion
 
+	    public async void HeartBeat(bool stop)
+	    {
+	        if (stop)
+	        {
+	            Logger.Debug("Stopping heartbeat.");
+	            _heartbeat_stopping = true;
+	            return;
+	        }
+	        Logger.Debug("Heartbeat...");
+	        Thread.Sleep(2000);
+	        GlobalHeartbeatEvent?.Invoke(this, new EventArgs());
+	        if (_heartbeat_stopping)
+	            HeartBeat(true);
+	        else
+	            HeartBeat(false);
+	    }
 		/* Moved WS connection to the apworker, but to actually parse the messages we have to hook the event
          * handler here too.
          */
@@ -961,21 +996,15 @@ namespace RatTracker_WPF
 			{
 				Button.Content = "On Duty";
 				MyPlayer.OnDuty = true;
-				_watcher.EnableRaisingEvents = true;
-				AppendStatus("Started watching for events in netlog.");
-				Button.Background = Brushes.Green;
-				StopNetLog = false;
-				_threadLogWatcher = new Thread(_netlogparser.NetLogWatcher) {Name = "Netlog watcher"};
-				_threadLogWatcher.Start();
+                var mainwin = this;
+                _netlogparser.StartWatcher(ref mainwin);
+
 			}
 			else
 			{
 				Button.Content = "Off Duty";
 				MyPlayer.OnDuty = false;
-				_watcher.EnableRaisingEvents = false;
-				AppendStatus("\nStopped watching for events in netlog.");
-				Button.Background = Brushes.Red;
-				StopNetLog = true;
+			    _netlogparser.StopWatcher();
 			}
 			try {
 				TPAMessage dutymessage = new TPAMessage

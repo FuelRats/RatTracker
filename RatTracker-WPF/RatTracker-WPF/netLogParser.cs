@@ -16,27 +16,26 @@ using Microsoft.ApplicationInsights;
 using RatTracker_WPF.Models.Api;
 using RatTracker_WPF.Models.App;
 using RatTracker_WPF.EventHandlers;
+using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
 
 namespace RatTracker_WPF
 {
     public delegate void StatusUpdateEvent(object sender, StatusUpdateArgs args);
+    public delegate void FriendRequestUpdateEvent(object sender, FriendRequestArgs args);
+    public delegate void InstanceChangeUpdateEvent(object sender, InstanceChangeArgs args);
+    public delegate void SystemChangeUpdateEvent(object sender, SystemChangeArgs args);
+    public delegate void ConnInfoUpdateEvent(object sender, ConnInfoArgs args);
 
-    public class StatusUpdate
+    public class NetLogParser 
     {
-
         public event StatusUpdateEvent StatusUpdateEvent;
-        protected void NotifyStatusUpdate(object sender, StatusUpdateArgs args)
-        {
-             
-            StatusUpdateEvent?.Invoke(sender, args);
-        }
+        public event FriendRequestUpdateEvent FriendRequestUpdateEvent;
+        public event InstanceChangeUpdateEvent InstanceChangeUpdateEvent;
+        public event SystemChangeUpdateEvent SystemChangeUpdateEvent;
+        public event ConnInfoUpdateEvent ConnInfoUpdateEvent;
 
-    }
-
-    public class NetLogParser : StatusUpdate
-    {
         private string _scState;
         private string _xmlparselist;
         private static readonly ILog Logger = LogManager.GetLogger(System.Reflection.Assembly.GetCallingAssembly().GetName().Name);
@@ -47,6 +46,8 @@ namespace RatTracker_WPF
         private FileSystemWatcher _watcher;
         private ConnectionInfo _conninfo = new ConnectionInfo();
         private string _conntype;
+        private Thread _threadLogWatcher;
+        private MainWindow _mainwindowref;
 
         public static byte[] StringToByteArray(string hex)
         {
@@ -64,10 +65,24 @@ namespace RatTracker_WPF
 
         public void AppendStatus(string message)
         {
-            this.NotifyStatusUpdate(this, new StatusUpdateArgs() {StatusMessage= message});
+            StatusUpdateEvent?.Invoke(this, new StatusUpdateArgs() {StatusMessage= message});
         }
 
+        public void TriggerSystemChange(string sysname, EdsmCoords coords)
+        {
+            SystemChangeUpdateEvent?.Invoke(this, new SystemChangeArgs() {SystemName = sysname, Coords = coords});
+        }
 
+        public void TriggerInstanceChange(string island, List<string> instancemembers, string systemname)
+        {
+            InstanceChangeUpdateEvent?.Invoke(this,
+                new InstanceChangeArgs() {IslandName = island, IslandMembers = instancemembers, SystemName = systemname});
+        }
+        public void TriggerConnInfoUpdate(ConnectionInfo conninfo)
+        {
+            ConnInfoUpdateEvent?.Invoke(this,
+                new ConnInfoArgs() {ConnInfo = conninfo});
+        }
         public void CheckLogDirectory()
         {
             Logger.Debug("Checking log directories.");
@@ -304,16 +319,7 @@ namespace RatTracker_WPF
             AppendStatus("From NetLogParser - Netlogwatcher started.");
             try
             {
-                while (!StopNetLog)
-                {
-                    Thread.Sleep(2000);
-
-                    FileInfo fi = new FileInfo(_logFile.FullName);
-                    if (fi.Length == _fileSize) continue;
-                    ReadLogfile(fi.FullName); /* Maybe a poke on the FS is enough to wake watcher? */
-                    _fileOffset = fi.Length;
-                    _fileSize = fi.Length;
-                }
+                _mainwindowref.GlobalHeartbeatEvent += RunTick;
             }
             catch (Exception ex)
             {
@@ -322,6 +328,39 @@ namespace RatTracker_WPF
             }
         }
 
+        public void RunTick(object sender, EventArgs args)
+        {
+            Logger.Debug("Running tick!");
+            FileInfo fi = new FileInfo(_logFile.FullName);
+            if (fi.Length == _fileSize) return;
+            ReadLogfile(fi.FullName); /* Maybe a poke on the FS is enough to wake watcher? */
+            _fileOffset = fi.Length;
+            _fileSize = fi.Length;
+
+        }
+        public void StartWatcher(ref MainWindow mainwindow)
+        {
+            if (_watcher==null)
+            {
+                Logger.Fatal("No watcher in NetLogWatcher StartWatcher!");
+                return;
+            }
+            _mainwindowref = mainwindow;
+            _watcher.EnableRaisingEvents = true;
+            AppendStatus("Started watching for events in netlog.");
+           // Button.Background = Brushes.Green;
+            StopNetLog = false;
+            _threadLogWatcher = new Thread(NetLogWatcher) { Name = "Netlog watcher" };
+            _threadLogWatcher.Start();
+        }
+
+        public void StopWatcher()
+        {
+            _watcher.EnableRaisingEvents = false;
+            AppendStatus("\nStopped watching for events in netlog.");
+            //Button.Background = Brushes.Red;
+            StopNetLog = true;
+        }
         public bool StopNetLog { get; set; }
 
 
