@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class WingLeaveLog : ICmdrLogEntry
+    public class WingLeaveLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Time the event occured

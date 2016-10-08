@@ -5,7 +5,7 @@ namespace RatTracker_WPF.Models.CmdrLog
     /// <summary>
     ///     Provides a common interface for all CmdrLog entries.
     /// </summary>
-    public interface ICmdrLogEntry
+    public interface ICmdrJournalEntry
     {
         /// <summary>
         ///     Time the event occured

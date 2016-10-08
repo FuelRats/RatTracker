@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class HullDamageLog : ICmdrLogEntry
+    public class HullDamageLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Current health of the player;

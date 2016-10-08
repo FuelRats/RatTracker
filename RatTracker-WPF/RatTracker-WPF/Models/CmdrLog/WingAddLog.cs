@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class WingAddLog : ICmdrLogEntry
+    public class WingAddLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Name of the CMDR added to the wing.

@@ -3,7 +3,7 @@
 namespace RatTracker_WPF.Models.CmdrLog
 {
     // ReSharper disable InconsistentNaming
-    public class ReceiveTextLog : ICmdrLogEntry
+    public class ReceiveTextLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Entity sending the message.

@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class InterdictionLog : ICmdrLogEntry
+    public class InterdictionLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Whether the interdiction was succuessful

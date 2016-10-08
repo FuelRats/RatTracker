@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class FuelScoopLog : ICmdrLogEntry
+    public class FuelScoopLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Amount of fuel scooped.

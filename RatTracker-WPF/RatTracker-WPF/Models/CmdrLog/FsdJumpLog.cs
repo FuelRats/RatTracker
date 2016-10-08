@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class FsdJumpLog : ICmdrLogEntry
+    public class FsdJumpLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Whether a FSD boost was used.

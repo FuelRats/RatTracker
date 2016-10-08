@@ -94,7 +94,7 @@ namespace RatTracker_WPF
 
             _watcher.EnableRaisingEvents = true;
 
-            _currentLogFile = new CmdrLogFile(GetLastModifiedFile(filePath, _watcher.Filter));
+            _currentLogFile = new CmdrJournalFile(GetLastModifiedFile(filePath, _watcher.Filter));
 
             mainWindow.MyPlayer.PropertyChanged += (sender, args) =>
             {
@@ -128,7 +128,7 @@ namespace RatTracker_WPF
 
         #region Fields
 
-        private CmdrLogFile _currentLogFile;
+        private CmdrJournalFile _currentLogFile;
         private readonly FileSystemWatcher _watcher;
         private volatile bool _terminateThread;
         private volatile bool _newFile = true;
@@ -146,14 +146,14 @@ namespace RatTracker_WPF
         {
             if (_currentLogFile.FileInfo.FullName == e.FullPath) return;
 
-            _currentLogFile = new CmdrLogFile(e.FullPath);
+            _currentLogFile = new CmdrJournalFile(e.FullPath);
             _newFile = true;
             Logger.Info($"A different cmdr log file has been updated. Now tracking {_currentLogFile.FileInfo.FullName}.");
         }
 
         private void _watcher_FileCreated(object sender, FileSystemEventArgs e)
         {
-            _currentLogFile = new CmdrLogFile(e.FullPath);
+            _currentLogFile = new CmdrJournalFile(e.FullPath);
             _newFile = true;
             Logger.Info($"A new CmdrLog file has been made. Now tracking {_currentLogFile.FileInfo.FullName}.");
         }
@@ -162,7 +162,7 @@ namespace RatTracker_WPF
         {
             if (_currentLogFile.FileInfo.FullName != e.FullPath) return;
 
-            _currentLogFile = new CmdrLogFile
+            _currentLogFile = new CmdrJournalFile
             {
                 FileInfo = GetLastModifiedFile(Settings.Default.CmdrLogPath, _watcher.Filter)
             };
@@ -175,7 +175,7 @@ namespace RatTracker_WPF
         {
             if (_currentLogFile.FileInfo.FullName != e.OldFullPath) return;
 
-            _currentLogFile = new CmdrLogFile(e.FullPath);
+            _currentLogFile = new CmdrJournalFile(e.FullPath);
             Logger.Info(
                 $"Currently tracked CmdrLog has been renamed. Now tracking {_currentLogFile.FileInfo.FullName} instead.");
         }

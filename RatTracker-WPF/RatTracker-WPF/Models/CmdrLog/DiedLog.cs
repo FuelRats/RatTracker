@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class DiedLog : ICmdrLogEntry
+    public class DiedLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     If a single killer, Name of the killer.

@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class EscapeInterdictionLog : ICmdrLogEntry
+    public class EscapeInterdictionLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Name of the interdictor

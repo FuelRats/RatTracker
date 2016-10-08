@@ -7,27 +7,27 @@ namespace RatTracker_WPF.Models.CmdrLog
     /// <summary>
     ///     Holds file info and known entries for a given Cmdr Journal file.
     /// </summary>
-    public class CmdrLogFile
+    public class CmdrJournalFile
     {
-        public CmdrLogFile(string filePath)
+        public CmdrJournalFile(string filePath)
         {
             FileInfo = new FileInfo(filePath);
             CmdrLogEntries = new List<ICmdrJournalEntry>();
         }
 
-        public CmdrLogFile(FileInfo fileInfo)
+        public CmdrJournalFile(FileInfo fileInfo)
         {
             FileInfo = fileInfo;
             CmdrLogEntries = new List<ICmdrJournalEntry>();
         }
 
-        public CmdrLogFile(string filePath, IEnumerable<ICmdrJournalEntry> cmdrLogEntries)
+        public CmdrJournalFile(string filePath, IEnumerable<ICmdrJournalEntry> cmdrLogEntries)
         {
             FileInfo = new FileInfo(filePath);
             CmdrLogEntries = new List<ICmdrJournalEntry>(cmdrLogEntries);
         }
 
-        public CmdrLogFile(FileInfo fileInfo, IEnumerable<ICmdrJournalEntry> cmdrLogEntries)
+        public CmdrJournalFile(FileInfo fileInfo, IEnumerable<ICmdrJournalEntry> cmdrLogEntries)
         {
             FileInfo = fileInfo;
             CmdrLogEntries = new List<ICmdrJournalEntry>(cmdrLogEntries);

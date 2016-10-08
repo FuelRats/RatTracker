@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class SupercruiseEntryLog : ICmdrLogEntry
+    public class SupercruiseEntryLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Name of the starsystem the player is in.

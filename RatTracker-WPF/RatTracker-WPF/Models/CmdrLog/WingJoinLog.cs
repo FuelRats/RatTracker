@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class WingJoinLog : ICmdrLogEntry
+    public class WingJoinLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Array of Cmdr names who are also in the wing.

@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class SuperCruiseExitLog : ICmdrLogEntry
+    public class SuperCruiseExitLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     The name of the closest stellar body.

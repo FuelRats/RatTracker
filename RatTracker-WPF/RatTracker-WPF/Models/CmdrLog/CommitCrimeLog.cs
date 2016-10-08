@@ -2,7 +2,7 @@
 
 namespace RatTracker_WPF.Models.CmdrLog
 {
-    public class CommitCrimeLog : ICmdrLogEntry
+    public class CommitCrimeLog : ICmdrJournalEntry
     {
         /// <summary>
         ///     Type of crime committed
