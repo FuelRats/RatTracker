@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using log4net;
 using Newtonsoft.Json;
+using RatTracker_WPF.Models.App;
 using RatTracker_WPF.Models.CmdrLog;
 using RatTracker_WPF.Properties;
 
@@ -38,7 +39,7 @@ namespace RatTracker_WPF
     {
         #region Constructor
 
-        public CmdrLogParser()
+        public CmdrLogParser(MainWindow mainWindow)
         {
             var filePath = Settings.Default.CmdrLogPath;
 
@@ -81,6 +82,15 @@ namespace RatTracker_WPF
             _watcher.EnableRaisingEvents = true;
 
             _currentLogFile = new CmdrLogFile {FileInfo = GetLastModifiedFile(filePath, _watcher.Filter)};
+
+            mainWindow.MyPlayer.PropertyChanged += (sender, args) =>
+            {
+                if (args.PropertyName == nameof(PlayerInfo.OnDuty))
+                    StartListenerThread();
+                else
+                    StopListenerThread();
+            };
+
         }
 
         #endregion
@@ -162,7 +172,7 @@ namespace RatTracker_WPF
 
         #region Methods
 
-        public void StartListenerThread()
+        private void StartListenerThread()
         {
             if (_cmdrLogMonitorThread.IsAlive) return;
 
@@ -170,7 +180,7 @@ namespace RatTracker_WPF
             _cmdrLogMonitorThread?.Start();
         }
 
-        public void StopListenerThread()
+        private void StopListenerThread()
         {
             if (!_cmdrLogMonitorThread.IsAlive) return;
 
