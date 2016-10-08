@@ -19,27 +19,40 @@ namespace RatTracker_WPF
     // TODO do these properly and use event args. Passing the data is functional for now.
     // I'll just let absolver hate me later for this. I'LL FIX WHATEVER I BREAK!!1 -clap
     public delegate void CommitCrimeEvent(object sender, CommitCrimeLog eventData);
+
     public delegate void DiedEvent(object sender, DiedLog eventData);
+
     public delegate void EscapeInterdictionEvent(object sender, EscapeInterdictionLog eventData);
+
     public delegate void FsdJumpEvent(object sender, FsdJumpLog eventData);
+
     public delegate void FuelScoopEvent(object sender, FuelScoopLog eventData);
+
     public delegate void HullDamageEvent(object sender, HullDamageLog eventData);
+
     public delegate void InterdictedEvent(object sender, InterdictedLog eventData);
+
     public delegate void InterdictionEvent(object sender, InterdictionLog eventData);
+
     public delegate void ReceiveTextEvent(object sender, ReceiveTextLog eventData);
+
     public delegate void SupercruiseEntryEvent(object sender, SupercruiseEntryLog eventData);
+
     public delegate void SuperCruiseExitEvent(object sender, SuperCruiseExitLog eventData);
+
     public delegate void WingAddEvent(object sender, WingAddLog eventData);
+
     public delegate void WingJoinEvent(object sender, WingJoinLog eventData);
+
     public delegate void WingLeaveEvent(object sender, WingLeaveLog eventData);
 
     #endregion
 
-    public class CmdrLogParser
+    public class CmdrJournalParser
     {
         #region Constructor
 
-        public CmdrLogParser(MainWindow mainWindow)
+        public CmdrJournalParser(MainWindow mainWindow)
         {
             var filePath = Settings.Default.CmdrLogPath;
 
@@ -81,7 +94,7 @@ namespace RatTracker_WPF
 
             _watcher.EnableRaisingEvents = true;
 
-            _currentLogFile = new CmdrLogFile {FileInfo = GetLastModifiedFile(filePath, _watcher.Filter)};
+            _currentLogFile = new CmdrLogFile(GetLastModifiedFile(filePath, _watcher.Filter));
 
             mainWindow.MyPlayer.PropertyChanged += (sender, args) =>
             {
@@ -90,7 +103,6 @@ namespace RatTracker_WPF
                 else
                     StopListenerThread();
             };
-
         }
 
         #endregion
@@ -225,6 +237,7 @@ namespace RatTracker_WPF
         {
             var eventType =
                 Regex.Match(jObjectString, "\"event\":\"(.*?)\",", RegexOptions.IgnoreCase).Groups[1].Value ?? "";
+
 
             switch (eventType)
             {
