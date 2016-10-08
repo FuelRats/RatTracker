@@ -47,5 +47,8 @@
     <Setting Name="ClientID" Type="System.String" Scope="User">
       <Value Profile="(Default)">4eace3e0-6564-4d41-87d4-bae2e2d2f6df</Value>
     </Setting>
+    <Setting Name="CmdrLogPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>
