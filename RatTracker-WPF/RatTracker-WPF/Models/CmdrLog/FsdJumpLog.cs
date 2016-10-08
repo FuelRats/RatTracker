@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace RatTracker_WPF.Models.CmdrLog {
-    public class FsdJumpLog : ICmdrLogEntry {
-        public DateTime Timestamp { get; set; }
-        public string Event { get; set; }
+namespace RatTracker_WPF.Models.CmdrLog
+{
+    public class FsdJumpLog : ICmdrLogEntry
+    {
         public bool BoostUsed { get; set; }
         public double FuelLevel { get; set; }
         public double FuelUsed { get; set; }
@@ -17,5 +17,7 @@ namespace RatTracker_WPF.Models.CmdrLog {
         public string Government { get; set; }
         public string Security { get; set; }
         public string StarSystem { get; set; }
+        public DateTime Timestamp { get; set; }
+        public string Event { get; set; }
     }
 }

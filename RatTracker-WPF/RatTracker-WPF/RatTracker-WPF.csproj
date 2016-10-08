@@ -238,7 +238,6 @@
     <Compile Include="Models\Edsm\EdsmCoords.cs" />
     <Compile Include="Models\Edsm\EdsmSystem.cs" />
     <Compile Include="Models\CmdrLog\DiedLog.cs" />
-    <Compile Include="Models\EventArgs\NewCmdrLogFileEventArgs.cs" />
     <Compile Include="Models\NetLog\Friend.cs" />
     <Compile Include="Models\Api\Meta.cs" />
     <Compile Include="Models\Api\DrillStatus.cs" />
