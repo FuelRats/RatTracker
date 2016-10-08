@@ -9,7 +9,7 @@
       <Value Profile="(Default)">C:\Program Files (x86)\Frontier\Products\elite-dangerous-64\Logs</Value>
     </Setting>
     <Setting Name="APIUsername" Type="System.String" Scope="User">
-      <Value Profile="(Default)">mecha@squeak.net</Value>
+      <Value Profile="(Default)">kenneaal@gmail.com</Value>
     </Setting>
     <Setting Name="APIPassword" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
@@ -38,14 +38,14 @@
     <Setting Name="OAuthCode" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="AppSecret" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">ed0ed4a3a03184d8cc0e47203ee43f3da350b79710a0174a</Value>
+    </Setting>
+    <Setting Name="ClientID" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">68dee8f2-d0e9-4377-a374-b98cd2d21b94</Value>
+    </Setting>
     <Setting Name="OAuthToken" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="AppSecret" Type="System.String" Scope="User">
-      <Value Profile="(Default)">0f9b77d273f97cdd2341af31c3cbb373be65229192c4c98d</Value>
-    </Setting>
-    <Setting Name="ClientID" Type="System.String" Scope="User">
-      <Value Profile="(Default)">4eace3e0-6564-4d41-87d4-bae2e2d2f6df</Value>
     </Setting>
   </Settings>
 </SettingsFile>

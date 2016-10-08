@@ -49,7 +49,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("mecha@squeak.net")]
+        [global::System.Configuration.DefaultSettingValueAttribute("kenneaal@gmail.com")]
         public string APIUsername {
             get {
                 return ((string)(this["APIUsername"]));
@@ -164,6 +164,24 @@ namespace RatTracker_WPF.Properties {
             }
         }
         
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("ed0ed4a3a03184d8cc0e47203ee43f3da350b79710a0174a")]
+        public string AppSecret {
+            get {
+                return ((string)(this["AppSecret"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("68dee8f2-d0e9-4377-a374-b98cd2d21b94")]
+        public string ClientID {
+            get {
+                return ((string)(this["ClientID"]));
+            }
+        }
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
@@ -173,30 +191,6 @@ namespace RatTracker_WPF.Properties {
             }
             set {
                 this["OAuthToken"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0f9b77d273f97cdd2341af31c3cbb373be65229192c4c98d")]
-        public string AppSecret {
-            get {
-                return ((string)(this["AppSecret"]));
-            }
-            set {
-                this["AppSecret"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("4eace3e0-6564-4d41-87d4-bae2e2d2f6df")]
-        public string ClientID {
-            get {
-                return ((string)(this["ClientID"]));
-            }
-            set {
-                this["ClientID"] = value;
             }
         }
     }
