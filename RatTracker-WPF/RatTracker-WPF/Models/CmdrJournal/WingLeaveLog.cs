@@ -1,17 +1,21 @@
 ﻿using System;
+using Newtonsoft.Json;
 
-namespace RatTracker_WPF.Models.CmdrLog
+namespace RatTracker_WPF.Models.CmdrJournal
 {
+    [JsonObject]
     public class WingLeaveLog : ICmdrJournalEntry
     {
         /// <summary>
-        ///     Time the event occured
+        ///     Time the event occured.
         /// </summary>
+        [JsonProperty("timestamp")]
         public DateTime Timestamp { get; set; }
 
         /// <summary>
-        ///     Name of the event as seen in the cmdr log.
+        ///     Event type name.
         /// </summary>
+        [JsonProperty("event")]
         public string Event { get; set; }
     }
 }

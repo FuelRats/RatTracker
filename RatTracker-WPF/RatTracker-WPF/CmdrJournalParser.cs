@@ -8,7 +8,7 @@ using System.Threading;
 using log4net;
 using Newtonsoft.Json;
 using RatTracker_WPF.Models.App;
-using RatTracker_WPF.Models.CmdrLog;
+using RatTracker_WPF.Models.CmdrJournal;
 using RatTracker_WPF.Properties;
 
 namespace RatTracker_WPF

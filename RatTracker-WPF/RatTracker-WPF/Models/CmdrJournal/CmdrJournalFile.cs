@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 
-namespace RatTracker_WPF.Models.CmdrLog
+namespace RatTracker_WPF.Models.CmdrJournal
 {
     /// <summary>
     ///     Holds file info and known entries for a given Cmdr Journal file.
