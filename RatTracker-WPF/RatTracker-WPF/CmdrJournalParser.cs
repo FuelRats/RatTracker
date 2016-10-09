@@ -162,10 +162,7 @@ namespace RatTracker_WPF
         {
             if (_currentLogFile.FileInfo.FullName != e.FullPath) return;
 
-            _currentLogFile = new CmdrJournalFile
-            {
-                FileInfo = GetLastModifiedFile(Settings.Default.CmdrLogPath, _watcher.Filter)
-            };
+            _currentLogFile = new CmdrJournalFile(GetLastModifiedFile(Settings.Default.CmdrLogPath, _watcher.Filter));
             _newFile = true;
             Logger.Info(
                 $"Currently tracked CmdrLog has been deleted. Now tracking {_currentLogFile.FileInfo.FullName} instead.");
