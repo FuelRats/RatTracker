@@ -180,7 +180,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="APIWorker.cs" />
-    <Compile Include="CmdrLogParser.cs" />
+    <Compile Include="CmdrJournalParser.cs" />
     <Compile Include="CustomHotKey.cs" />
     <Compile Include="ConfigChecker.cs" />
     <Compile Include="Converter\BooleanGridHeightConverter.cs" />
@@ -225,25 +225,25 @@
     <Compile Include="Models\App\PlayerInfo.cs" />
     <Compile Include="Models\App\RescueData.cs" />
     <Compile Include="Models\App\SysInfo.cs" />
-    <Compile Include="Models\CmdrLog\WingAddLog.cs" />
-    <Compile Include="Models\CmdrLog\CmdrLogFile.cs" />
-    <Compile Include="Models\CmdrLog\CommitCrimeLog.cs" />
-    <Compile Include="Models\CmdrLog\EscapeInterdictionLog.cs" />
-    <Compile Include="Models\CmdrLog\FsdJumpLog.cs" />
-    <Compile Include="Models\CmdrLog\FuelScoopLog.cs" />
-    <Compile Include="Models\CmdrLog\HullDamageLog.cs" />
-    <Compile Include="Models\CmdrLog\ICmdrLogEntry.cs" />
-    <Compile Include="Models\CmdrLog\InterdictedLog.cs" />
-    <Compile Include="Models\CmdrLog\InterdictionLog.cs" />
-    <Compile Include="Models\CmdrLog\ReceiveTextLog.cs" />
-    <Compile Include="Models\CmdrLog\SupercruiseEntryLog.cs" />
-    <Compile Include="Models\CmdrLog\WingJoinLog.cs" />
-    <Compile Include="Models\CmdrLog\WingLeaveLog.cs" />
+    <Compile Include="Models\CmdrJournal\WingAddLog.cs" />
+    <Compile Include="Models\CmdrJournal\CmdrJournalFile.cs" />
+    <Compile Include="Models\CmdrJournal\CommitCrimeLog.cs" />
+    <Compile Include="Models\CmdrJournal\EscapeInterdictionLog.cs" />
+    <Compile Include="Models\CmdrJournal\FsdJumpLog.cs" />
+    <Compile Include="Models\CmdrJournal\FuelScoopLog.cs" />
+    <Compile Include="Models\CmdrJournal\HullDamageLog.cs" />
+    <Compile Include="Models\CmdrJournal\ICmdrJournalEntry.cs" />
+    <Compile Include="Models\CmdrJournal\InterdictedLog.cs" />
+    <Compile Include="Models\CmdrJournal\InterdictionLog.cs" />
+    <Compile Include="Models\CmdrJournal\ReceiveTextLog.cs" />
+    <Compile Include="Models\CmdrJournal\SupercruiseEntryLog.cs" />
+    <Compile Include="Models\CmdrJournal\WingJoinLog.cs" />
+    <Compile Include="Models\CmdrJournal\WingLeaveLog.cs" />
     <Compile Include="Models\Eddb\EddbStation.cs" />
     <Compile Include="Models\Eddb\EddbSystem.cs" />
     <Compile Include="Models\Edsm\EdsmCoords.cs" />
     <Compile Include="Models\Edsm\EdsmSystem.cs" />
-    <Compile Include="Models\CmdrLog\DiedLog.cs" />
+    <Compile Include="Models\CmdrJournal\DiedLog.cs" />
     <Compile Include="Models\NetLog\Friend.cs" />
     <Compile Include="Models\Api\Meta.cs" />
     <Compile Include="Models\Api\DrillStatus.cs" />
@@ -267,7 +267,7 @@
       <DependentUpon>Settings.xaml</DependentUpon>
     </Compile>
     <Compile Include="StringBuilderExtensions.cs" />
-    <Compile Include="Models\CmdrLog\SuperCruiseExitLog.cs" />
+    <Compile Include="Models\CmdrJournal\SuperCruiseExitLog.cs" />
     <Page Include="DispatchInterface\DispatchMain.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
