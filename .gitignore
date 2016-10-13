@@ -216,3 +216,4 @@ RatTracker-WPF/Report20160216-1214.diagsession
 RatTracker-WPF/RatTracker-WPF/RatTracker-WPF-own.csproj
 RatTracker-WPF/RatTracker-WPF/rattracker.pfx
 RatTracker-WPF/RatTracker-WPF/*.dll
+RatTracker-WPF/RatTracker-WPF/buildtimeconfig.config
