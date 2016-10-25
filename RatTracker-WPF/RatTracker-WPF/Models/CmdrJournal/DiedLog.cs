@@ -38,7 +38,7 @@ namespace RatTracker_WPF.Models.CmdrJournal
         ///     Array of killers involved in the death of the player.
         /// </summary>
         [JsonIgnore]
-        public Killer[] KillersList => Killers ?? new[] {new Killer {Name = KillerName, Ship = KillerShip, Rank = KillerRank}};
+        public Killer[] KillersList => Killers ?? new[] {new Killer {Name = KillerName ?? "", Ship = KillerShip ?? "", Rank = KillerRank ?? ""}};
 
         /// <summary>
         ///     Time the event occured.
