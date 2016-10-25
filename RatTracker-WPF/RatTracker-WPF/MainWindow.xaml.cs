@@ -38,6 +38,7 @@ using System.Net.Http.Headers;
 using Microsoft.ApplicationInsights.DataContracts;
 using System.Configuration;
 using RatTracker_WPF.EventHandlers;
+using RatTracker_WPF.Models.CmdrJournal;
 
 namespace RatTracker_WPF
 {
@@ -68,6 +69,7 @@ namespace RatTracker_WPF
 		private string _distanceToClientString; // Bound to UI element
 		private string _jumpsToClient; // Bound to UI element
 	    private NetLogParser _netlogparser = new NetLogParser();
+	    private CmdrJournalParser _cmdrJournalParser;
 
 		// ReSharper disable once UnusedMember.Local TODO ??
 		private string _logDirectory = Settings.Default.NetLogPath; // TODO: Remove this assignment and pull live from Settings, have the logfile watcher reaquire file if settings are changed.
@@ -163,6 +165,19 @@ namespace RatTracker_WPF
                         {
                             AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
                         }
+                        _cmdrJournalParser = new CmdrJournalParser(this);
+                        //_cmdrJournalParser.CommitCrimeEvent += CmdrJournalParser_CommitCrimeEvent;
+                        _cmdrJournalParser.DiedEvent += CmdrJournalParser_DiedEvent;
+                        _cmdrJournalParser.FsdJumpEvent += CmdrJournalParser_FsdJumpEvent;
+                        _cmdrJournalParser.HullDamageEvent += CmdrJournalParser_HullDamageEvent;
+                        _cmdrJournalParser.InterdictedEvent += CmdrJournalParser_InterdictedEvent;
+                        _cmdrJournalParser.InterdictionEvent += CmdrJournalParser_InterdictionEvent;
+                        _cmdrJournalParser.ReceiveTextEvent += CmdrJournalParser_ReceiveTextEvent;
+                        _cmdrJournalParser.SupercruiseEntryEvent += CmdrJournalParser_SupercruiseEntryEvent;
+                        _cmdrJournalParser.SuperCruiseExitEvent += CmdrJournalParser_SuperCruiseExitEvent;
+                        _cmdrJournalParser.WingAddEvent += CmdrJournalParser_WingAddEvent;
+                        _cmdrJournalParser.WingJoinEvent += CmdrJournalParser_WingJoinEvent;
+                        _cmdrJournalParser.WingLeaveEvent += CmdrJournalParser_WingLeaveEvent;
                     }
                 }
 			}
@@ -297,8 +312,91 @@ namespace RatTracker_WPF
 	        AppendStatus(args.StatusMessage);
 	    }
 
+        private void CmdrJournalParser_CommitCrimeEvent(object sender, CommitCrimeLog eventData) {
+            var msg = new TPAMessage()
+            {
+                action = "CommitCrime",
+                data = new JObject()
+            };
 
-	    public async Task InitFirebird()
+            msg.data.Add("CrimeType", eventData.CrimeType);
+            if (eventData.Victim != null)
+                msg.data.Add("Victim", eventData.Victim);
+            msg.data.Add("RatID", _myplayer.RatId.FirstOrDefault());
+            msg.data.Add("CurrentSystem", MyPlayer.CurrentSystem);
+            msg.data.Add("RescueID", MyClient.Rescue.id);
+
+            _apworker.SendTpaMessage(msg);
+        }
+        private void CmdrJournalParser_DiedEvent(object sender, DiedLog eventData)
+        {
+            if (MyClient?.Rescue != null)
+            {
+                _apworker.SendTpaMessage(new TPAMessage()
+                {
+                    action = "RatDeath",
+                    data = new JObject
+                    (
+                        new JProperty("Killers", eventData.KillersList?.Select(k => k.Name).ToArray())
+                    new JProperty("Killers",
+                    eventData.KillersList?.Select(k => k.Name).ToArray())
+                        )
+                });
+            }
+        }
+
+        private void CmdrJournalParser_FsdJumpEvent(object sender, FsdJumpLog eventData)
+        {
+            TriggerSystemChange(eventData.StarSystem);
+        }
+
+        private void CmdrJournalParser_HullDamageEvent(object sender, HullDamageLog eventData) {
+            //TODO THIS SHIT'S FUCKED. I NEED TO WORK ON THIS ONE... ALONE... IN A DARK ROOM... WITH A MALLET... AND MAYBE A CHAINSAW.
+            // don't wait for me on this one.
+        }
+
+        private void CmdrJournalParser_InterdictedEvent(object sender, InterdictedLog eventData)
+        {
+            if (!eventData.IsPlayer) return; //we really only care if it's a player.
+
+            if (MyClient?.Rescue != null)
+            {
+                var msg = new TPAMessage() {
+                    action = "CommitCrime",
+                    data = new JObject()
+                };
+                msg.data.Add("CrimeType", "Interdiction");
+                msg.data.Add("RatID", _myplayer.RatId.FirstOrDefault());
+                msg.data.Add("CurrentSystem", MyPlayer.CurrentSystem);
+                msg.data.Add("RescueID", MyClient.Rescue.id);
+
+                _apworker.SendTpaMessage(msg);
+            }
+            
+        }
+        private void CmdrJournalParser_InterdictionEvent(object sender, InterdictionLog eventData) {
+            //Will be sending this one as a crime event, again, waiting for this to be ready.
+        }
+        private void CmdrJournalParser_ReceiveTextEvent(object sender, ReceiveTextLog eventData) {
+            throw new NotImplementedException();
+        }
+        private void CmdrJournalParser_SupercruiseEntryEvent(object sender, SupercruiseEntryLog eventData) {
+            throw new NotImplementedException();
+        }
+        private void CmdrJournalParser_SuperCruiseExitEvent(object sender, SuperCruiseExitLog eventData) {
+            throw new NotImplementedException();
+        }
+        private void CmdrJournalParser_WingAddEvent(object sender, WingAddLog eventData) {
+            throw new NotImplementedException();
+        }
+        private void CmdrJournalParser_WingJoinEvent(object sender, WingJoinLog eventData) {
+            throw new NotImplementedException();
+        }
+        private void CmdrJournalParser_WingLeaveEvent(object sender, WingLeaveLog eventData) {
+            throw new NotImplementedException();
+        }
+
+        public async Task InitFirebird()
 		{
 			if (Eddbworker == null)
 			{
