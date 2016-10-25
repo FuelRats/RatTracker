@@ -940,12 +940,12 @@ namespace RatTracker_WPF
 							TPAMessage sysmsg = new TPAMessage
 							{
 								action = "SysArrived:update",
-								data = new Dictionary<string, string>
-								{
-									{"SysArrived", "true"},
-									{"RatID", _myplayer.RatId.FirstOrDefault()},
-									{"RescueID", _myrescue.id}
-								}
+								data = new JObject
+								(
+									new JProperty("SysArrived", "true"),
+									new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+									new JProperty("RescueID", _myrescue.id)
+								)
 							};
 							_apworker.SendTpaMessage(sysmsg);
 							MyClient.Self.InSystem = true;
@@ -1010,12 +1010,12 @@ namespace RatTracker_WPF
 				TPAMessage dutymessage = new TPAMessage
 				{
 					action = "OnDuty:update",
-					data = new Dictionary<string, string>
-					{
-						{"OnDuty", MyPlayer.OnDuty.ToString()},
-						{"RatID", _myplayer.RatId.FirstOrDefault()},
-						{"currentSystem", MyPlayer.CurrentSystem}
-					}
+					data = new JObject
+                    (
+						new JProperty("OnDuty", MyPlayer.OnDuty.ToString()),
+                        new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                        new JProperty("currentSystem", MyPlayer.CurrentSystem)
+					)
 				};
 				// _apworker.SendTpaMessage(dutymessage); // Disabled while testing, it's spammy.
 			}
@@ -1051,12 +1051,12 @@ namespace RatTracker_WPF
 			TPAMessage systemmessage = new TPAMessage
 			{
 				action = "ClientSystem:update",
-				data = new Dictionary<string, string>
-				{
-					{"SystemName", SystemName.Text},
-					{"RatID", _myplayer.RatId.FirstOrDefault()},
-					{"RescueID", MyClient.Rescue.id}
-				}
+				data = new JObject
+				(
+					new JProperty("SystemName", SystemName.Text),
+                    new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                    new JProperty("RescueID", MyClient.Rescue.id)
+				)
 			};
 			_apworker.SendTpaMessage(systemmessage);
 		}
@@ -1638,7 +1638,7 @@ namespace RatTracker_WPF
 		private void frButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, FrButton, FrButtonCopy, FrButtonCopy1);
-			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
+			TPAMessage frmsg = new TPAMessage {data = new JObject()};
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "FriendRequest:update";
@@ -1674,7 +1674,7 @@ namespace RatTracker_WPF
 		private void wrButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, WrButton, WrButtonCopy, WrButtonCopy1);
-			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
+			TPAMessage frmsg = new TPAMessage {data = new JObject()};
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "WingRequest:update";
@@ -1710,7 +1710,7 @@ namespace RatTracker_WPF
 		private void sysButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, SysButton, SysButtonCopy, SysButtonCopy1);
-			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
+			TPAMessage frmsg = new TPAMessage {data = new JObject()};
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "SysArrived:update";
@@ -1740,7 +1740,7 @@ namespace RatTracker_WPF
 		private void bcnButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, BcnButton, BcnButtonCopy, BcnButtonCopy1);
-			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
+			TPAMessage frmsg = new TPAMessage {data = new JObject()};
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "BeaconSpotted:update";
@@ -1770,7 +1770,7 @@ namespace RatTracker_WPF
 		private void instButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, InstButton, InstButtonCopy, InstButtonCopy1);
-			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
+			TPAMessage frmsg = new TPAMessage {data = new JObject()};
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "InstanceSuccessful:update";
@@ -1829,7 +1829,7 @@ namespace RatTracker_WPF
                 return;
             }
 
-			TPAMessage fuelmsg = new TPAMessage { data = new Dictionary<string, string>() };
+			TPAMessage fuelmsg = new TPAMessage { data = new JObject() };
             fuelmsg.action = "fueled:update";
 			fuelmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
 			fuelmsg.data.Add("RescueID", MyClient.Rescue.id);
@@ -1975,14 +1975,14 @@ namespace RatTracker_WPF
 			jumpmessage.applicationId = "0xDEADBEEF";
 			Logger.Debug("Set appID");
 			Logger.Debug("Constructing TPA for "+_myrescue.id+" with "+_myplayer.RatId.First());
-			jumpmessage.data = new Dictionary<string, string> {
-					{"CallJumps", Math.Ceiling(distance.Distance/_myplayer.JumpRange).ToString(CultureInfo.InvariantCulture)},
-					{"RescueID", _myrescue.id},
-					{"RatID", _myplayer.RatId.FirstOrDefault()},
-					{"Lightyears", distance.Distance.ToString(CultureInfo.InvariantCulture)},
-					{"SourceCertainty", distance.SourceCertainty},
-					{"DestinationCertainty", distance.TargetCertainty}
-			};
+			jumpmessage.data = new JObject(
+					new JProperty("CallJumps", Math.Ceiling(distance.Distance/_myplayer.JumpRange).ToString(CultureInfo.InvariantCulture)),
+                    new JProperty("RescueID", _myrescue.id),
+                    new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                    new JProperty("Lightyears", distance.Distance.ToString(CultureInfo.InvariantCulture)),
+                    new JProperty("SourceCertainty", distance.SourceCertainty),
+                    new JProperty("DestinationCertainty", distance.TargetCertainty)
+            );
 			Logger.Debug("Sending TPA message");
 			_apworker.SendTpaMessage(jumpmessage);
 		}
