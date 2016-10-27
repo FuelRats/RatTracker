@@ -375,12 +375,32 @@ namespace RatTracker_WPF
             TriggerSystemChange(eventData.StarSystem);
         }
 
-        private void CmdrJournalParser_HullDamageEvent(object sender, HullDamageLog eventData) {
-            //TODO THIS SHIT'S FUCKED. I NEED TO WORK ON THIS ONE... ALONE... IN A DARK ROOM... WITH A MALLET... AND MAYBE A CHAINSAW.
-            // don't wait for me on this one.
+        //TODO Move this... somewhere
+        private DateTime lastHullDamageEvent;
+	    private void CmdrJournalParser_HullDamageEvent(object sender, HullDamageLog eventData)
+	    {
+            if(MyClient?.Rescue != null) {
+                if ((eventData.Timestamp - lastHullDamageEvent).TotalMinutes < 1)
+                    return;
+
+                lastHullDamageEvent = eventData.Timestamp;
+
+                _apworker.SendTpaMessage(new TPAMessage() {
+                    action = "UnderAttack:Update",
+                    data = new JObject
+                    (
+                        new JProperty("UnderAttack", "True"),
+                        new JProperty("RatHealth", eventData.Health),
+                        new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                        new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+                        new JProperty("RescueID", MyClient.Rescue.id)
+                    )
+                });
+                AppendStatus("Sending Under Attack notification.");
+            }
         }
 
-        private void CmdrJournalParser_InterdictedEvent(object sender, InterdictedLog eventData)
+	    private void CmdrJournalParser_InterdictedEvent(object sender, InterdictedLog eventData)
         {
             if (MyClient?.Rescue != null)
             {
@@ -398,7 +418,6 @@ namespace RatTracker_WPF
                 });
                 AppendStatus("Sending interdicted notification.");
             }
-            
         }
 
 	    private void CmdrJournalParser_InterdictionEvent(object sender, InterdictionLog eventData)
