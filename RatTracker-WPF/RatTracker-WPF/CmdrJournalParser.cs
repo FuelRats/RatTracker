@@ -44,8 +44,6 @@ namespace RatTracker_WPF
 
     public delegate void WingJoinEvent(object sender, WingJoinLog eventData);
 
-    public delegate void WingLeaveEvent(object sender, WingLeaveLog eventData);
-
     #endregion
 
     public class CmdrJournalParser
@@ -127,7 +125,6 @@ namespace RatTracker_WPF
         public event SuperCruiseExitEvent SuperCruiseExitEvent;
         public event WingAddEvent WingAddEvent;
         public event WingJoinEvent WingJoinEvent;
-        public event WingLeaveEvent WingLeaveEvent;
 
         #endregion
 
@@ -309,11 +306,6 @@ namespace RatTracker_WPF
                     var wingJoinObj = JsonConvert.DeserializeObject<WingJoinLog>(jObjectString);
                     if (!suppressEvents) WingJoinEvent?.Invoke(this, wingJoinObj);
                     _currentLogFile.CmdrLogEntries.Add(wingJoinObj);
-                    break;
-                case "WingLeave":
-                    var wingLeaveObj = JsonConvert.DeserializeObject<WingLeaveLog>(jObjectString);
-                    if (!suppressEvents) WingLeaveEvent?.Invoke(this, wingLeaveObj);
-                    _currentLogFile.CmdrLogEntries.Add(wingLeaveObj);
                     break;
                 default:
                     return;

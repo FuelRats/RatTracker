@@ -177,7 +177,6 @@ namespace RatTracker_WPF
                         _cmdrJournalParser.SuperCruiseExitEvent += CmdrJournalParser_SuperCruiseExitEvent;
                         _cmdrJournalParser.WingAddEvent += CmdrJournalParser_WingAddEvent;
                         _cmdrJournalParser.WingJoinEvent += CmdrJournalParser_WingJoinEvent;
-                        _cmdrJournalParser.WingLeaveEvent += CmdrJournalParser_WingLeaveEvent;
                     }
                 }
 			}
