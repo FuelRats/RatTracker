@@ -13,7 +13,7 @@ namespace RatTracker_WPF.Models.CmdrJournal
         public string CrimeType { get; set; }
 
         /// <summary>
-        ///     If fine was issued, The faction which issued the fine. Returns nul, otherwise.
+        ///     If fine was issued, The faction which issued the fine. Returns null, otherwise.
         /// </summary>
         [JsonProperty]
         public string Faction { get; set; }
