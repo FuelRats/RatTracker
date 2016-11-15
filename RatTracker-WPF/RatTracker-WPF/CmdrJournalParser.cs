@@ -44,8 +44,6 @@ namespace RatTracker_WPF
 
     public delegate void WingJoinEvent(object sender, WingJoinLog eventData);
 
-    public delegate void WingLeaveEvent(object sender, WingLeaveLog eventData);
-
     #endregion
 
     public class CmdrJournalParser
@@ -77,7 +75,7 @@ namespace RatTracker_WPF
                 return;
             }
 
-            _cmdrLogMonitorThread = new Thread(CmdrLogMonitor) {Name = "CmdrLog Monitor"};
+            _cmdrLogMonitorThread = new Thread(CmdrLogMonitor) {Name = "CmdrJournalMonitorThread"};
 
             _watcher = new FileSystemWatcher
             {
@@ -87,6 +85,7 @@ namespace RatTracker_WPF
                     NotifyFilters.DirectoryName | NotifyFilters.Size,
                 Filter = "Journal.*.log"
             };
+
             _watcher.Changed += _watcher_FSChanged;
             _watcher.Created += _watcher_FileCreated;
             _watcher.Deleted += _watcher_FileDeleted;
@@ -103,7 +102,11 @@ namespace RatTracker_WPF
                 else
                     StopListenerThread();
             };
+
+
         }
+
+
 
         #endregion
 
@@ -122,7 +125,6 @@ namespace RatTracker_WPF
         public event SuperCruiseExitEvent SuperCruiseExitEvent;
         public event WingAddEvent WingAddEvent;
         public event WingJoinEvent WingJoinEvent;
-        public event WingLeaveEvent WingLeaveEvent;
 
         #endregion
 
@@ -183,15 +185,17 @@ namespace RatTracker_WPF
 
         private void StartListenerThread()
         {
-            if (_cmdrLogMonitorThread.IsAlive) return;
+            if (_cmdrLogMonitorThread?.IsAlive ?? true) return;
+
 
             _terminateThread = false;
             _cmdrLogMonitorThread?.Start();
+            
         }
 
         private void StopListenerThread()
         {
-            if (!_cmdrLogMonitorThread.IsAlive) return;
+            if (!_cmdrLogMonitorThread?.IsAlive ?? true) return;
 
             _terminateThread = true;
             _cmdrLogMonitorThread?.Join(100);
@@ -202,9 +206,10 @@ namespace RatTracker_WPF
             while (!_terminateThread)
             {
                 var fi = new FileInfo(_currentLogFile.FileInfo.FullName);
-                if (!File.Exists(fi.FullName))
+                if (!fi.Exists)
                 {
-                    Logger.Fatal("current log file does not exist!");
+                    Logger.Fatal("Current log file has gone missing! waiting for a new one.");
+                    Thread.Sleep(5000);
                     continue;
                 }
 
@@ -223,10 +228,10 @@ namespace RatTracker_WPF
                 if (newLines.Length > 0)
                 {
                     _lineOffset += newLines.Length;
-                    foreach (var line in newLines) ReadJObjectString(line);
+                    foreach (var line in newLines)
+                        ReadJObjectString(line);
                 }
-
-                Thread.Sleep(2000);
+                Thread.Sleep(1000);
             }
         }
 
@@ -234,7 +239,6 @@ namespace RatTracker_WPF
         {
             var eventType =
                 Regex.Match(jObjectString, "\"event\":\"(.*?)\",", RegexOptions.IgnoreCase).Groups[1].Value ?? "";
-
 
             switch (eventType)
             {
@@ -302,11 +306,6 @@ namespace RatTracker_WPF
                     var wingJoinObj = JsonConvert.DeserializeObject<WingJoinLog>(jObjectString);
                     if (!suppressEvents) WingJoinEvent?.Invoke(this, wingJoinObj);
                     _currentLogFile.CmdrLogEntries.Add(wingJoinObj);
-                    break;
-                case "WingLeave":
-                    var wingLeaveObj = JsonConvert.DeserializeObject<WingLeaveLog>(jObjectString);
-                    if (!suppressEvents) WingLeaveEvent?.Invoke(this, wingLeaveObj);
-                    _currentLogFile.CmdrLogEntries.Add(wingLeaveObj);
                     break;
                 default:
                     return;

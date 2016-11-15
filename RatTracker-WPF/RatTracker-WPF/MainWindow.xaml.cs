@@ -38,6 +38,7 @@ using System.Net.Http.Headers;
 using Microsoft.ApplicationInsights.DataContracts;
 using System.Configuration;
 using RatTracker_WPF.EventHandlers;
+using RatTracker_WPF.Models.CmdrJournal;
 
 namespace RatTracker_WPF
 {
@@ -68,6 +69,7 @@ namespace RatTracker_WPF
 		private string _distanceToClientString; // Bound to UI element
 		private string _jumpsToClient; // Bound to UI element
 	    private NetLogParser _netlogparser = new NetLogParser();
+	    private CmdrJournalParser _cmdrJournalParser;
 
 		// ReSharper disable once UnusedMember.Local TODO ??
 		private string _logDirectory = Settings.Default.NetLogPath; // TODO: Remove this assignment and pull live from Settings, have the logfile watcher reaquire file if settings are changed.
@@ -163,6 +165,18 @@ namespace RatTracker_WPF
                         {
                             AppendStatus("RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
                         }
+                        _cmdrJournalParser = new CmdrJournalParser(this);
+                        _cmdrJournalParser.CommitCrimeEvent += CmdrJournalParser_CommitCrimeEvent;
+                        _cmdrJournalParser.DiedEvent += CmdrJournalParser_DiedEvent;
+                        _cmdrJournalParser.EscapeInterdictionEvent += _cmdrJournalParser_EscapeInterdictionEvent;
+                        _cmdrJournalParser.FsdJumpEvent += CmdrJournalParser_FsdJumpEvent;
+                        _cmdrJournalParser.HullDamageEvent += CmdrJournalParser_HullDamageEvent;
+                        _cmdrJournalParser.InterdictedEvent += CmdrJournalParser_InterdictedEvent;
+                        _cmdrJournalParser.InterdictionEvent += CmdrJournalParser_InterdictionEvent;
+                        _cmdrJournalParser.ReceiveTextEvent += CmdrJournalParser_ReceiveTextEvent;
+                        _cmdrJournalParser.SupercruiseEntryEvent += CmdrJournalParser_SupercruiseEntryEvent;
+                        _cmdrJournalParser.SuperCruiseExitEvent += CmdrJournalParser_SuperCruiseExitEvent;
+                        _cmdrJournalParser.WingAddEvent += CmdrJournalParser_WingAddEvent;
                     }
                 }
 			}
@@ -173,7 +187,7 @@ namespace RatTracker_WPF
 
 		}
 
-		private async void OAuth_Authorize(string code)
+        private async void OAuth_Authorize(string code)
 		{
 			if (code.Length > 0)
 			{
@@ -297,6 +311,209 @@ namespace RatTracker_WPF
 	        AppendStatus(args.StatusMessage);
 	    }
 
+
+        private void CmdrJournalParser_CommitCrimeEvent(object sender, CommitCrimeLog eventData) {
+            var msg = new TPAMessage()
+            {
+                action = "CommitCrime",
+                data = new JObject
+                (
+                    new JProperty("CrimeType", eventData.CrimeType),
+                    new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                    new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+                    new JProperty("RescueID", MyClient.Rescue.id)
+                )
+            };
+
+            if (eventData.Victim != null)
+                msg.data.Add("Victim", eventData.Victim);
+
+            _apworker.SendTpaMessage(msg);
+        }
+
+        private void CmdrJournalParser_DiedEvent(object sender, DiedLog eventData)
+        {
+            if (MyClient?.Rescue != null)
+            {
+                _apworker.SendTpaMessage(new TPAMessage()
+                {
+                    action = "RatDeath",
+                    data = new JObject
+                    (
+                        new JProperty("Killers", eventData.KillersList?.Select(k => k.Name).ToArray()),
+                        new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                        new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+                        new JProperty("RescueID", MyClient.Rescue.id)
+                    )
+                });
+                AppendStatus("Sending death notice.");
+            }
+        }
+
+	    private void _cmdrJournalParser_EscapeInterdictionEvent(object sender, EscapeInterdictionLog eventData)
+	    {
+	        if (MyClient?.Rescue != null)
+	        {
+	            _apworker.SendTpaMessage(new TPAMessage()
+	            {
+	                action = "Interdiction:Update",
+	                data = new JObject
+	                (
+	                    new JProperty("Interdiction", "Escaped"),
+	                    new JProperty("Interdictor", eventData.Interdictor),
+	                    new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+	                    new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+	                    new JProperty("RescueID", MyClient.Rescue.id)
+	                )
+	            });
+                AppendStatus("Sending Escape Interdiction Noticiation.");
+            }
+	    }
+
+	    private void CmdrJournalParser_FsdJumpEvent(object sender, FsdJumpLog eventData)
+        {
+            TriggerSystemChange(eventData.StarSystem);
+        }
+
+        //TODO Move this... somewhere
+        private DateTime lastHullDamageEvent;
+	    private void CmdrJournalParser_HullDamageEvent(object sender, HullDamageLog eventData)
+	    {
+            if(MyClient?.Rescue != null) {
+                if ((eventData.Timestamp - lastHullDamageEvent).TotalMinutes < 1)
+                    return;
+
+                lastHullDamageEvent = eventData.Timestamp;
+
+                _apworker.SendTpaMessage(new TPAMessage() {
+                    action = "UnderAttack:Update",
+                    data = new JObject
+                    (
+                        new JProperty("UnderAttack", "True"),
+                        new JProperty("RatHealth", eventData.Health),
+                        new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                        new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+                        new JProperty("RescueID", MyClient.Rescue.id)
+                    )
+                });
+                AppendStatus("Sending Under Attack notification.");
+            }
+        }
+
+	    private void CmdrJournalParser_InterdictedEvent(object sender, InterdictedLog eventData)
+        {
+            if (MyClient?.Rescue != null)
+            {
+                _apworker.SendTpaMessage(new TPAMessage()
+                {
+                    action = "Interdiction:Update",
+                    data = new JObject
+                    (
+                        new JProperty("Interdiction", "Interdicted"),
+                        new JProperty("Interdictor", eventData.Interdictor),
+                        new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                        new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+                        new JProperty("RescueID", MyClient.Rescue.id)
+                    )
+                });
+                AppendStatus("Sending interdicted notification.");
+            }
+        }
+
+	    private void CmdrJournalParser_InterdictionEvent(object sender, InterdictionLog eventData)
+	    {
+	        if (MyClient?.Rescue != null)
+	        {
+	            var msg = new TPAMessage()
+	            {
+	                action = "Interdiction:Update",
+	                data = new JObject
+	                (
+	                    new JProperty("Interdiction", "Interdicting"),
+                        new JProperty("Interdicted", eventData.Interdicted),
+	                    new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+	                    new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+	                    new JProperty("RescueID", MyClient.Rescue.id)
+	                )
+	            };
+	            _apworker.SendTpaMessage(msg);
+	        }
+	    }
+
+	    private void CmdrJournalParser_ReceiveTextEvent(object sender, ReceiveTextLog eventData)
+	    {
+	        if (MyClient?.Rescue != null)
+	        {
+	            // We need to clean the string up for cmdr name comparison. The cmdr name is not consistant, and appears as "CMDR cmdrName" or "&cmdrName" depending on how it was recieved.
+	            if (!eventData.FromText.Replace("CMDR", "").Replace("&", "").Trim().Equals(_myClient.Rescue.Client, StringComparison.InvariantCultureIgnoreCase)) return;
+
+                _apworker.SendTpaMessage(new TPAMessage()
+                {
+                    action = "Communication:Update",
+                    data = new JObject
+                    (
+                        new JProperty("Communication", "True"),
+                        new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                        new JProperty("RescueID", MyClient.Rescue.id)
+                    )
+                });
+                AppendStatus("Sending comms+ confirmation.");
+
+                //TODO add in "Comms+" status and update it here.
+            }
+	    }
+
+	    private void CmdrJournalParser_SupercruiseEntryEvent(object sender, SupercruiseEntryLog eventData)
+	    {
+            if(MyClient?.Rescue != null) {
+                _apworker.SendTpaMessage(new TPAMessage() {
+                    action = "Supercruise:Update",
+                    data = new JObject
+                    (
+                        new JProperty("Supercruise", "Entering"),
+                        new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                        new JProperty("RescueID", MyClient.Rescue.id)
+                    )
+                });
+                AppendStatus("Sending supercrise entry notification.");
+            }
+        }
+
+	    private void CmdrJournalParser_SuperCruiseExitEvent(object sender, SuperCruiseExitLog eventData)
+	    {
+            if(MyClient?.Rescue != null) {
+                _apworker.SendTpaMessage(new TPAMessage() {
+                    action = "Supercruise:Update",
+                    data = new JObject
+                    (
+                        new JProperty("Supercruise", "Exiting"),
+                        new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                        new JProperty("RescueID", MyClient.Rescue.id)
+                    )
+                });
+                AppendStatus("Sending supercruise exit noticiation.");
+            }
+        }
+
+	    private void CmdrJournalParser_WingAddEvent(object sender, WingAddLog eventData)
+	    {
+	        if (MyClient?.Rescue != null)
+	        {
+	            if (!MyClient.Rescue.Client.Equals(eventData.Name, StringComparison.InvariantCultureIgnoreCase)) return;
+	            _apworker.SendTpaMessage(new TPAMessage()
+	            {
+	                action = "WingRequest:Update",
+	                data = new JObject
+	                (
+	                    new JProperty("WingRequest", "True"),
+	                    new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+	                    new JProperty("RescueID", MyClient.Rescue.id)
+	                )
+	            });
+                AppendStatus("Sending Wing Request acknowledgement.");
+                MyClient.Self.WingRequest = RequestState.Accepted;
+	        }
+	    }
 
 	    public async Task InitFirebird()
 		{
@@ -940,12 +1157,12 @@ namespace RatTracker_WPF
 							TPAMessage sysmsg = new TPAMessage
 							{
 								action = "SysArrived:update",
-								data = new Dictionary<string, string>
-								{
-									{"SysArrived", "true"},
-									{"RatID", _myplayer.RatId.FirstOrDefault()},
-									{"RescueID", _myrescue.id}
-								}
+								data = new JObject
+								(
+									new JProperty("SysArrived", "true"),
+									new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+									new JProperty("RescueID", _myrescue.id)
+								)
 							};
 							_apworker.SendTpaMessage(sysmsg);
 							MyClient.Self.InSystem = true;
@@ -1010,12 +1227,12 @@ namespace RatTracker_WPF
 				TPAMessage dutymessage = new TPAMessage
 				{
 					action = "OnDuty:update",
-					data = new Dictionary<string, string>
-					{
-						{"OnDuty", MyPlayer.OnDuty.ToString()},
-						{"RatID", _myplayer.RatId.FirstOrDefault()},
-						{"currentSystem", MyPlayer.CurrentSystem}
-					}
+					data = new JObject
+                    (
+						new JProperty("OnDuty", MyPlayer.OnDuty.ToString()),
+                        new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                        new JProperty("currentSystem", MyPlayer.CurrentSystem)
+					)
 				};
 				// _apworker.SendTpaMessage(dutymessage); // Disabled while testing, it's spammy.
 			}
@@ -1051,12 +1268,12 @@ namespace RatTracker_WPF
 			TPAMessage systemmessage = new TPAMessage
 			{
 				action = "ClientSystem:update",
-				data = new Dictionary<string, string>
-				{
-					{"SystemName", SystemName.Text},
-					{"RatID", _myplayer.RatId.FirstOrDefault()},
-					{"RescueID", MyClient.Rescue.id}
-				}
+				data = new JObject
+				(
+					new JProperty("SystemName", SystemName.Text),
+                    new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                    new JProperty("RescueID", MyClient.Rescue.id)
+				)
 			};
 			_apworker.SendTpaMessage(systemmessage);
 		}
@@ -1638,7 +1855,7 @@ namespace RatTracker_WPF
 		private void frButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, FrButton, FrButtonCopy, FrButtonCopy1);
-			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
+			TPAMessage frmsg = new TPAMessage {data = new JObject()};
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "FriendRequest:update";
@@ -1674,7 +1891,7 @@ namespace RatTracker_WPF
 		private void wrButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, WrButton, WrButtonCopy, WrButtonCopy1);
-			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
+			TPAMessage frmsg = new TPAMessage {data = new JObject()};
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "WingRequest:update";
@@ -1710,7 +1927,7 @@ namespace RatTracker_WPF
 		private void sysButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, SysButton, SysButtonCopy, SysButtonCopy1);
-			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
+			TPAMessage frmsg = new TPAMessage {data = new JObject()};
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "SysArrived:update";
@@ -1740,7 +1957,7 @@ namespace RatTracker_WPF
 		private void bcnButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, BcnButton, BcnButtonCopy, BcnButtonCopy1);
-			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
+			TPAMessage frmsg = new TPAMessage {data = new JObject()};
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "BeaconSpotted:update";
@@ -1770,7 +1987,7 @@ namespace RatTracker_WPF
 		private void instButton_Click(object sender, RoutedEventArgs e)
 		{
 			RatState ratState = GetRatStateForButton(sender, InstButton, InstButtonCopy, InstButtonCopy1);
-			TPAMessage frmsg = new TPAMessage {data = new Dictionary<string, string>()};
+			TPAMessage frmsg = new TPAMessage {data = new JObject()};
 			if (MyClient?.Rescue != null)
 			{
 				frmsg.action = "InstanceSuccessful:update";
@@ -1829,7 +2046,7 @@ namespace RatTracker_WPF
                 return;
             }
 
-			TPAMessage fuelmsg = new TPAMessage { data = new Dictionary<string, string>() };
+			TPAMessage fuelmsg = new TPAMessage { data = new JObject() };
             fuelmsg.action = "fueled:update";
 			fuelmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
 			fuelmsg.data.Add("RescueID", MyClient.Rescue.id);
@@ -1975,14 +2192,14 @@ namespace RatTracker_WPF
 			jumpmessage.applicationId = "0xDEADBEEF";
 			Logger.Debug("Set appID");
 			Logger.Debug("Constructing TPA for "+_myrescue.id+" with "+_myplayer.RatId.First());
-			jumpmessage.data = new Dictionary<string, string> {
-					{"CallJumps", Math.Ceiling(distance.Distance/_myplayer.JumpRange).ToString(CultureInfo.InvariantCulture)},
-					{"RescueID", _myrescue.id},
-					{"RatID", _myplayer.RatId.FirstOrDefault()},
-					{"Lightyears", distance.Distance.ToString(CultureInfo.InvariantCulture)},
-					{"SourceCertainty", distance.SourceCertainty},
-					{"DestinationCertainty", distance.TargetCertainty}
-			};
+			jumpmessage.data = new JObject(
+					new JProperty("CallJumps", Math.Ceiling(distance.Distance/_myplayer.JumpRange).ToString(CultureInfo.InvariantCulture)),
+                    new JProperty("RescueID", _myrescue.id),
+                    new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                    new JProperty("Lightyears", distance.Distance.ToString(CultureInfo.InvariantCulture)),
+                    new JProperty("SourceCertainty", distance.SourceCertainty),
+                    new JProperty("DestinationCertainty", distance.TargetCertainty)
+            );
 			Logger.Debug("Sending TPA message");
 			_apworker.SendTpaMessage(jumpmessage);
 		}
