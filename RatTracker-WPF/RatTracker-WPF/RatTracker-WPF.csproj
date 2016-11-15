@@ -238,7 +238,6 @@
     <Compile Include="Models\CmdrJournal\ReceiveTextLog.cs" />
     <Compile Include="Models\CmdrJournal\SupercruiseEntryLog.cs" />
     <Compile Include="Models\CmdrJournal\WingJoinLog.cs" />
-    <Compile Include="Models\CmdrJournal\WingLeaveLog.cs" />
     <Compile Include="Models\Eddb\EddbStation.cs" />
     <Compile Include="Models\Eddb\EddbSystem.cs" />
     <Compile Include="Models\Edsm\EdsmCoords.cs" />
