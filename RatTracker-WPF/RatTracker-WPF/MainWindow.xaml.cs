@@ -280,11 +280,11 @@ namespace RatTracker_WPF
 				    _fbworker.FireBirdLoadedEvent += FireBirdLoaded;
 
 				};
-			    hbWorker.DoWork += async delegate
-			    {
-			        HeartBeat(false);
-			    };
-				fbWorker.RunWorkerAsync();
+                hbWorker.DoWork += delegate {
+                    Logger.Debug("Initalize Heartbeat Thread...");
+                    InitHeartBeat();
+                };
+                fbWorker.RunWorkerAsync();
 				eddbWorker.RunWorkerAsync();
 				apiWorker.RunWorkerAsync();
 				piWorker.RunWorkerAsync();
@@ -694,26 +694,38 @@ namespace RatTracker_WPF
 
 		#endregion
 
-	    public async void HeartBeat(bool stop)
+	    private Thread _heartBeatThread;
+
+	    private void TerminateHeartBeat()
 	    {
-	        if (stop)
-	        {
-	            Logger.Debug("Stopping heartbeat.");
-	            _heartbeat_stopping = true;
-	            return;
-	        }
-	        Logger.Debug("Heartbeat...");
-	        Thread.Sleep(2000);
-	        GlobalHeartbeatEvent?.Invoke(this, new EventArgs());
-	        if (_heartbeat_stopping)
-	            HeartBeat(true);
-	        else
-	            HeartBeat(false);
+            Logger.Debug("Terminating Heartbeat.");
+	        _heartbeat_stopping = true;
+            //other logic here? if not, we can just set the bool to true to terminate it.
+        }
+
+	    private void InitHeartBeat()
+	    {
+	        Logger.Debug("Starting Heartbeat.");
+            _heartBeatThread = new Thread(HeartBeat) {Name = "HeartBeatThread"};
+            _heartBeatThread.Start();
 	    }
-		/* Moved WS connection to the apworker, but to actually parse the messages we have to hook the event
+
+        private void HeartBeat() // just give it a thread and let it do it's thing.
+	    {
+	        _heartbeat_stopping = false;
+	        while(!_heartbeat_stopping)
+	        {
+                Logger.Debug("Heartbeat...");
+                Thread.Sleep(2000);
+                GlobalHeartbeatEvent?.Invoke(this, new EventArgs());
+            }
+            Logger.Debug("Heartbeat stopped.");
+	    }
+
+        /* Moved WS connection to the apworker, but to actually parse the messages we have to hook the event
          * handler here too.
          */
-		private async void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
+        private async void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
 		{
 			Dispatcher disp = Dispatcher;
 			try
@@ -1100,6 +1112,7 @@ namespace RatTracker_WPF
 			StopNetLog = true;
 			_apworker?.DisconnectWs();
 			_tc?.Flush();
+            TerminateHeartBeat();
 			Thread.Sleep(1000);
 			Application.Current.Shutdown();
 		}
