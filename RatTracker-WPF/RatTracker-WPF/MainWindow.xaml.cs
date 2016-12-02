@@ -715,7 +715,7 @@ namespace RatTracker_WPF
 	        _heartbeat_stopping = false;
 	        while(!_heartbeat_stopping)
 	        {
-                Logger.Debug("Heartbeat...");
+                //Logger.Debug("Heartbeat..."); //Let's not do this EVERY heartbeat...
                 Thread.Sleep(2000);
                 GlobalHeartbeatEvent?.Invoke(this, new EventArgs());
             }
@@ -1132,87 +1132,153 @@ namespace RatTracker_WPF
 			try
 			{
 				_tc.TrackEvent("SystemChange");
-				using (HttpClient client = new HttpClient())
-				{
-					UriBuilder content = new UriBuilder(EdsmUrl + "systems?sysname=" + value + "&coords=1") {Port = -1};
-					NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
-					content.Query = query.ToString();
-					HttpResponseMessage response = await client.GetAsync(content.ToString());
-					response.EnsureSuccessStatusCode();
-					string responseString = await response.Content.ReadAsStringAsync();
-					IEnumerable<EdsmSystem> m = JsonConvert.DeserializeObject<IEnumerable<EdsmSystem>>(responseString);
-					EdsmSystem firstsys = m.FirstOrDefault();
-					// EDSM should return the closest lexical match as the first element. Trust that - for now.
-					if (firstsys != null && firstsys.Name == value)
-					{
-						if (firstsys.Coords == default(EdsmCoords))
-							Logger.Debug("Got a match on " + firstsys.Name + " but it has no coords.");
-						else
-							Logger.Debug("Got definite match in first pos, disregarding extra hits:" + firstsys.Name + " X:" +
-										firstsys.Coords.X + " Y:" + firstsys.Coords.Y + " Z:" + firstsys.Coords.Z);
-						//AppendStatus("Got M:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
-						if (_myTravelLog == null)
-						{
-							_myTravelLog=new Collection<TravelLog>();
-						}
+			    IEnumerable<EdsmSystem> m = await QueryEdsmSystem(value);
+			    EdsmSystem firstsys = m.FirstOrDefault();
+			    if (firstsys != null && firstsys.Name == value)
+			    {
+			        if (firstsys.Coords == default(EdsmCoords))
+			            Logger.Debug("Got a match on " + firstsys.Name + ", but it has no coords.");
+			    }
+                else
+                    Logger.Debug("Got definite match in first pos, disregarding extra hits:" + firstsys.Name + " X:" +
+                                firstsys.Coords.X + " Y:" + firstsys.Coords.Y + " Z:" + firstsys.Coords.Z);
+                //AppendStatus("Got M:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
+                if (_myTravelLog == null)
+                {
+                    _myTravelLog = new Collection<TravelLog>();
+                }
 
-						_myTravelLog.Add(new TravelLog() {System = firstsys, LastVisited = DateTime.Now});
-						Logger.Debug("Added system to TravelLog.");
-						// Should we add systems even if they don't exist in EDSM? Maybe submit them?
-					}
+                _myTravelLog.Add(new TravelLog() { System = firstsys, LastVisited = DateTime.Now });
+                await
+                    disp.BeginInvoke(DispatcherPriority.Normal,
+                    (Action)(() => SystemNameLabel.Foreground = Brushes.Green));
+                    Logger.Debug("Getting distance from fuelum to " + firstsys.Name);
+                    double distance = await CalculateEdsmDistance("Fuelum", firstsys.Name);
+                    distance = Math.Round(distance, 2);
+                    await
+                        disp.BeginInvoke(DispatcherPriority.Normal,
+                            (Action)(() => DistanceLabel.Content = distance + "LY from Fuelum"));
+                Logger.Debug("Added system to TravelLog.");
+                if (_myrescue != null)
+                {
+                    if (_myrescue.System == value)
+                    {
+                        AppendStatus("Arrived in client system. Notifying dispatch.");
+                        Logger.Info("Sending 3PA sys+ message!");
+                        TPAMessage sysmsg = new TPAMessage
+                        {
+                            action = "SysArrived:update",
+                            data = new JObject
+                            (
+                                new JProperty("SysArrived", "true"),
+                                new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                                new JProperty("RescueID", _myrescue.id)
+                            )
+                        };
+                        _apworker.SendTpaMessage(sysmsg);
+                        MyClient.Self.InSystem = true;
+                    }
+                }
 
-					if (_myrescue != null)
-					{
-						if (_myrescue.System == value)
-						{
-							AppendStatus("Arrived in client system. Notifying dispatch.");
+                await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => SystemNameLabel.Content = firstsys.Name));
+                if (firstsys.Coords==default(EdsmCoords))
+                {
+                    await
+                        disp.BeginInvoke(DispatcherPriority.Normal,
+                            (Action)(() => SystemNameLabel.Foreground = Brushes.Red));
+                }
+                else
+                {
+                    await
+                        disp.BeginInvoke(DispatcherPriority.Normal,
+                            (Action)(() => SystemNameLabel.Foreground = Brushes.Orange));
+                }
+                /* We don't need this anymore...
+                 * 
+                using (HttpClient client = new HttpClient())
+                {
+                    UriBuilder content = new UriBuilder(EdsmUrl + "systems?sysname=" + value + "&coords=1") {Port = -1};
+                    NameValueCollection query = HttpUtility.ParseQueryString(content.Query);
+                    content.Query = query.ToString();
+                    HttpResponseMessage response = await client.GetAsync(content.ToString());
+                    response.EnsureSuccessStatusCode();
+                    string responseString = await response.Content.ReadAsStringAsync();
+                    IEnumerable<EdsmSystem> m = JsonConvert.DeserializeObject<IEnumerable<EdsmSystem>>(responseString);
+                    EdsmSystem firstsys = m.FirstOrDefault();
+                    // EDSM should return the closest lexical match as the first element. Trust that - for now.
+
+                    if (firstsys != null && firstsys.Name == value)
+                    {
+                        if (firstsys.Coords == default(EdsmCoords))
+                            Logger.Debug("Got a match on " + firstsys.Name + " but it has no coords.");
+                        else
+                            Logger.Debug("Got definite match in first pos, disregarding extra hits:" + firstsys.Name + " X:" +
+                                        firstsys.Coords.X + " Y:" + firstsys.Coords.Y + " Z:" + firstsys.Coords.Z);
+                        //AppendStatus("Got M:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
+                        if (_myTravelLog == null)
+                        {
+                            _myTravelLog=new Collection<TravelLog>();
+                        }
+
+                        _myTravelLog.Add(new TravelLog() {System = firstsys, LastVisited = DateTime.Now});
+                        Logger.Debug("Added system to TravelLog.");
+                        // Should we add systems even if they don't exist in EDSM? Maybe submit them?
+                    }
+
+                    if (_myrescue != null)
+                    {
+                        if (_myrescue.System == value)
+                        {
+                            AppendStatus("Arrived in client system. Notifying dispatch.");
                             Logger.Info("Sending 3PA sys+ message!");
-							TPAMessage sysmsg = new TPAMessage
-							{
-								action = "SysArrived:update",
-								data = new JObject
-								(
-									new JProperty("SysArrived", "true"),
-									new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-									new JProperty("RescueID", _myrescue.id)
-								)
-							};
-							_apworker.SendTpaMessage(sysmsg);
-							MyClient.Self.InSystem = true;
-						}
-					}
+                            TPAMessage sysmsg = new TPAMessage
+                            {
+                                action = "SysArrived:update",
+                                data = new JObject
+                                (
+                                    new JProperty("SysArrived", "true"),
+                                    new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+                                    new JProperty("RescueID", _myrescue.id)
+                                )
+                            };
+                            _apworker.SendTpaMessage(sysmsg);
+                            MyClient.Self.InSystem = true;
+                        }
+                    }
 
-					await disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => SystemNameLabel.Content = value));
-					if (responseString.Contains("-1"))
-					{
-						await
-							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => SystemNameLabel.Foreground = Brushes.Red));
-					}
-					else
-					{
-						await
-							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => SystemNameLabel.Foreground = Brushes.Orange));
-					}
-					if (responseString.Contains("coords"))
-					{
-						await
-							disp.BeginInvoke(DispatcherPriority.Normal,
-								(Action) (() => SystemNameLabel.Foreground = Brushes.Green));
-						if (firstsys != null)
-						{
-							Logger.Debug("Getting distance from fuelum to " + firstsys.Name);
-							double distance = await CalculateEdsmDistance("Fuelum", firstsys.Name);
-							distance = Math.Round(distance, 2);
-							await
-								disp.BeginInvoke(DispatcherPriority.Normal,
-									(Action) (() => DistanceLabel.Content = distance + "LY from Fuelum"));
-						}
-					}
-				}
-			}
-			catch (Exception ex)
+                    await disp.BeginInvoke(DispatcherPriority.Normal, (Action) (() => SystemNameLabel.Content = value));
+                    if (responseString.Contains("-1"))
+                    {
+                        await
+                            disp.BeginInvoke(DispatcherPriority.Normal,
+                                (Action) (() => SystemNameLabel.Foreground = Brushes.Red));
+                    }
+                    else
+                    {
+                        await
+                            disp.BeginInvoke(DispatcherPriority.Normal,
+                                (Action) (() => SystemNameLabel.Foreground = Brushes.Orange));
+                    }
+                    if (responseString.Contains("coords"))
+                    {
+                        await
+                            disp.BeginInvoke(DispatcherPriority.Normal,
+                                (Action) (() => SystemNameLabel.Foreground = Brushes.Green));
+                        if (firstsys != null)
+                        {
+                            Logger.Debug("Getting distance from fuelum to " + firstsys.Name);
+                            double distance = await CalculateEdsmDistance("Fuelum", firstsys.Name);
+                            distance = Math.Round(distance, 2);
+                            await
+                                disp.BeginInvoke(DispatcherPriority.Normal,
+                                    (Action) (() => DistanceLabel.Content = distance + "LY from Fuelum"));
+                        }
+                    }
+                }
+                    */
+
+            }
+            catch (Exception ex)
 			{
 				Logger.Fatal("Exception in triggerSystemChange: " + ex.Message);
 				_tc.TrackException(ex);

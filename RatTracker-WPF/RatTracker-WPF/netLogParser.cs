@@ -330,7 +330,7 @@ namespace RatTracker_WPF
 
         public void RunTick(object sender, EventArgs args)
         {
-            Logger.Debug("Running tick!");
+            //Logger.Debug("Running NetlogParser tick!");
             FileInfo fi = new FileInfo(_logFile.FullName);
             if (fi.Length == _fileSize) return;
             ReadLogfile(fi.FullName); /* Maybe a poke on the FS is enough to wake watcher? */
@@ -507,7 +507,7 @@ namespace RatTracker_WPF
                 {
                     Logger.Debug("Startline for FriendsXML, initialize XML buffer");
                     _xmlparselist = "";
-                    _xmlparselist += line;
+                    _xmlparselist += line.Substring(line.IndexOf("}", StringComparison.Ordinal) + line.Length);
                     return;
                 }
                 if (line.Contains("<FriendWingInvite>"))
@@ -573,8 +573,9 @@ namespace RatTracker_WPF
                         if (element != null && element.Value == "1")
                         {
                             AppendStatus("Pending invite from CMDR " + Encoding.UTF8.GetString(byteenc) + "detected!");
-                            /*
->>>>>>> master
+/*
+ * This needs refactoring to get the client name from the main thread instead.
+
                             if (Encoding.UTF8.GetString(byteenc) == MyClient.ClientName)
                             {
                                 MyClient.Self.FriendRequest = RequestState.Recieved;
@@ -591,8 +592,6 @@ namespace RatTracker_WPF
                                 };
                                 _apworker.SendTpaMessage(frmsg);
                             }
-<<<<<<< HEAD
-=======
                             */
                         }
                     }
@@ -603,17 +602,11 @@ namespace RatTracker_WPF
                 {
                     if (element.Name != "OK") continue;
                     XElement xElement1 = xdoc.Element("data");
-                    if (xElement1 != null)
-                    {
-                        XElement element1 = xElement1.Element("OK");
-                        if (element1 != null) Logger.Debug("Return code: " + element1.Value);
-                    }
+                    XElement element1 = xElement1?.Element("OK");
+                    if (element1 != null) Logger.Debug("Return code: " + element1.Value);
                     var xElement = xdoc.Element("data");
-                    if (xElement != null)
-                    {
-                        var o = xElement.Element("OK");
-                        if (o != null && (!o.Value.Contains("Invitation accepted"))) continue;
-                    }
+                    var o = xElement?.Element("OK");
+                    if (o != null && (!o.Value.Contains("Invitation accepted"))) continue;
                     AppendStatus("Friend request accepted.");
                     //MyClient.Self.FriendRequest = RequestState.Accepted;
                 }
