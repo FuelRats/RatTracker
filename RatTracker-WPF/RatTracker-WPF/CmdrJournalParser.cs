@@ -75,8 +75,6 @@ namespace RatTracker_WPF
                 return;
             }
 
-            _cmdrLogMonitorThread = new Thread(CmdrLogMonitor) {Name = "CmdrJournalMonitorThread"};
-
             _watcher = new FileSystemWatcher
             {
                 Path = filePath,
@@ -95,6 +93,7 @@ namespace RatTracker_WPF
 
             _currentLogFile = new CmdrJournalFile(GetLastModifiedFile(filePath, _watcher.Filter));
 
+            mainWindow.GlobalHeartbeatEvent += CmdrLogMonitor;
             mainWindow.MyPlayer.PropertyChanged += (sender, args) =>
             {
                 if (args.PropertyName == nameof(PlayerInfo.OnDuty))
@@ -132,13 +131,12 @@ namespace RatTracker_WPF
 
         private CmdrJournalFile _currentLogFile;
         private readonly FileSystemWatcher _watcher;
-        private volatile bool _terminateThread;
+        private volatile bool _fileListeningActive;
         private volatile bool _newFile = true;
         private static readonly ILog Logger = LogManager.GetLogger(Assembly.GetCallingAssembly().GetName().Name);
-        private readonly Thread _cmdrLogMonitorThread;
         private int _lineOffset;
 
-        public bool IsListening => _cmdrLogMonitorThread?.IsAlive ?? false;
+        public bool IsListening => _fileListeningActive;
 
         #endregion
 
@@ -185,55 +183,44 @@ namespace RatTracker_WPF
 
         private void StartListenerThread()
         {
-            if (_cmdrLogMonitorThread?.IsAlive ?? true) return;
-
-
-            _terminateThread = false;
-            _cmdrLogMonitorThread?.Start();
-            
+            _newFile = true;
+            _fileListeningActive = true;
         }
 
         private void StopListenerThread()
         {
-            if (!_cmdrLogMonitorThread?.IsAlive ?? true) return;
-
-            _terminateThread = true;
-            _cmdrLogMonitorThread?.Join(100);
+            _fileListeningActive = false;
         }
 
-        private void CmdrLogMonitor()
+        private void CmdrLogMonitor(object sender, EventArgs args)
         {
-            while (!_terminateThread)
+            if (!_fileListeningActive) return;
+
+            var fi = new FileInfo(_currentLogFile.FileInfo.FullName);
+            if (!fi.Exists)
             {
-                var fi = new FileInfo(_currentLogFile.FileInfo.FullName);
-                if (!fi.Exists)
-                {
-                    Logger.Fatal("Current log file has gone missing! waiting for a new one.");
-                    Thread.Sleep(5000);
-                    continue;
-                }
-
-                if (_newFile)
-                {
-                    var existingLines = File.ReadAllLines(fi.FullName);
-                    _lineOffset = existingLines.Length;
-                    foreach (var line in existingLines) ReadJObjectString(line, true);
-
-                    _newFile = false;
-                    continue;
-                }
-
-                var newLines = File.ReadLines(fi.FullName).Skip(_lineOffset).ToArray();
-
-                if (newLines.Length > 0)
-                {
-                    _lineOffset += newLines.Length;
-                    foreach (var line in newLines)
-                        ReadJObjectString(line);
-                }
-                Thread.Sleep(1000);
+                Logger.Fatal("Current log file has gone missing! waiting for a new one.");
+                return;
             }
+
+            if (_newFile)
+            {
+                var existingLines = File.ReadAllLines(fi.FullName);
+                _lineOffset = existingLines.Length;
+                foreach (var line in existingLines)
+                    ReadJObjectString(line, true);
+                _newFile = false;
+                return;
+            }
+
+            var newLines = File.ReadLines(fi.FullName).Skip(_lineOffset).ToArray();
+            if (newLines.Length <= 0) return;
+
+            _lineOffset += newLines.Length;
+            foreach (var line in newLines)
+                ReadJObjectString(line);
         }
+
 
         private void ReadJObjectString(string jObjectString, bool suppressEvents = false)
         {
