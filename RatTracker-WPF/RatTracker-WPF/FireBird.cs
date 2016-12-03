@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using FirebirdSql.Data.FirebirdClient;
 using log4net;
@@ -27,7 +25,7 @@ namespace RatTracker_WPF
 			LogManager.GetLogger(System.Reflection.Assembly.GetCallingAssembly().GetName().Name);
         
 		private string _status="Initializing";
-        private bool _dbReady = false;
+        private bool _dbReady;
         string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
         string _fbConStr = "User=SYSDBA;Password=masterkey;Database=" + Environment.GetFolderPath(Environment.SpecialFolder.Personal) + @"\RatTracker\EDDB.FDB;Dialect=3;Charset=UTF8;ServerType=1;";
         EddbData _eddbworker;
@@ -44,7 +42,7 @@ namespace RatTracker_WPF
 				NotifyPropertyChanged();
 			}
 		}
-		private FbConnection con;
+		private FbConnection _con;
         public void SetEDDB(ref EddbData eddbworker)
         {
             _eddbworker = eddbworker;
@@ -54,11 +52,13 @@ namespace RatTracker_WPF
 			bool newdb = false;
 			Logger.Debug("Starting FbConnection");
             Status = "Connecting";
-			FbConnectionStringBuilder builder = new FbConnectionStringBuilder();
-			builder.UserID = "SYSDBA";
-            builder.Database = Environment.GetFolderPath(Environment.SpecialFolder.Personal)+@"\RatTracker\EDDB.FDB";
-			builder.ServerType = FbServerType.Embedded;
-            if (Thread.CurrentThread.Name == null)
+		    FbConnectionStringBuilder builder = new FbConnectionStringBuilder
+		    {
+		        UserID = "SYSDBA",
+		        Database = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + @"\RatTracker\EDDB.FDB",
+		        ServerType = FbServerType.Embedded
+		    };
+		    if (Thread.CurrentThread.Name == null)
             {
                 Thread.CurrentThread.Name = "FireBirdWorker";
             }
@@ -94,11 +94,11 @@ namespace RatTracker_WPF
                     return;
                 }
 			}
-			con = new FbConnection(
+			_con = new FbConnection(
                         _fbConStr);
 				try
 				{
-					con.Open();
+					_con.Open();
 					Logger.Info("FBWorker has connected to the database.");
 					Status = "Connected";
 					if (newdb)
@@ -118,7 +118,7 @@ namespace RatTracker_WPF
                 return;
             }
             Logger.Debug("FBWorker is dropping the database due to a refresh command.");
-            using (FbCommand dropTables = con.CreateCommand())
+            using (FbCommand dropTables = _con.CreateCommand())
             {
                 dropTables.CommandText = "DROP INDEX ix_lcname";
                 dropTables.ExecuteNonQuery();
@@ -131,7 +131,6 @@ namespace RatTracker_WPF
             }
             Logger.Debug("Recreating tables.");
             CreateTables();
-            return;
         }
 		public void CreateTables()
 		{
@@ -144,19 +143,19 @@ namespace RatTracker_WPF
             {
                 Logger.Debug("Starting database table creation.");
                 Status = "Creating Tables";
-                using (FbCommand createDomain = con.CreateCommand())
+                using (FbCommand createDomain = _con.CreateCommand())
                 {
                     createDomain.CommandText = "CREATE DOMAIN BOOLEAN AS SMALLINT CHECK (value is null or value in (0, 1))";
                     createDomain.ExecuteNonQuery();
                 }
-                using (FbCommand createTable = con.CreateCommand())
+                using (FbCommand createTable = _con.CreateCommand())
                 {
                     createTable.CommandText =
                             "CREATE TABLE eddb_systems (id int, name varchar(150), x float, y float, z float, faction varchar(150), population bigint, goverment varchar(130), allegiance varchar(130), state varchar(130), " +
                             "security varchar(150), primary_economy varchar(130), power varchar(130), power_state varchar(130), needs_permit boolean, updated_at bigint, simbad_ref varchar(150), lowercase_name varchar(150))";
                     createTable.ExecuteNonQuery();
                 }
-                using (FbCommand createTable = con.CreateCommand())
+                using (FbCommand createTable = _con.CreateCommand())
                 {
                     createTable.CommandText =
                         "CREATE TABLE eddb_stations (id bigint, name varchar(150), system_id bigint, max_landing_pad_size varchar(5), distance_to_star bigint, faction varchar(150), government varchar(120), allegiance varchar(130), " +
@@ -166,7 +165,7 @@ namespace RatTracker_WPF
                     createTable.ExecuteNonQuery();
 
                 }
-                using (FbCommand createTable = con.CreateCommand())
+                using (FbCommand createTable = _con.CreateCommand())
                 {
                     createTable.CommandText = "CREATE TABLE eddb_info (sectorname varchar(150), sectorsize bigint, injectedat bigint)";
                     createTable.ExecuteNonQuery();
@@ -191,7 +190,7 @@ namespace RatTracker_WPF
             {
                 Status = "Creating Indexes";
                 Logger.Info("Creating indexes...");
-                using (FbCommand createIndex = con.CreateCommand())
+                using (FbCommand createIndex = _con.CreateCommand())
                 {
                     createIndex.CommandText = "CREATE INDEX ix_lcname on eddb_systems (lowercase_name)";
                     createIndex.ExecuteNonQuery();
@@ -219,7 +218,7 @@ namespace RatTracker_WPF
             try
             {
                 Status = "Inserting";
-                using (FbCommand insertStation = con.CreateCommand())
+                using (FbCommand insertStation = _con.CreateCommand())
                 {
                     insertStation.CommandText =
                         "INSERT INTO eddb_stations values (@id, @name, @system_id, @max_landing_pad_size, @distance_to_star, @faction, @government, @allegiance, @state, @type_id, @type, @has_blackmarket, @has_market, " +
@@ -420,7 +419,7 @@ namespace RatTracker_WPF
             {
                 //Logger.Debug("Inserting system id " + id + ", " + name);
                 Status = "Inserting";
-                using (FbCommand insertSystem = con.CreateCommand())
+                using (FbCommand insertSystem = _con.CreateCommand())
                 {
                     insertSystem.CommandText =
                         "INSERT INTO eddb_systems values (@id, @name, @x, @y, @z, @faction, @population, @government, @allegiance, @state, @security, @primary_economy, @power, @power_state, @needs_permit, @updated_at, @simbad_ref, @lowercase_name)";
@@ -548,7 +547,7 @@ namespace RatTracker_WPF
 		public void TestInserts()
 		{
 			Logger.Debug("Testing a query for a system.");
-			using (FbCommand querySystem = con.CreateCommand())
+			using (FbCommand querySystem = _con.CreateCommand())
 			{
 				querySystem.CommandText = "SELECT * from eddb_systems LIMIT 5";
 				using (FbDataReader r = querySystem.ExecuteReader())
@@ -565,7 +564,7 @@ namespace RatTracker_WPF
 		{
 			List<EdsmSystem> systemResult = new List<EdsmSystem>();
             Status = "Working...";
-			using (FbCommand getSystem = con.CreateCommand())
+			using (FbCommand getSystem = _con.CreateCommand())
 			{
 				getSystem.CommandText = "SELECT FIRST 50 name,id,x,y,z FROM eddb_systems WHERE lowercase_name LIKE '%" + systemname.ToLower() + "%'";
                 using (DbDataReader r = await getSystem.ExecuteReaderAsync())
@@ -593,7 +592,7 @@ namespace RatTracker_WPF
             Status = "Working...";
 			try
 			{
-				using (FbCommand querySystemCount = con.CreateCommand())
+				using (FbCommand querySystemCount = _con.CreateCommand())
 				{
 					querySystemCount.CommandText = "SELECT COUNT(id) from eddb_systems";
 					using (FbDataReader r = querySystemCount.ExecuteReader())
