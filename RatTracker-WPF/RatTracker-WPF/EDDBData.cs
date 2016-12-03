@@ -111,9 +111,9 @@ namespace RatTracker_WPF
                 SystemCount = 0;
                 foreach (SysInfo sys in temp)
                 {
-                    Logger.Debug("System chunk " + sys.SectorName +" has "+sys.SectorSize+" systems.");
+                    Logger.Debug("System chunk " + sys.SectorName +" has "+sys.Systems+" systems.");
                     _jsonfiles.Add(sys.SectorName);
-                    SystemCount += sys.SectorSize;
+                    SystemCount += sys.Systems;
                 }
 
             }

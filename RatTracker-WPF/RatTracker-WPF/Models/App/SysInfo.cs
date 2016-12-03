@@ -9,6 +9,6 @@ namespace RatTracker_WPF.Models.App
     class SysInfo
     {
         public string SectorName { get; set; }
-        public int SectorSize { get; set; }
+        public int Systems { get; set; }
     }
 }

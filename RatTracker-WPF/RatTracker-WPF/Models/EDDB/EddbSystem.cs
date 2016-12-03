@@ -18,7 +18,7 @@ namespace RatTracker_WPF.Models.Eddb
         public string primary_economy { get; set; }
         public string power { get; set; }
         public string power_state { get; set; }
-        public bool? needs_permit { get; set; }
+        public string needs_permit { get; set; }
         public int? updated_at { get; set; }
         public string simbad_ref { get; set; }
     }
