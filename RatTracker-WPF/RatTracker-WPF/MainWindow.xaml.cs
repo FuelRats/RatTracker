@@ -885,24 +885,28 @@ namespace RatTracker_WPF
 						break;
                     case "authorization":
                         Logger.Debug("Authorization callback: " + realdata.ToString());
-                        if (realdata.errors)
+                        /*
+                         * This fucking breaks. Someone explain to me why this breaks (While it certainly didn't before), and I'll be happy.
+                         *                     if (realdata.errors)
+                                                {
+                                                    AppendStatus("Error during WS Authentication: " + realdata.errors.code + ": " + realdata.errors.detail);
+                                                    Logger.Error("Error during WS Authentication: " + realdata.errors.code + ": " + realdata.errors.detail);
+                                                    MessageBoxResult reauth = MessageBox.Show("RatTracker has failed to authenticate with WebSocket. This is usually caused by an invalid OAuth token. If you would like to retry the OAuth process, press OK. To leave the OAuth token intact, press cancel.");
+                                                    if (reauth==MessageBoxResult.Yes)
+                                                    {
+                                                        Logger.Info("Clearing OAuth keys...");
+                                                        Settings.Default.OAuthToken = "";
+                                                        Settings.Default.Save();
+                                                        string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+                                                        if (File.Exists(rtPath + @"\RatTracker\OAuthToken.tmp"))
+                                                            File.Delete(rtPath+@"\RatTracker\OAuthToken.tmp");
+                                                        AppendStatus("OAuth information cleared. Please restart RatTracker to reauthenticate it.");
+                                                    }
+                                                }
+                                                else */
+                        if (realdata.email!="")
                         {
-                            AppendStatus("Error during WS Authentication: " + realdata.errors.code + ": " + realdata.errors.detail);
-                            Logger.Error("Error during WS Authentication: " + realdata.errors.code + ": " + realdata.errors.detail);
-                            MessageBoxResult reauth = MessageBox.Show("RatTracker has failed to authenticate with WebSocket. This is usually caused by an invalid OAuth token. If you would like to retry the OAuth process, press OK. To leave the OAuth token intact, press cancel.");
-                            if (reauth==MessageBoxResult.Yes)
-                            {
-                                Logger.Info("Clearing OAuth keys...");
-                                Settings.Default.OAuthToken = "";
-                                Settings.Default.Save();
-                                string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                                if (File.Exists(rtPath + @"\RatTracker\OAuthToken.tmp"))
-                                    File.Delete(rtPath+@"\RatTracker\OAuthToken.tmp");
-                                AppendStatus("OAuth information cleared. Please restart RatTracker to reauthenticate it.");
-                            }
-                        }
-                        else if (realdata.email)
-                        {
+                            Logger.Debug("Passed error check for auth callback.");
                             AppendStatus("Got user data for " + realdata.email);
                             MyPlayer.RatId = new List<string>();
                             foreach (dynamic cmdrdata in realdata.rats)
