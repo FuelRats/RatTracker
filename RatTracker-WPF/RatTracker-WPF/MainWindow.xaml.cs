@@ -2219,6 +2219,11 @@ namespace RatTracker_WPF
 				AppendStatus("Null system.");
 				return;
 			}
+		    if (_myplayer.RatId == null)
+		    {
+		        Logger.Debug("I have no ratID for myself! That's bad, can't carry on..."); // Enforce a check for who we really are.
+                return;
+		    }
 			Logger.Debug("Null tests completed");
 			AppendStatus("Tracking rescue. System: " + _myrescue.System + " Client: " + _myrescue.Client);
 			MyClient = new ClientInfo
