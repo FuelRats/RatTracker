@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Threading;
@@ -29,7 +28,7 @@ namespace RatTracker_WPF
 		private List<string> _jsonfiles = new List<string>();
 		string _rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
 		private string _orthancUrl = "http://orthanc.localecho.net/json/";
-        private bool _progressVisibility = false;
+        private bool _progressVisibility;
 		public string Status
 		{
 			get { return _status; }
@@ -123,7 +122,7 @@ namespace RatTracker_WPF
 				DateTime filedate = File.Exists(_rtPath + @"\RatTracker\" + jsonchunk)
 					? File.GetLastWriteTime(_rtPath + @"\RatTracker\" + jsonchunk)
 					: new DateTime(1985, 4, 1);
-				if (filedate.AddDays(30) < DateTime.Now || forced==true)
+				if (filedate.AddDays(30) < DateTime.Now || forced)
 				{
 					using (HttpClient client = new HttpClient(new HttpClientHandler
 					{
@@ -193,12 +192,12 @@ namespace RatTracker_WPF
             {
                 Thread.CurrentThread.Name = "EDDBWorker";
             }
-            if (forced == true)
+            if (forced)
             {
                 Logger.Debug("Forcing a redownload and reinjection of EDDB systems.");
                 await LoadChunkedJson(true);
             }
-            if (_fbworker.GetSystemCount() < 1)
+            if (_fbworker != null && _fbworker.GetSystemCount() < 1)
                 await LoadChunkedJson(false);
             DateTime filedate = File.Exists(rtPath + @"\RatTracker\stations.json") ? File.GetLastWriteTime(rtPath + @"\RatTracker\stations.json") : new DateTime(1985, 4, 1);
             if (filedate.AddDays(7) < DateTime.Now)
@@ -207,7 +206,7 @@ namespace RatTracker_WPF
                 Status = "Downloading Stations";
                 try
                 {
-                    List<EddbStation> eddbStations = new List<EddbStation>();
+                    List<EddbStation> eddbStations;
                     using (
                         HttpClient client =
                             new HttpClient(new HttpClientHandler
