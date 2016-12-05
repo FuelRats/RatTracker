@@ -385,7 +385,7 @@ namespace RatTracker_WPF
 				}
 				Logger.Debug("Launching authorization process.");
 				var authcontent =
-					new UriBuilder(Path.Combine(Properties.Settings.Default.APIURL +"oauth2/authorise?client_id="+Properties.Settings.Default.ClientID+"&scope=*&redirect_uri=rattracker://auth&state=preinit&response_type=code"))
+					new UriBuilder(Path.Combine(Properties.Settings.Default.APIURL +"oauth2/authorize?client_id="+Properties.Settings.Default.ClientID+"&scope=*&redirect_uri=rattracker://auth&state=preinit&response_type=code"))
 					{
 						Port = Properties.Settings.Default.APIPort
 					};
