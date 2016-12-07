@@ -105,8 +105,6 @@ namespace RatTracker_WPF
 
         }
 
-
-
         #endregion
 
         #region Event Declarations
@@ -205,7 +203,15 @@ namespace RatTracker_WPF
 
             if (_newFile)
             {
-                var existingLines = File.ReadAllLines(fi.FullName);
+                string[] existingLines = {};
+                try
+                {
+                    existingLines = File.ReadAllLines(fi.FullName);
+                }
+                catch (Exception e)
+                {
+                    Logger.Error("Unable to read CmdrJournal: " + e.StackTrace);
+                }
                 _lineOffset = existingLines.Length;
                 foreach (var line in existingLines)
                     ReadJObjectString(line, true);
@@ -213,8 +219,16 @@ namespace RatTracker_WPF
                 return;
             }
 
-            var newLines = File.ReadLines(fi.FullName).Skip(_lineOffset).ToArray();
-            if (newLines.Length <= 0) return;
+            string[] newLines = { };
+
+            try {
+                newLines = File.ReadLines(fi.FullName).Skip(_lineOffset).ToArray();
+            } catch(Exception e) {
+                Logger.Error("Unable to read CmdrJournal: " + e.StackTrace);
+            }
+
+            if (newLines.Length <= 0)
+                return;
 
             _lineOffset += newLines.Length;
             foreach (var line in newLines)
