@@ -211,6 +211,7 @@ namespace RatTracker_WPF
                 catch (Exception e)
                 {
                     Logger.Error("Unable to read CmdrJournal: " + e.StackTrace);
+                    return;
                 }
                 _lineOffset = existingLines.Length;
                 foreach (var line in existingLines)
@@ -225,6 +226,7 @@ namespace RatTracker_WPF
                 newLines = File.ReadLines(fi.FullName).Skip(_lineOffset).ToArray();
             } catch(Exception e) {
                 Logger.Error("Unable to read CmdrJournal: " + e.StackTrace);
+                return;
             }
 
             if (newLines.Length <= 0)
