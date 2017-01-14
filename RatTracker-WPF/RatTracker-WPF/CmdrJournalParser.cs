@@ -62,7 +62,7 @@ namespace RatTracker_WPF
                 }
                 else
                 {
-                    Logger.Fatal("Could not get path to Commander Log! Could not setup CmdrLogParser.");
+                    Logger.Fatal("Could not get path to Commander Log! Unable to setup CmdrLogParser.");
                     return;
                 }
 
@@ -210,7 +210,7 @@ namespace RatTracker_WPF
                 }
                 catch (Exception e)
                 {
-                    Logger.Error("Unable to read CmdrJournal: " + e.StackTrace);
+                    Logger.Error("Unable to read CmdrJournal: " + e.Message + Environment.NewLine + e.StackTrace);
                     return;
                 }
                 _lineOffset = existingLines.Length;
@@ -225,7 +225,7 @@ namespace RatTracker_WPF
             try {
                 newLines = File.ReadLines(fi.FullName).Skip(_lineOffset).ToArray();
             } catch(Exception e) {
-                Logger.Error("Unable to read CmdrJournal: " + e.StackTrace);
+                Logger.Error("Unable to read CmdrJournal: "+ e.Message + Environment.NewLine + e.StackTrace);
                 return;
             }
 
