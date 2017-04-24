@@ -83,17 +83,14 @@ namespace RatTracker_WPF
 		private readonly TelemetryClient _tc = new TelemetryClient(); 
 		private Thread _threadLogWatcher; // Holds logwatcher thread.
 		private EddbData _eddbworker;
-        private bool _heartbeat_stopping = false;
+        private bool _heartbeatStopping = false;
 
 	    public event GlobalHeartbeatEvent GlobalHeartbeatEvent;
 
 		public EddbData Eddbworker
 		{
-			get
-			{
-				return _eddbworker;
-			}
-			set
+			get => _eddbworker;
+		    set
 			{
 				_eddbworker = value;
 				NotifyPropertyChanged();
@@ -104,10 +101,7 @@ namespace RatTracker_WPF
 
         public FireBird FbWorker
         {
-            get
-            {
-                return _fbworker;
-            }
+            get => _fbworker;
             set
             {
                 _fbworker = value;
@@ -120,9 +114,10 @@ namespace RatTracker_WPF
 #pragma warning restore 649
 		#endregion
 		
-		public MainWindow()
+		public MainWindow(Thread threadLogWatcher)
 		{
-			Logger.Info("---Starting RatTracker---");
+		    _threadLogWatcher = threadLogWatcher;
+		    Logger.Info("---Starting RatTracker---");
             Logger.Info("OAuth stored token is " + Settings.Default.OAuthToken);
 			try
 			{
@@ -182,65 +177,61 @@ namespace RatTracker_WPF
 			}
 			catch(Exception ex)
 			{
-				Logger.Debug("Exception in token parse: "+ex.Message);
+				Logger.Debug($"Exception in token parse: {ex.Message}");
 			}
 
 		}
 
         private async void OAuth_Authorize(string code)
 		{
-			if (code.Length > 0)
-			{
-				Logger.Debug("A code was passed to connectAPI, attempting token exchange: "+code);
-				using (HttpClient hc = new HttpClient())
-				{
-					Auth myauth = new Auth
-					{
-						code = code,
-						grant_type = "authorization_code",
-						redirect_url = "rattracker://auth"
-                    };
-					var content = new UriBuilder(Path.Combine(Settings.Default.APIURL + "oauth2/token"))
-					{
-						Port = Settings.Default.APIPort
-					};
-                    string clientauthheader = Settings.Default.ClientID+":"+Settings.Default.AppSecret;
-				    Logger.Debug("Attempting auth with CID: " + Properties.Settings.Default.ClientID + " and AS " +
-				                 Settings.Default.AppSecret);
-					hc.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes(
-						clientauthheader)));
-					var formenc = new FormUrlEncodedContent(new[]
-					{
-						new KeyValuePair<string,string>("code",code),
-						new KeyValuePair<string,string>("grant_type","authorization_code"),
-						new KeyValuePair<string,string>("redirect_uri","rattracker://auth")
-					});
-					HttpResponseMessage response = await hc.PostAsync(content.ToString(), formenc).ConfigureAwait(false);
-					HttpContent mycontent = response.Content;
-					string data = mycontent.ReadAsStringAsync().Result;
-					Logger.Debug("OAuth token exchange data: " + data);
-					if (data.Contains("access_token"))
-					{
-						var token = JsonConvert.DeserializeObject<TokenResponse>(data);
-						Logger.Debug("Access token received: " + token.access_token);
-						Settings.Default.OAuthToken = token.access_token;
-						Settings.Default.Save();
-						AppendStatus("OAuth authentication transaction successful, bearer token stored. Please exit RatTracker and start it again.");
-                        MessageBox.Show("RatTracker has successfully completed OAuth authentication. Please close and restart RatTracker to complete the process.");
-                        //The fact that I have to cheat this way is FUCKING ANNOYING!
-                        string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                        File.WriteAllText(rtPath + @"\RatTracker\OAuthToken.tmp", token.access_token);
-                        Logger.Debug("Saved CheatyFile.");
-                        //_oauthProcessing = false;
-                        //DoInitialize();  // We can't actually do initialization at this point, because the app gets called by the webbrowser and has a stupid run path.
-                    }
-					else
-					{
-						Logger.Debug("No access token in data response! Data:"+data.ToString());
-						AppendStatus("OAuth authentication failed. Please restart RatTracker to retry the operation.");
-					}
-				}
-			}
+		    if (code.Length <= 0) return;
+		    Logger.Debug("A code was passed to connectAPI, attempting token exchange: "+code);
+		    using (HttpClient hc = new HttpClient())
+		    {
+		        Auth myauth = new Auth();
+		        myauth.code = code;
+		        myauth.grant_type = "authorization_code";
+		        myauth.redirect_url = "rattracker://auth";
+		        var content = new UriBuilder(Path.Combine($"{Settings.Default.APIURL}oauth2/token"))
+		        {
+		            Port = Settings.Default.APIPort
+		        };
+		        string clientauthheader = Settings.Default.ClientID+":"+Settings.Default.AppSecret;
+		        Logger.Debug("Attempting auth with CID: " + Properties.Settings.Default.ClientID + " and AS " +
+		                     Settings.Default.AppSecret);
+		        hc.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes(
+		            clientauthheader)));
+		        var formenc = new FormUrlEncodedContent(new[]
+		        {
+		            new KeyValuePair<string,string>("code",code),
+		            new KeyValuePair<string,string>("grant_type","authorization_code"),
+		            new KeyValuePair<string,string>("redirect_uri","rattracker://auth")
+		        });
+		        HttpResponseMessage response = await hc.PostAsync(content.ToString(), formenc).ConfigureAwait(false);
+		        HttpContent mycontent = response.Content;
+		        string data = mycontent.ReadAsStringAsync().Result;
+		        Logger.Debug("OAuth token exchange data: " + data);
+		        if (data.Contains("access_token"))
+		        {
+		            var token = JsonConvert.DeserializeObject<TokenResponse>(data);
+		            Logger.Debug("Access token received: " + token.access_token);
+		            Settings.Default.OAuthToken = token.access_token;
+		            Settings.Default.Save();
+		            AppendStatus("OAuth authentication transaction successful, bearer token stored. Please exit RatTracker and start it again.");
+		            MessageBox.Show("RatTracker has successfully completed OAuth authentication. Please close and restart RatTracker to complete the process.");
+		            //The fact that I have to cheat this way is FUCKING ANNOYING!
+		            string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+		            File.WriteAllText(rtPath + @"\RatTracker\OAuthToken.tmp", token.access_token);
+		            Logger.Debug("Saved CheatyFile.");
+		            //_oauthProcessing = false;
+		            //DoInitialize();  // We can't actually do initialization at this point, because the app gets called by the webbrowser and has a stupid run path.
+		        }
+		        else
+		        {
+		            Logger.Debug("No access token in data response! Data:"+data.ToString());
+		            AppendStatus("OAuth authentication failed. Please restart RatTracker to retry the operation.");
+		        }
+		    }
 		}
 
 		private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -699,7 +690,7 @@ namespace RatTracker_WPF
 	    private void TerminateHeartBeat()
 	    {
             Logger.Debug("Terminating Heartbeat.");
-	        _heartbeat_stopping = true;
+	        _heartbeatStopping = true;
             //other logic here? if not, we can just set the bool to true to terminate it.
         }
 
@@ -712,8 +703,8 @@ namespace RatTracker_WPF
 
         private void HeartBeat() // just give it a thread and let it do it's thing.
 	    {
-	        _heartbeat_stopping = false;
-	        while(!_heartbeat_stopping)
+	        _heartbeatStopping = false;
+	        while(!_heartbeatStopping)
 	        {
                 //Logger.Debug("Heartbeat..."); //Let's not do this EVERY heartbeat...
                 Thread.Sleep(2000);
@@ -754,8 +745,6 @@ namespace RatTracker_WPF
                         await GetMissingRats(_rescues);
                         await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
 						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => _rescues.Data.ForEach(datum => ItemsSource.Add(datum))));
-						//await disp.BeginInvoke(DispatcherPriority.Normal,
-						//	(Action)(() => RescueGrid.ItemsSource = rescues.Data));
 						break;
 					case "message:send":
 						/* We got a message broadcast on our channel. */
@@ -769,8 +758,6 @@ namespace RatTracker_WPF
                             AppendStatus("RatTracker failed to get your user data from the API. This makes RatTracker unable to verify your identity for jump calls and messages.");
                             break;
                         }
-						//Logger.Debug("Raw: " + realdata[0]);
-
 						AppendStatus("Got user data for " + realdata[0].email);
 						MyPlayer.RatId = new List<string>();
 						foreach (dynamic cmdrdata in realdata[0].CMDRs)
@@ -813,6 +800,7 @@ namespace RatTracker_WPF
                                 Logger.Debug("Our active rescue was closed.");
 
                             }
+						    Logger.Debug("Updating rescue grid.");
 							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Remove(myRescue)));
 						}
 						else
@@ -885,7 +873,7 @@ namespace RatTracker_WPF
 						break;
                     case "authorization":
                         Logger.Debug("Authorization callback: " + realdata.ToString());
-                        /*
+                        /* TODO
                          * This fucking breaks. Someone explain to me why this breaks (While it certainly didn't before), and I'll be happy.
                          *                     if (realdata.errors)
                                                 {
@@ -978,7 +966,6 @@ namespace RatTracker_WPF
 
                     Logger.Debug("Found Windows 10 installation. Setting application paths...");
                     Settings.Default.EDPath = edProductDir;
-                    //Settings.Default.NetLogPath = edProductDir + "\\logs";
                     Settings.Default.Save();
                 }
                 else
@@ -1105,12 +1092,6 @@ namespace RatTracker_WPF
 			}
 		}
 
-		/*
-		 * Converter for E:Ds UTF encoded CMDR names. Seen in NetLog.
-		 */
-
-
-
 		private void MainWindow_Closing(object sender, CancelEventArgs e)
 		{
 			StopNetLog = true;
@@ -1146,7 +1127,6 @@ namespace RatTracker_WPF
                 else
                     Logger.Debug("Got definite match in first pos, disregarding extra hits:" + firstsys.Name + " X:" +
                                 firstsys.Coords.X + " Y:" + firstsys.Coords.Y + " Z:" + firstsys.Coords.Z);
-                //AppendStatus("Got M:" + firstsys.name + " X:" + firstsys.coords.x + " Y:" + firstsys.coords.y + " Z:" + firstsys.coords.z);
                 if (_myTravelLog == null)
                 {
                     _myTravelLog = new Collection<TravelLog>();
@@ -1252,12 +1232,11 @@ namespace RatTracker_WPF
 		{
 			AppendStatus("Setting client location to current system: "+_myplayer.CurrentSystem);
 			// SystemName.Text = "Fuelum";
-			// Do actual system name update through Mecha with 3PAM
+			// TODO: Do actual system name update through Mecha with 3PAM
 		}
 
 		private void UpdateButton_Click(object sender, RoutedEventArgs e)
 		{
-			// No more of this testing bull, let's actually send the updated system now.
 			if (MyClient==null)
 			{
 				Logger.Debug("No current rescue, ignoring system update request.");
@@ -1315,17 +1294,10 @@ namespace RatTracker_WPF
 		{
 			if (RescueGrid.SelectedItem == null)
 				return;
-			/*			BackgroundWorker bgworker = new BackgroundWorker() {WorkerReportsProgress = true};
-						bgworker.DoWork += (s, e2) => {
-							RecalculateJumps();
-						};
-						bgworker.RunWorkerAsync();
-						*/
 			/* The shit I do for you, Marenthyu. Update the grid to show the selection, reset labels and
 			 * manually redraw one frame before the thread goes into background work. Yeesh. :P
 			 */
 			Datum myrow = (Datum)RescueGrid.SelectedItem;
-			//Logger.Debug("Client is " + myrow.Client);
 
 			var rats = Rats.Where(r => myrow.Rats.Contains(r.Key)).Select(r => r.Value.CmdrName).ToList();
 			var count = rats.Count;
@@ -1334,7 +1306,7 @@ namespace RatTracker_WPF
 			MyClient = new ClientInfo { Rescue = myrow };
 			if (count > 0)
 			{
-				MyClient.Self.RatName = rats[0]; // Nope! We have no guarantee that the first listed rat in the rescue is ourself.
+				MyClient.Self.RatName = rats[0]; // TODO: Fix this. We have no guarantee that the first listed rat in the rescue is ourself.
 			}
 			if (count > 1)
 			{
@@ -1766,7 +1738,7 @@ namespace RatTracker_WPF
 						    {
 						        Logger.Debug("Exception while installing hotkeys: " + ex.Message + "@" + ex.Source);
 						    }
-						    // Broken all of a sudden? May require recode.
+						    // TODO: Broken all of a sudden? May require recode.
 						}
 					}
 				}
@@ -2118,7 +2090,7 @@ namespace RatTracker_WPF
 		{
 			Logger.Debug("Begin TPA Jump Call...");
 			_myrescue = (Datum) RescueGrid.SelectedItem;
-			if (_myrescue == null)
+			if (_myrescue == null) // TODO: Major cleanup in this null testing.
 			{
 				AppendStatus("Null myrescue! Failing.");
 				return;
