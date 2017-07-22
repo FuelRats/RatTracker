@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using RatTracker_WPF.Models.App;
 using RatTracker_WPF.Models.CmdrJournal;
 using RatTracker_WPF.Properties;
+using System.Collections.Generic;
 
 namespace RatTracker_WPF
 {
@@ -206,7 +207,7 @@ namespace RatTracker_WPF
                 string[] existingLines = {};
                 try
                 {
-                    existingLines = File.ReadAllLines(fi.FullName);
+                    existingLines = WriteSafeReadAllLines(fi.FullName);
                 }
                 catch (Exception e)
                 {
@@ -351,6 +352,20 @@ namespace RatTracker_WPF
         private static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid rfid, uint dwFlags,
             IntPtr hToken, out IntPtr ppszPath);
 
+        public string[] WriteSafeReadAllLines(String path)
+        {
+            using (var journal = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var sr = new StreamReader(journal))
+            {
+                List<string> file = new List<string>();
+                while (!sr.EndOfStream)
+                {
+                    file.Add(sr.ReadLine());
+                }
+
+                return file.ToArray();
+            }
+        }
         #endregion
     }
 }
