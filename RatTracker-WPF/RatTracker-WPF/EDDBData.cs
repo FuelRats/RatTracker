@@ -15,7 +15,7 @@ namespace RatTracker_WPF
 {
 	public class EddbData : PropertyChangedBase
 	{
-		public static string EddbUrl { get; } = "http://eddb.io/archive/v4/";
+		public static string EddbUrl { get; } = "http://eddb.io/archive/v5/";
 
 		private static readonly ILog Logger =
 			LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);

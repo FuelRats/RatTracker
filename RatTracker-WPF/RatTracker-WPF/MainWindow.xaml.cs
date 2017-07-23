@@ -114,9 +114,8 @@ namespace RatTracker_WPF
 #pragma warning restore 649
 		#endregion
 		
-		public MainWindow(Thread threadLogWatcher)
+		public MainWindow()
 		{
-		    _threadLogWatcher = threadLogWatcher;
 		    Logger.Info("---Starting RatTracker---");
             Logger.Info("OAuth stored token is " + Settings.Default.OAuthToken);
 			try
