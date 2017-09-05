@@ -620,7 +620,46 @@ namespace RatTracker_WPF
 			}
 		}
 
-		public event PropertyChangedEventHandler PropertyChanged;
+	  private bool showOnlyPCCases;
+    public bool ShowOnlyPCCases
+	  {
+	    get { return showOnlyPCCases; }
+	    set
+	    {
+	      showOnlyPCCases = value;
+
+	      ReloadRescueGrid();
+	      NotifyPropertyChanged();
+	    }
+	  }
+
+	  private bool showOnlyActiveCases;
+    public bool ShowOnlyActiveCases
+	  {
+	    get { return showOnlyActiveCases; }
+	    set
+	    {
+	      showOnlyActiveCases = value;
+	      ReloadRescueGrid();
+        NotifyPropertyChanged();
+	    }
+	  }
+
+	  private void ReloadRescueGrid()
+	  {
+	    ItemsSource.Clear();
+	    var qq = from rescue in _rescues.Data
+               where (!ShowOnlyPCCases || rescue.Platform == "pc")
+               && (!ShowOnlyActiveCases || rescue.Active)
+               select rescue;
+
+      foreach (var rescue in qq)
+      {
+        ItemsSource.Add(rescue);
+      }
+	  }
+
+	  public event PropertyChangedEventHandler PropertyChanged;
 		#endregion
 
 		#region Initializers
@@ -686,7 +725,7 @@ namespace RatTracker_WPF
 
 	    private Thread _heartBeatThread;
 
-	    private void TerminateHeartBeat()
+	  private void TerminateHeartBeat()
 	    {
             Logger.Debug("Terminating Heartbeat.");
 	        _heartbeatStopping = true;
@@ -741,8 +780,8 @@ namespace RatTracker_WPF
 						}
 						Logger.Debug("Got a list of rescues: " + realdata);
 						_rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
-                        await GetMissingRats(_rescues);
-                        await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
+            await GetMissingRats(_rescues);
+            await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
 						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => _rescues.Data.ForEach(datum => ItemsSource.Add(datum))));
 						break;
 					case "message:send":
@@ -1259,7 +1298,7 @@ namespace RatTracker_WPF
 			try {
 				Logger.Info("Initializing Rescues grid");
 				Dictionary<string, string> data = new Dictionary<string, string> {{"open", "true"}};
-				_rescues = new RootObject();
+				_rescues = _rescues ?? new RootObject();
 				if (_apworker.Ws.State != WebSocketState.Open)
 				{
 					Logger.Info("No available WebSocket connection, falling back to HTML API.");
