@@ -781,8 +781,7 @@ namespace RatTracker_WPF
 						Logger.Debug("Got a list of rescues: " + realdata);
 						_rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
             await GetMissingRats(_rescues);
-            await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Clear()));
-						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => _rescues.Data.ForEach(datum => ItemsSource.Add(datum))));
+						await disp.BeginInvoke(DispatcherPriority.Normal, (Action)ReloadRescueGrid);
 						break;
 					case "message:send":
 						/* We got a message broadcast on our channel. */
@@ -839,7 +838,12 @@ namespace RatTracker_WPF
 
                             }
 						    Logger.Debug("Updating rescue grid.");
-							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => ItemsSource.Remove(myRescue)));
+							await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() =>
+							{
+							  ItemsSource.Remove(myRescue);
+							  var rescue = _rescues.Data.SingleOrDefault(r => r.id == myRescue.id);
+							  _rescues.Data.Remove(rescue);
+							}));
 						}
 						else
 						{
