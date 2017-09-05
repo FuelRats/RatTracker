@@ -339,7 +339,7 @@ namespace RatTracker_WPF
 				try
 				{
 					Logger.Debug("Not admin and key does not exist, requesting elevation.");
-					MessageBoxResult result = MessageBox.Show("RatTracker needs to set up a custom URL handler to handle OAuth authentication. This requires elevated privileges. Please click OK to restart RatTracker as Administrator. It will restart with normal privileges once the OAuth process is complete.", "RT Needs elevation", MessageBoxButton.YesNo, MessageBoxImage.Exclamation);
+					MessageBoxResult result = MessageBox.Show("RatTracker needs to set up a custom URL handler to handle OAuth authentication. This requires elevated privileges. Please click OK to restart RatTracker as Administrator. It will restart with normal privileges once the OAuth process is complete.", "RT Needs elevation", MessageBoxButton.OKCancel, MessageBoxImage.Exclamation);
 					switch (result)
 					{
 						case MessageBoxResult.Yes:
