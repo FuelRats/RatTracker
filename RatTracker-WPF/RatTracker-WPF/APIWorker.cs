@@ -40,8 +40,7 @@ namespace RatTracker_WPF
 
 			try
 			{
-				const string wsurl = "wss://api.fuelrats.com:443/"; //TODO: Remove this hardcoding! Rewrite URL with ws:// instead of http://
-																   //string wsurl = "ws://dev.api.fuelrats.com/";
+			  var wsurl = GetApiWssUrl();
 				Logger.Info("Connecting to WS at " + wsurl);
 				Ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455) {AllowUnstrustedCertificate = true};
 				Ws.Error += websocketClient_Error;
@@ -56,7 +55,19 @@ namespace RatTracker_WPF
 			}
 		}
 
-		public void OpenWs()
+	  private static string GetApiWssUrl()
+	  {
+	    var apiurl = Settings.Default.APIURL.Replace("https://", "wss://");
+	    if (apiurl.EndsWith("/"))
+	    {
+	      apiurl = apiurl.Substring(0, apiurl.Length - 1);
+	    }
+
+	    apiurl = $"{apiurl}:{Settings.Default.APIPort}";
+	    return apiurl;
+	  }
+
+	  public void OpenWs()
 		{
 			if (Ws == null)
 			{
