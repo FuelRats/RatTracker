@@ -180,12 +180,6 @@
     <Compile Include="Converter\BooleanToColourConverter.cs" />
     <Compile Include="Converter\EmptyStringToVisibilityConverter.cs" />
     <Compile Include="Converter\RequestStateToColourConverter.cs" />
-    <Compile Include="DispatchInterface\DispatchMain.xaml.cs">
-      <DependentUpon>DispatchMain.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="DispatchInterface\DispatchStatus.xaml.cs">
-      <DependentUpon>DispatchStatus.xaml</DependentUpon>
-    </Compile>
     <Compile Include="EDDBData.cs" />
     <Compile Include="ErrorReporter.xaml.cs">
       <DependentUpon>ErrorReporter.xaml</DependentUpon>
@@ -260,14 +254,6 @@
     </Compile>
     <Compile Include="StringBuilderExtensions.cs" />
     <Compile Include="Models\CmdrJournal\SuperCruiseExitLog.cs" />
-    <Page Include="DispatchInterface\DispatchMain.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="DispatchInterface\DispatchStatus.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="ErrorReporter.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

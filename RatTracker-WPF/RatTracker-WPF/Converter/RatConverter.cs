@@ -3,49 +3,48 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Data;
-using RatTracker_WPF.Models.Api;
 
 namespace RatTracker_WPF.Converter
 {
-    /// <summary>
-    ///     Converts rat ids to rat names using a global rat id to rat cache.
-    /// </summary>
-    public class RatConverter : IValueConverter
+  /// <summary>
+  ///   Converts rat ids to rat names using a global rat id to rat cache.
+  /// </summary>
+  public class RatConverter : IValueConverter
+  {
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            List<string> myrats = value as List<string>;
-            if (myrats == null)
-            {
-                return "I am a null rat.";
-            }
+      var myrats = value as List<string>;
+      if (myrats == null)
+      {
+        return "I am a null rat.";
+      }
 
-            IEnumerable<KeyValuePair<string, Rat>> matchedRats = MainWindow.Rats.Where(x => myrats.Contains(x.Key));
-            IEnumerable<string> missingRats = myrats.Except(matchedRats.Select(x => x.Value.id));
-            foreach (string missingRat in missingRats)
-            {
-                Console.WriteLine("Cannot find rat '" + missingRat + "'");
-            }
+      var matchedRats = MainWindow.Rats.Where(x => myrats.Contains(x.Key));
+      var missingRats = myrats.Except(matchedRats.Select(x => x.Value.id));
+      foreach (var missingRat in missingRats)
+      {
+        Console.WriteLine("Cannot find rat '" + missingRat + "'");
+      }
 
-            IEnumerable<string> ratNames = matchedRats.Select(x => x.Value.CmdrName);
+      var ratNames = matchedRats.Select(x => x.Value.CmdrName);
 
-            string rats = string.Join(", ", ratNames);
-            int index = rats.IndexOf(", ", StringComparison.Ordinal);
+      var rats = string.Join(", ", ratNames);
+      var index = rats.IndexOf(", ", StringComparison.Ordinal);
 
-            if (index > 0)
-            {
-                string firstPart = rats.Substring(0, index);
-                string secondPart = rats.Substring(index + 2);
+      if (index > 0)
+      {
+        var firstPart = rats.Substring(0, index);
+        var secondPart = rats.Substring(index + 2);
 
-                rats = firstPart + " and " + secondPart;
-            }
+        rats = firstPart + " and " + secondPart;
+      }
 
-            return rats;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return "I am a negative rat";
-        }
+      return rats;
     }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+      return "I am a negative rat";
+    }
+  }
 }
