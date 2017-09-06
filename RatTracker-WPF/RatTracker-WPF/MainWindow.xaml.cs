@@ -29,6 +29,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RatTracker_WPF.EventHandlers;
+using RatTracker_WPF.Json;
 using RatTracker_WPF.Models.Api;
 using RatTracker_WPF.Models.App;
 using RatTracker_WPF.Models.CmdrJournal;
@@ -131,7 +132,7 @@ namespace RatTracker_WPF
         apiWorker.DoWork += (s, args) =>
         {
           Logger.Debug("Initialize API...");
-          InitApi(false);
+          InitApi(false, true);
         };
         eddbWorker.DoWork += async delegate
         {
@@ -185,7 +186,7 @@ namespace RatTracker_WPF
       InitRescueGrid();
     }
 
-    public async void Reinitialize()
+    public async void Reinitialize(bool includeToken)
     {
       Logger.Debug("Reinitializing application...");
       if (ParseEdAppConfig())
@@ -198,7 +199,7 @@ namespace RatTracker_WPF
           "RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
       }
 
-      InitApi(true);
+      InitApi(true, true);
       await InitEddb(true);
       await InitPlayer();
       Logger.Debug("Reinitialization complete.");
@@ -737,9 +738,10 @@ namespace RatTracker_WPF
               break;
             }
             Logger.Debug("Got a list of rescues: " + realdata);
-            _rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
-            await GetMissingRats(_rescues);
-            await disp.BeginInvoke(DispatcherPriority.Normal, (Action) ReloadRescueGrid);
+            var rescues = JsonApi.Deserialize<Models.Api.V2.Rescue[]>(e.Message);
+            //_rescues = JsonConvert.DeserializeObject<RootObject>(e.Message);
+            //await GetMissingRats(_rescues);
+            //await disp.BeginInvoke(DispatcherPriority.Normal, (Action) ReloadRescueGrid);
             break;
           case "message:send":
             /* We got a message broadcast on our channel. */
@@ -783,7 +785,7 @@ namespace RatTracker_WPF
               Logger.Debug("Myrescue is null in updaterescue, reinitialize grid.");
               var rescuequery = new APIQuery
               {
-                action = "rescues:read",
+                action = "rescues:read".Split(':'),
                 data = new Dictionary<string, string> {{"open", "true"}}
               };
               _apworker.SendQuery(rescuequery);
@@ -1115,7 +1117,7 @@ namespace RatTracker_WPF
           RescueGrid.AutoGenerateColumns = false;
           var rescuequery = new APIQuery
           {
-            action = "rescues:read",
+            action = "rescues:read".Split(':'),
             data = new Dictionary<string, string> {{"open", "true"}}
           };
           _apworker.SendQuery(rescuequery);
@@ -1264,7 +1266,7 @@ namespace RatTracker_WPF
       if (result == true)
       {
         AppendStatus("Reinitializing application due to configuration change...");
-        Reinitialize();
+        Reinitialize(true);
         return;
       }
       AppendStatus("No changes made, not reinitializing.");
@@ -1643,10 +1645,7 @@ namespace RatTracker_WPF
 
       */
       Logger.Debug("Forcing RescueGrid Update");
-      IDictionary<string, string> logindata = new Dictionary<string, string>();
-      logindata.Add(new KeyValuePair<string, string>("open", "true"));
-      //logindata.Add(new KeyValuePair<string, string>("password", "password"));
-      _apworker.SendWs("rescues:read", logindata);
+      _apworker.QueryRescues();
     }
 
     private async void button1_Click(object sender, RoutedEventArgs e)
@@ -1993,7 +1992,7 @@ namespace RatTracker_WPF
 
     #region Initializers
 
-    private void InitApi(bool reinitialize)
+    private void InitApi(bool reinitialize, bool includeToken)
     {
       try
       {
@@ -2002,7 +2001,14 @@ namespace RatTracker_WPF
         {
           _apworker = new ApiWorker();
         }
-        _apworker.InitWs();
+
+        if (includeToken && _apworker.Ws != null)
+        {
+          _apworker.Ws.MessageReceived -= websocketClient_MessageReceieved;
+          _apworker.Ws.Opened -= websocketClient_Opened;
+        }
+
+        _apworker.InitWs(includeToken);
         _apworker.OpenWs();
         if (!reinitialize)
         {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -13,7 +14,9 @@ using System.Windows;
 using log4net;
 using Microsoft.Win32;
 using Newtonsoft.Json;
+using RatTracker_WPF.Infrastructure;
 using RatTracker_WPF.Models.Api;
+using RatTracker_WPF.Models.Api.V2;
 using RatTracker_WPF.Properties;
 using WebSocket4Net;
 using ErrorEventArgs = SuperSocket.ClientEngine.ErrorEventArgs;
@@ -34,16 +37,25 @@ namespace RatTracker_WPF
     /*
          * queryAPI sends a GET request to the API. Kindasorta deprecated behavior.
          */
-    public void InitWs()
+    public void InitWs(bool includeToken)
     {
       if (Thread.CurrentThread.Name == null)
       {
         Thread.CurrentThread.Name = "APIWorker";
       }
 
+      if (Ws != null)
+      {
+        Ws.Error -= websocketClient_Error;
+        Ws.Opened -= websocketClient_Opened;
+        Ws.MessageReceived -= websocketClient_MessageReceieved;
+        Ws.Closed -= websocket_Client_Closed;
+        Ws = null;
+      }
+
       try
       {
-        var wsurl = GetApiWssUrl();
+        var wsurl = GetApiWssUrl(includeToken);
         Logger.Info("Connecting to WS at " + wsurl);
         Ws = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455) {AllowUnstrustedCertificate = true};
         Ws.Error += websocketClient_Error;
@@ -92,7 +104,7 @@ namespace RatTracker_WPF
 
       var myquery = new APIQuery
       {
-        action = action,
+        action = action.Split(':'),
         data = data
       };
       var json = JsonConvert.SerializeObject(myquery);
@@ -107,13 +119,13 @@ namespace RatTracker_WPF
       Ws.Send(json);
     }
 
-    public void SendAuth(AuthQuery myauth)
+    public void SendQuery(IDictionary<string, object> myquery)
     {
-      var json = JsonConvert.SerializeObject(myauth);
-      Logger.Debug("Sent an API Auth message serialized as: " + json);
+      var json = JsonConvert.SerializeObject(myquery);
+      Logger.Debug("Sent an APIQuery serialized as: " + json);
       Ws.Send(json);
     }
-
+    
     public void SendTpaMessage(TPAMessage message)
     {
       if (Ws == null)
@@ -144,31 +156,29 @@ namespace RatTracker_WPF
       }
       else
       {
-        var auth = new AuthQuery
-        {
-          action = "authorization",
-          bearer = Settings.Default.OAuthToken
-        };
-        SendAuth(auth);
         SubscribeStream("0xDEADBEEF");
-        var login = new APIQuery
-        {
-          action = "rescues:read",
-          data = new Dictionary<string, string> {{"open", "true"}}
-        };
-        SendQuery(login);
-        Logger.Info("Sent RescueGrid Update request.");
+        QueryRescues();
       }
       //TODO: Put stream subscription messages here when Mecha goes live. Do we want to listen to ourselves?
     }
 
+    public void QueryRescues()
+    {
+      IDictionary<string, object> login = new ExpandoObject();
+      login.Add("action", new[] {"rescues", "read"});
+      login.Add(nameof(Models.Api.V2.Rescue.Status).ToApiName(), RescueState.Open.ToApiName());
+      SendQuery(login);
+      Logger.Info("Sent RescueGrid Update request.");
+    }
+
     public void SubscribeStream(string applicationId)
     {
-      var data = new Dictionary<string, string>();
-      data.Add("action", "stream:subscribe");
-      data.Add("applicationId", applicationId);
+      var data = new Dictionary<string, object>();
+      data.Add("action", "stream:subscribe".Split(':'));
+      data.Add("id", applicationId);
       Logger.Debug("Subscribing to stream: " + applicationId);
       var json = JsonConvert.SerializeObject(data);
+      Logger.Debug("Sent a Subscribe serialized as: " + json);
       Ws.Send(json);
     }
 
@@ -399,15 +409,20 @@ namespace RatTracker_WPF
       }
     }
 
-    private static string GetApiWssUrl()
+    private static string GetApiWssUrl(bool includeToken)
     {
-      var apiurl = Settings.Default.APIURL.Replace("https://", "wss://");
+      var apiurl = Settings.Default.APIURL.Replace("https://", "wss://").Replace("http://", "ws://");
       if (apiurl.EndsWith("/"))
       {
         apiurl = apiurl.Substring(0, apiurl.Length - 1);
       }
 
       apiurl = $"{apiurl}:{Settings.Default.APIPort}";
+      if (includeToken)
+      {
+        apiurl += $"?bearer={Settings.Default.OAuthToken}";
+      }
+
       return apiurl;
     }
 

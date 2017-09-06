@@ -25,8 +25,9 @@
         <ComboBox x:Name="monitorBox" HorizontalAlignment="Left" Height="25" Margin="145,182,0,0" VerticalAlignment="Top" Width="366" SelectionChanged="monitorBox_SelectionChanged"/>
         <Label x:Name="label6" Content="Jump Range" HorizontalAlignment="Left" Height="25" Margin="20,212,0,0" VerticalAlignment="Top" Width="106"/>
         <TextBox x:Name="textBox1" HorizontalAlignment="Left" Height="25" Margin="145,212,0,0" TextWrapping="Wrap" Text="{Binding Source={x:Static p:Settings.Default},Path=JumpRange, Mode=TwoWay}" VerticalAlignment="Top" Width="366" TextChanged="textBox1_TextChanged"/>
+    <Button x:Name="ResetOauth" Content="Reset OAuth" HorizontalAlignment="Left" Height="25" Margin="516,151,0,0" VerticalAlignment="Top" Width="49" Click="ResetOauth_OnClick"/>
 
 
 
-    </Grid>
+  </Grid>
 </Window>
