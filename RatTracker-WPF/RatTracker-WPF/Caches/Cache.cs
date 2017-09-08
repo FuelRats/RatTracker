@@ -74,6 +74,28 @@ namespace RatTracker_WPF.Caches
       }
     }
 
+    public IEnumerable<Rescue> GetRescues()
+    {
+      return rescues.Values.ToList();
+    }
+
+    public Rescue GetRescue(Guid id)
+    {
+      var match = rescues.TryGetValue(id, out var rescue);
+      return match ? rescue : null;
+    }
+
+    public Rat GetRat(Guid id)
+    {
+      var match = rats.TryGetValue(id, out var rat);
+      return match ? rat : null;
+    }
+
+    public IEnumerable<Rat> GetRats()
+    {
+      return rats.Values.ToList();
+    }
+
     private void RemoveRescue(Guid rescueId)
     {
       rescues.TryRemove(rescueId, out var unused);

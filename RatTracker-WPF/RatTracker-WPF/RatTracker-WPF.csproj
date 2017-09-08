@@ -200,10 +200,10 @@
     <Compile Include="Json\JsonApi.cs" />
     <Compile Include="Models\Api\AccessToken.cs" />
     <Compile Include="Models\Api\APIQuery.cs" />
-    <Compile Include="Models\Api\Auth.cs" />
+    <Compile Include="Models\Api\V2\OAuth\Auth.cs" />
     <Compile Include="Models\Api\Platform.cs" />
-    <Compile Include="Models\Api\TokenResponse.cs" />
-    <Compile Include="Models\Api\TPAMessage.cs" />
+    <Compile Include="Models\Api\V2\OAuth\TokenResponse.cs" />
+    <Compile Include="Models\Api\V2\TPA\TPAMessage.cs" />
     <Compile Include="Models\Api\Client.cs" />
     <Compile Include="Models\Api\ClientInfo.cs" />
     <Compile Include="Converter\ClientConverter.cs" />
@@ -238,7 +238,7 @@
     <Compile Include="Models\CmdrJournal\WingJoinLog.cs" />
     <Compile Include="Models\Eddb\EddbStation.cs" />
     <Compile Include="Models\Eddb\EddbSystem.cs" />
-    <Compile Include="Models\Edsm\EdsmCoords.cs" />
+    <Compile Include="Models\Edsm\Coordinates.cs" />
     <Compile Include="Models\Edsm\EdsmSystem.cs" />
     <Compile Include="Models\CmdrJournal\DiedLog.cs" />
     <Compile Include="Models\NetLog\Friend.cs" />

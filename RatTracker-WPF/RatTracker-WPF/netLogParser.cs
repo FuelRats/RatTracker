@@ -65,7 +65,7 @@ namespace RatTracker_WPF
       StatusUpdateEvent?.Invoke(this, new StatusUpdateArgs {StatusMessage = message});
     }
 
-    public void TriggerSystemChange(string sysname, EdsmCoords coords)
+    public void TriggerSystemChange(string sysname, Coordinates coords)
     {
       SystemChangeUpdateEvent?.Invoke(this, new SystemChangeArgs {SystemName = sysname, Coords = coords});
     }

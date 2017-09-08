@@ -590,7 +590,7 @@ namespace RatTracker_WPF
           while (r.Read())
           {
             var tmpsys = new EdsmSystem();
-            tmpsys.Coords = new EdsmCoords();
+            tmpsys.Coords = new Coordinates();
             tmpsys.Name = r.GetString(0);
             tmpsys.Coords.X = r.GetDouble(r.GetOrdinal("X"));
             tmpsys.Coords.Y = r.GetDouble(r.GetOrdinal("Y"));

@@ -147,7 +147,7 @@
           <MenuItem x:Name="SendErrorReport" Header="Send error report" Click="ErrorReportClick" />
           <MenuItem x:Name="RefreshEDDB" Header="Refresh EDDB data" Click="RefreshEDDBData_Click" />
         </MenuItem>
-        <MenuItem Header="Settings" Click="MenuItem_Click" />
+        <MenuItem Header="Settings" Click="SettingsMenuItem_Click" />
         <MenuItem x:Name="OverlayMenu" Header="Overlay" Click="OverlayMenu_Click" />
       </Menu>
       <GroupBox x:Name="ConnectionInfoBox" Header="Connection Information" Margin="279,0,9.667,34.667" Grid.Column="1"
@@ -198,7 +198,7 @@
           <DropShadowEffect />
         </GroupBox.Effect>
         <DataGrid x:Name="RescueGrid" Margin="10,5,10,10" ItemsSource="{Binding ItemsSource}" IsReadOnly="True"
-                  AutoGenerateColumns="False" SelectionMode="Single" SelectionChanged="RescueGrid_SelectionChanged"
+                  AutoGenerateColumns="False" SelectionMode="Single" SelectedItem="{Binding SelectedRescue}" 
                   Background="{DynamicResource brushTransparent}" Foreground="{DynamicResource brushEliteOrange}">
           <DataGrid.Resources>
             <Style TargetType="{x:Type DataGridColumnHeader}">

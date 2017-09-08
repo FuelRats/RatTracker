@@ -314,7 +314,7 @@ namespace RatTracker_WPF
       return id < 1 ? new EddbSystem() : Systems.FirstOrDefault(sys => sys.id == id);
     }
 
-    public EddbStation GetClosestStation(EdsmCoords coords)
+    public EddbStation GetClosestStation(Coordinates coords)
     {
       try
       {

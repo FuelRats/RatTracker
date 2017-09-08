@@ -6,6 +6,6 @@ namespace RatTracker_WPF.EventHandlers
   public class SystemChangeArgs : EventArgs
   {
     public string SystemName { get; set; }
-    public EdsmCoords Coords { get; set; }
+    public Coordinates Coords { get; set; }
   }
 }

@@ -17,6 +17,7 @@ using Newtonsoft.Json;
 using RatTracker_WPF.Infrastructure;
 using RatTracker_WPF.Models.Api;
 using RatTracker_WPF.Models.Api.V2;
+using RatTracker_WPF.Models.Api.V2.TPA;
 using RatTracker_WPF.Properties;
 using WebSocket4Net;
 using ErrorEventArgs = SuperSocket.ClientEngine.ErrorEventArgs;
@@ -126,7 +127,7 @@ namespace RatTracker_WPF
       Ws.Send(json);
     }
     
-    public void SendTpaMessage(TPAMessage message)
+    public void SendTpaMessage(TpaMessage message)
     {
       if (Ws == null)
       {
@@ -134,8 +135,8 @@ namespace RatTracker_WPF
         return;
       }
 
-      message.data.Add("platform", "PC");
-      message.applicationId = Settings.Default.AppID;
+      message.Data.Add("platform", "PC");
+      message.ApplicationId = Settings.Default.AppID;
       var json = JsonConvert.SerializeObject(message);
       Logger.Debug("Serialized TPA data: " + json);
       Ws.Send(json);
