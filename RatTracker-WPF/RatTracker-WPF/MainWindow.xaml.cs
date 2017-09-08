@@ -53,8 +53,7 @@ namespace RatTracker_WPF
     private readonly Cache cache = new Cache();
     public ObservableCollection<Rescue> ItemsSource { get; } = new ObservableCollection<Rescue>();
     private Rescue selectedRescue;
-
-
+    
     public Rescue SelectedRescue
     {
       get => selectedRescue;
@@ -64,8 +63,7 @@ namespace RatTracker_WPF
         NotifyPropertyChanged();
       }
     }
-
-
+    
     //TODO Move this... somewhere
     private DateTime lastHullDamageEvent;
 
@@ -104,7 +102,6 @@ namespace RatTracker_WPF
 
 
     private PlayerInfo _myplayer = new PlayerInfo(); // Playerinfo, bound to various UI elements
-    private Datum _myrescue; // TODO: See myClient - must be refactored.
     private ICollection<TravelLog> _myTravelLog; // Log of recently visited systems.
     private Overlay _overlay; // Pointer to UI overlay
     public bool StopNetLog; // Used to terminate netlog reader thread.
@@ -484,34 +481,6 @@ namespace RatTracker_WPF
       AppendStatus("EDDB: " + status);
     }
 
-    #endregion StartUp
-
-    #region ExceptionHandling
-
-    // ReSharper disable once UnusedMember.Local TODO what to do with this?
-    // ReSharper disable once UnusedParameter.Local TODO what to do with this?
-    private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-    {
-      TrackFatalException(e.ExceptionObject as Exception);
-      _tc.Flush();
-    }
-
-    /// <summary>
-    /// Application Insights exception tracking. This SHOULD send off any unhandled fatal exceptions to AI for investigation.
-    /// </summary>
-    /// <param name="ex"></param>
-    // ReSharper disable once UnusedParameter.Global  TODO what to do with this?
-    public void TrackFatalException(Exception ex)
-    {
-      var exceptionTelemetry = new ExceptionTelemetry(new Exception())
-      {
-        HandledAt = ExceptionHandledAt.Unhandled
-      };
-      _tc.TrackException(exceptionTelemetry);
-    }
-
-    #endregion ExceptionHandling
-
     /// <summary>
     /// Parses E:D's AppConfig and looks for the configuration variables we need to make RT work.
     /// Offers to change them if not set correctly.
@@ -650,35 +619,6 @@ namespace RatTracker_WPF
       return true;
     }
 
-    /*
-		 * Appends text to our status display window.
-		 */
-    public void AppendStatus(string text)
-    {
-      if (StatusDisplay.Dispatcher.CheckAccess())
-      {
-        StatusDisplay.Text += "\n" + text;
-        StatusDisplay.ScrollToEnd();
-        StatusDisplay.CaretIndex = StatusDisplay.Text.Length;
-      }
-      else
-      {
-        StatusDisplay.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action<string>(AppendStatus), text);
-      }
-    }
-
-    // ReSharper disable once UnusedParameter.Global TODO ??
-    public void CompleteRescueUpdate(string json)
-    {
-      Logger.Debug("CompleteRescueUpdate was called.");
-    }
-
-    protected virtual void NotifyPropertyChanged([CallerMemberName] string propertyName = null)
-    {
-      var onPropertyChanged = PropertyChanged;
-      onPropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
     private async void OAuth_Authorize(string code)
     {
       if (code.Length <= 0)
@@ -746,7 +686,63 @@ namespace RatTracker_WPF
     {
       Logger.Debug("Starting EDDB, as FireBird has completed loading.");
     }
+
+    #endregion StartUp
+
+    #region ExceptionHandling
+
+    // ReSharper disable once UnusedMember.Local TODO what to do with this?
+    // ReSharper disable once UnusedParameter.Local TODO what to do with this?
+    private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+      TrackFatalException(e.ExceptionObject as Exception);
+      _tc.Flush();
+    }
+
+    /// <summary>
+    /// Application Insights exception tracking. This SHOULD send off any unhandled fatal exceptions to AI for investigation.
+    /// </summary>
+    /// <param name="ex"></param>
+    // ReSharper disable once UnusedParameter.Global  TODO what to do with this?
+    public void TrackFatalException(Exception ex)
+    {
+      var exceptionTelemetry = new ExceptionTelemetry(new Exception())
+      {
+        HandledAt = ExceptionHandledAt.Unhandled
+      };
+      _tc.TrackException(exceptionTelemetry);
+    }
+
+    #endregion ExceptionHandling
+
+    #region Logging
+
+    /// <summary>
+    /// Appends text to our status display window.
+    /// </summary>
+    /// <param name="text"></param>
+    public void AppendStatus(string text)
+    {
+      if (StatusDisplay.Dispatcher.CheckAccess())
+      {
+        StatusDisplay.Text += "\n" + text;
+        StatusDisplay.ScrollToEnd();
+        StatusDisplay.CaretIndex = StatusDisplay.Text.Length;
+      }
+      else
+      {
+        StatusDisplay.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action<string>(AppendStatus), text);
+      }
+    }
+
+    #endregion Logging
     
+    protected virtual void NotifyPropertyChanged([CallerMemberName] string propertyName = null)
+    {
+      var onPropertyChanged = PropertyChanged;
+      onPropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
     private void DoStatusUpdate(object sender, StatusUpdateArgs args)
     {
       Logger.Debug("DSU from Netlogwatcher: " + args.StatusMessage);
