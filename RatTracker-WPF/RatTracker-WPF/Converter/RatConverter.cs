@@ -13,33 +13,34 @@ namespace RatTracker_WPF.Converter
   {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-      var myrats = value as List<string>;
-      if (myrats == null)
-      {
-        return "I am a null rat.";
-      }
+      //var myrats = value as List<string>;
+      //if (myrats == null)
+      //{
+      //  return "I am a null rat.";
+      //}
 
-      var matchedRats = MainWindow.Rats.Where(x => myrats.Contains(x.Key));
-      var missingRats = myrats.Except(matchedRats.Select(x => x.Value.id));
-      foreach (var missingRat in missingRats)
-      {
-        Console.WriteLine("Cannot find rat '" + missingRat + "'");
-      }
+      //var matchedRats = MainWindow.Rats.Where(x => myrats.Contains(x.Key));
+      //var missingRats = myrats.Except(matchedRats.Select(x => x.Value.id));
+      //foreach (var missingRat in missingRats)
+      //{
+      //  Console.WriteLine("Cannot find rat '" + missingRat + "'");
+      //}
 
-      var ratNames = matchedRats.Select(x => x.Value.CmdrName);
+      //var ratNames = matchedRats.Select(x => x.Value.CmdrName);
 
-      var rats = string.Join(", ", ratNames);
-      var index = rats.IndexOf(", ", StringComparison.Ordinal);
+      //var rats = string.Join(", ", ratNames);
+      //var index = rats.IndexOf(", ", StringComparison.Ordinal);
 
-      if (index > 0)
-      {
-        var firstPart = rats.Substring(0, index);
-        var secondPart = rats.Substring(index + 2);
+      //if (index > 0)
+      //{
+      //  var firstPart = rats.Substring(0, index);
+      //  var secondPart = rats.Substring(index + 2);
 
-        rats = firstPart + " and " + secondPart;
-      }
+      //  rats = firstPart + " and " + secondPart;
+      //}
 
-      return rats;
+      //return rats;
+      return value;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

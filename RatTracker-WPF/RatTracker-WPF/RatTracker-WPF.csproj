@@ -175,7 +175,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="APIWorker.cs" />
+    <Compile Include="Api\APIWorker.cs" />
+    <Compile Include="Api\WebsocketResponseHandler.cs" />
     <Compile Include="Caches\Cache.cs" />
     <Compile Include="CmdrJournalParser.cs" />
     <Compile Include="CustomHotKey.cs" />
@@ -205,7 +206,7 @@
     <Compile Include="Models\Api\V2\OAuth\TokenResponse.cs" />
     <Compile Include="Models\Api\V2\TPA\TPAMessage.cs" />
     <Compile Include="Models\Api\Client.cs" />
-    <Compile Include="Models\Api\ClientInfo.cs" />
+    <Compile Include="Models\App\ClientInfo.cs" />
     <Compile Include="Converter\ClientConverter.cs" />
     <Compile Include="Models\Api\Datum.cs" />
     <Compile Include="Models\Api\User.cs" />

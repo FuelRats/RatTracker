@@ -22,7 +22,7 @@ using RatTracker_WPF.Properties;
 using WebSocket4Net;
 using ErrorEventArgs = SuperSocket.ClientEngine.ErrorEventArgs;
 
-namespace RatTracker_WPF
+namespace RatTracker_WPF.Api
 {
   /*
      * APIWorker provides both HTTP and Websocket connection to the API. 
@@ -31,6 +31,7 @@ namespace RatTracker_WPF
   {
     private static readonly ILog Logger = LogManager.GetLogger(Assembly.GetCallingAssembly().GetName().Name);
     public WebSocket Ws;
+    public WebsocketResponseHandler ResponseHandler = new WebsocketResponseHandler();
     private bool _stopping;
 
     private bool _failing;
@@ -457,7 +458,10 @@ namespace RatTracker_WPF
 
     private void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
     {
-      /* We can let this go away fairly soon, since there's not much we can do in the API Worker anyways
+      ResponseHandler.MessageReceived(e.Message);
+
+
+      /* We can let everything below this go away fairly soon, since there's not much we can do in the API Worker anyways
              * at this point. Maybe attach a logger here?
              */
       dynamic data = JsonConvert.DeserializeObject(e.Message);

@@ -1,6 +1,6 @@
-using RatTracker_WPF.Models.App;
+using RatTracker_WPF.Models.Api.V2;
 
-namespace RatTracker_WPF.Models.Api
+namespace RatTracker_WPF.Models.App
 {
   public class ClientInfo
   {
@@ -11,7 +11,7 @@ namespace RatTracker_WPF.Models.Api
     public string SessionId { get; set; }
     public string ClientSystem { get; set; }
 
-    public Datum Rescue { get; set; }
+    public Rescue Rescue { get; set; }
 
     public RatState Self { get; } = new RatState();
 

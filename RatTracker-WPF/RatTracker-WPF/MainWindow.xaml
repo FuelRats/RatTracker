@@ -197,7 +197,7 @@
         <GroupBox.Effect>
           <DropShadowEffect />
         </GroupBox.Effect>
-        <DataGrid x:Name="RescueGrid" Margin="10,5,10,10" ItemsSource="{Binding ItemsSource}" IsReadOnly="True"
+        <DataGrid x:Name="RescueGrid" Margin="10,5,10,10" ItemsSource="{Binding VisibleRescues}" IsReadOnly="True"
                   AutoGenerateColumns="False" SelectionMode="Single" SelectedItem="{Binding SelectedRescue}" 
                   Background="{DynamicResource brushTransparent}" Foreground="{DynamicResource brushEliteOrange}">
           <DataGrid.Resources>
@@ -214,10 +214,6 @@
             <DataGridTextColumn Binding="{Binding Client, Converter={StaticResource ClientConverter}}"
                                 ClipboardContentBinding="{x:Null}" Header="Client" />
             <DataGridTextColumn Binding="{Binding Rats, Converter={StaticResource RatConverter}}" Header="Rats" />
-            <DataGridTextColumn Binding="{Binding Active}" ClipboardContentBinding="{x:Null}" Header="Active"
-                                Visibility="Hidden" />
-            <DataGridTextColumn Binding="{Binding Open}" ClipboardContentBinding="{x:Null}" Header="Open"
-                                Visibility="Hidden" />
             <DataGridTextColumn Binding="{Binding System}" ClipboardContentBinding="{x:Null}" Header="System" />
             <DataGridCheckBoxColumn Binding="{Binding CodeRed}" ClipboardContentBinding="{x:Null}" Header="Code Red"
                                     Visibility="Hidden" />
