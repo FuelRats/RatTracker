@@ -176,40 +176,41 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Api\APIWorker.cs" />
+    <Compile Include="Api\Queries\Query.cs" />
     <Compile Include="Api\WebsocketResponseHandler.cs" />
     <Compile Include="Caches\Cache.cs" />
     <Compile Include="CmdrJournalParser.cs" />
     <Compile Include="CustomHotKey.cs" />
     <Compile Include="ConfigChecker.cs" />
-    <Compile Include="Converter\BooleanGridHeightConverter.cs" />
-    <Compile Include="Converter\BooleanToColourConverter.cs" />
-    <Compile Include="Converter\EmptyStringToVisibilityConverter.cs" />
-    <Compile Include="Converter\RequestStateToColourConverter.cs" />
+    <Compile Include="Infrastructure\Converter\BooleanGridHeightConverter.cs" />
+    <Compile Include="Infrastructure\Converter\BooleanToColourConverter.cs" />
+    <Compile Include="Infrastructure\Converter\EmptyStringToVisibilityConverter.cs" />
+    <Compile Include="Infrastructure\Converter\RequestStateToColourConverter.cs" />
     <Compile Include="EDDBData.cs" />
     <Compile Include="ErrorReporter.xaml.cs">
       <DependentUpon>ErrorReporter.xaml</DependentUpon>
     </Compile>
-    <Compile Include="EventHandlers\ConnInfo.cs" />
-    <Compile Include="EventHandlers\FireBirdLoaded.cs" />
-    <Compile Include="EventHandlers\FriendRequest.cs" />
-    <Compile Include="EventHandlers\InstanceChange.cs" />
-    <Compile Include="EventHandlers\StatusUpdate.cs" />
-    <Compile Include="EventHandlers\SystemChange.cs" />
+    <Compile Include="Infrastructure\EventHandlers\ConnInfo.cs" />
+    <Compile Include="Infrastructure\EventHandlers\FireBirdLoaded.cs" />
+    <Compile Include="Infrastructure\EventHandlers\FriendRequest.cs" />
+    <Compile Include="Infrastructure\EventHandlers\InstanceChange.cs" />
+    <Compile Include="Infrastructure\EventHandlers\StatusUpdate.cs" />
+    <Compile Include="Infrastructure\EventHandlers\SystemChange.cs" />
     <Compile Include="FireBird.cs" />
     <Compile Include="GlobalHotkey.cs" />
     <Compile Include="Infrastructure\ApiExtensions.cs" />
-    <Compile Include="Json\JsonApi.cs" />
-    <Compile Include="Models\Api\AccessToken.cs" />
-    <Compile Include="Models\Api\APIQuery.cs" />
+    <Compile Include="Api\JsonApi.cs" />
+    <Compile Include="Models\Api\V1\AccessToken.cs" />
+    <Compile Include="Models\Api\V1\APIQuery.cs" />
     <Compile Include="Models\Api\V2\OAuth\Auth.cs" />
-    <Compile Include="Models\Api\Platform.cs" />
+    <Compile Include="Models\Api\V1\Platform.cs" />
     <Compile Include="Models\Api\V2\OAuth\TokenResponse.cs" />
     <Compile Include="Models\Api\V2\TPA\TPAMessage.cs" />
-    <Compile Include="Models\Api\Client.cs" />
+    <Compile Include="Models\Api\V1\Client.cs" />
     <Compile Include="Models\App\ClientInfo.cs" />
-    <Compile Include="Converter\ClientConverter.cs" />
-    <Compile Include="Models\Api\Datum.cs" />
-    <Compile Include="Models\Api\User.cs" />
+    <Compile Include="Infrastructure\Converter\ClientConverter.cs" />
+    <Compile Include="Models\Api\V1\Datum.cs" />
+    <Compile Include="Models\Api\V1\User.cs" />
     <Compile Include="Models\Api\V2\Data.cs" />
     <Compile Include="Models\Api\V2\ModelBase.cs" />
     <Compile Include="Models\Api\V2\Platform.cs" />
@@ -243,21 +244,21 @@
     <Compile Include="Models\Edsm\EdsmSystem.cs" />
     <Compile Include="Models\CmdrJournal\DiedLog.cs" />
     <Compile Include="Models\NetLog\Friend.cs" />
-    <Compile Include="Models\Api\Meta.cs" />
-    <Compile Include="Models\Api\DrillStatus.cs" />
-    <Compile Include="Models\Api\Links.cs" />
+    <Compile Include="Models\Api\V1\Meta.cs" />
+    <Compile Include="Models\Api\V1\DrillStatus.cs" />
+    <Compile Include="Models\Api\V1\Links.cs" />
     <Compile Include="Models\App\PropertyChangedBase.cs" />
-    <Compile Include="Models\Api\Rat.cs" />
+    <Compile Include="Models\Api\V1\Rat.cs" />
     <Compile Include="Models\App\RatState.cs" />
     <Compile Include="Models\App\RequestState.cs" />
     <Compile Include="Models\NetLog\TravelLog.cs" />
-    <Compile Include="Models\Api\WsApiData.cs" />
+    <Compile Include="Models\Api\V1\WsApiData.cs" />
     <Compile Include="Monitor.cs" />
     <Compile Include="NetLogFile.cs" />
     <Compile Include="NetLogParser.cs" />
-    <Compile Include="Converter\RatConverter.cs" />
-    <Compile Include="Models\Api\Rescue.cs" />
-    <Compile Include="Models\Api\RootObject.cs" />
+    <Compile Include="Infrastructure\Converter\RatConverter.cs" />
+    <Compile Include="Models\Api\V1\Rescue.cs" />
+    <Compile Include="Models\Api\V1\RootObject.cs" />
     <Compile Include="Overlay.xaml.cs">
       <DependentUpon>Overlay.xaml</DependentUpon>
     </Compile>
@@ -266,6 +267,7 @@
     </Compile>
     <Compile Include="StringBuilderExtensions.cs" />
     <Compile Include="Models\CmdrJournal\SuperCruiseExitLog.cs" />
+    <Compile Include="Api\TPA\Rescues.cs" />
     <Page Include="ErrorReporter.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

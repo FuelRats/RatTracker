@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RatTracker_WPF.EventHandlers
+namespace RatTracker_WPF.Infrastructure.EventHandlers
 {
   public class StatusUpdateArgs : EventArgs
   {

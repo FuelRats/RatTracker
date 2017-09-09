@@ -2,7 +2,7 @@
 using JsonApiSerializer.JsonApi;
 using Newtonsoft.Json;
 
-namespace RatTracker_WPF.Json
+namespace RatTracker_WPF.Api
 {
   public static class JsonApi
   {

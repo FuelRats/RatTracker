@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FirebirdSql.Data.FirebirdClient;
 using log4net;
-using RatTracker_WPF.EventHandlers;
+using RatTracker_WPF.Infrastructure.EventHandlers;
 using RatTracker_WPF.Models.App;
 using RatTracker_WPF.Models.Eddb;
 using RatTracker_WPF.Models.Edsm;

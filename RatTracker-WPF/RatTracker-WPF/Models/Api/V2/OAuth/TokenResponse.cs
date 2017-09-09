@@ -1,11 +1,13 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Newtonsoft.Json;
 
 namespace RatTracker_WPF.Models.Api.V2.OAuth
 {
-  [SuppressMessage("ReSharper", "InconsistentNaming")]
   public class TokenResponse
   {
-    public string access_token { get; set; }
-    public string token_type { get; set; }
+    [JsonProperty(PropertyName = "access_token")]
+    public string AccessToken { get; set; }
+
+    [JsonProperty(PropertyName = "token_type")]
+    public string TokenType { get; set; }
   }
 }

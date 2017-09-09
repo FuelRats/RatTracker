@@ -5,7 +5,7 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using RatTracker_WPF.Models.App;
 
-namespace RatTracker_WPF.Converter
+namespace RatTracker_WPF.Infrastructure.Converter
 {
   public class RequestStateToColourConverter : MarkupExtension, IValueConverter
   {

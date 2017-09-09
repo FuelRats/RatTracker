@@ -1,6 +1,6 @@
 ﻿using RatTracker_WPF.Models.App;
 
-namespace RatTracker_WPF.EventHandlers
+namespace RatTracker_WPF.Infrastructure.EventHandlers
 {
   public class ConnInfoArgs
   {

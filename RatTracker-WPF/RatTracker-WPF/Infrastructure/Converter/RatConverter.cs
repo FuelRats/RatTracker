@@ -1,10 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Windows.Data;
 
-namespace RatTracker_WPF.Converter
+namespace RatTracker_WPF.Infrastructure.Converter
 {
   /// <summary>
   ///   Converts rat ids to rat names using a global rat id to rat cache.

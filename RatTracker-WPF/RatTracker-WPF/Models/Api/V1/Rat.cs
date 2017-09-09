@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RatTracker_WPF.Models.Api
+namespace RatTracker_WPF.Models.Api.V1
 {
   public class Rat
   {

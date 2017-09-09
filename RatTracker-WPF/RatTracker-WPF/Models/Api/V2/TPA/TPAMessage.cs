@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using RatTracker_WPF.Properties;
 
 namespace RatTracker_WPF.Models.Api.V2.TPA
 {
-  [SuppressMessage("ReSharper", "InconsistentNaming")] // JS API names....
   public class TpaMessage
   {
     private static readonly IReadOnlyList<string> broadcastAction = new[] {"stream", "broadcast"};
@@ -22,7 +22,7 @@ namespace RatTracker_WPF.Models.Api.V2.TPA
         throw new ArgumentException("Action must not have a ':'", nameof(action));
       }
 
-      @event = new[] {action};
+      Event = new[] {action};
     }
 
     public TpaMessage(string controller, string action)
@@ -37,15 +37,19 @@ namespace RatTracker_WPF.Models.Api.V2.TPA
         throw new ArgumentNullException(nameof(action));
       }
 
-      @event = new[] {controller, action};
+      Event = new[] {controller, action};
     }
 
-    public IReadOnlyList<string> action => broadcastAction;
+    [JsonProperty(PropertyName = "action")]
+    public IReadOnlyList<string> Action => broadcastAction;
 
-    public IReadOnlyList<string> @event { get; }
+    [JsonProperty(PropertyName = "event")]
+    public IReadOnlyList<string> Event { get; }
 
-    public string id { get; set; }
+    [JsonProperty(PropertyName = "id")]
+    public string Id { get; set; } = Settings.Default.AppID;
 
-    public JObject data { get; set; }
+    [JsonProperty(PropertyName = "data")]
+    public JObject Data { get; set; }
   }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using RatTracker_WPF.Models.Edsm;
 
-namespace RatTracker_WPF.EventHandlers
+namespace RatTracker_WPF.Infrastructure.EventHandlers
 {
   public class SystemChangeArgs : EventArgs
   {

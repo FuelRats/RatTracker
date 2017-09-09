@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using RatTracker_WPF.Api;
-using RatTracker_WPF.Json;
 using RatTracker_WPF.Models.Api.V2;
 
 namespace RatTracker_WPF.Caches

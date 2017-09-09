@@ -11,7 +11,7 @@ using System.Xml;
 using System.Xml.Linq;
 using log4net;
 using Microsoft.ApplicationInsights;
-using RatTracker_WPF.EventHandlers;
+using RatTracker_WPF.Infrastructure.EventHandlers;
 using RatTracker_WPF.Models.App;
 using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Properties;

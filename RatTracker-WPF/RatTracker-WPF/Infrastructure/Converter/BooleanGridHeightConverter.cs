@@ -1,17 +1,17 @@
 using System;
 using System.Globalization;
-using System.Windows;
 using System.Windows.Data;
 using System.Windows.Markup;
 
-namespace RatTracker_WPF.Converter
+namespace RatTracker_WPF.Infrastructure.Converter
 {
-  public class EmptyStringToVisibilityConverter : MarkupExtension, IValueConverter
+  public class BooleanGridHeightConverter : MarkupExtension, IValueConverter
   {
+    public string TrueValue { get; set; } = "1*";
+
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-      var name = value as string;
-      return string.IsNullOrWhiteSpace(name) ? Visibility.Hidden : Visibility.Visible;
+      return TrueValue;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace RatTracker_WPF.Converter
+namespace RatTracker_WPF.Infrastructure.Converter
 {
   public class ClientConverter : IValueConverter
   {
