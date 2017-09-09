@@ -136,8 +136,8 @@ namespace RatTracker_WPF.Api
         return;
       }
 
-      message.Data.Add("platform", "PC");
-      message.ApplicationId = Settings.Default.AppID;
+      message.data.Add("platform", "PC");
+      message.id = Settings.Default.AppID;
       var json = JsonConvert.SerializeObject(message);
       Logger.Debug("Serialized TPA data: " + json);
       Ws.Send(json);

@@ -839,10 +839,9 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_CommitCrimeEvent(object sender, CommitCrimeLog eventData)
     {
-      var msg = new TpaMessage
+      var msg = new TpaMessage("CommitCrime")
       {
-        Action = "CommitCrime",
-        Data = new JObject
+        data = new JObject
         (
           new JProperty("CrimeType", eventData.CrimeType),
           new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
@@ -853,7 +852,7 @@ namespace RatTracker_WPF
 
       if (eventData.Victim != null)
       {
-        msg.Data.Add("Victim", eventData.Victim);
+        msg.data.Add("Victim", eventData.Victim);
       }
 
       apiWorker.SendTpaMessage(msg);
@@ -863,10 +862,9 @@ namespace RatTracker_WPF
     {
       if (MyClient?.Rescue != null)
       {
-        apiWorker.SendTpaMessage(new TpaMessage
+        apiWorker.SendTpaMessage(new TpaMessage("RatDeath")
         {
-          Action = "RatDeath",
-          Data = new JObject
+          data = new JObject
           (
             new JProperty("Killers", eventData.KillersList?.Select(k => k.Name).ToArray()),
             new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
@@ -882,10 +880,9 @@ namespace RatTracker_WPF
     {
       if (MyClient?.Rescue != null)
       {
-        apiWorker.SendTpaMessage(new TpaMessage
+        apiWorker.SendTpaMessage(new TpaMessage("Interdiction","Update")
         {
-          Action = "Interdiction:Update",
-          Data = new JObject
+          data = new JObject
           (
             new JProperty("Interdiction", "Escaped"),
             new JProperty("Interdictor", eventData.Interdictor),
@@ -914,10 +911,9 @@ namespace RatTracker_WPF
 
         lastHullDamageEvent = eventData.Timestamp;
 
-        apiWorker.SendTpaMessage(new TpaMessage
+        apiWorker.SendTpaMessage(new TpaMessage("UnderAttack","Update")
         {
-          Action = "UnderAttack:Update",
-          Data = new JObject
+          data = new JObject
           (
             new JProperty("UnderAttack", "True"),
             new JProperty("RatHealth", eventData.Health),
@@ -934,10 +930,9 @@ namespace RatTracker_WPF
     {
       if (MyClient?.Rescue != null)
       {
-        apiWorker.SendTpaMessage(new TpaMessage
+        apiWorker.SendTpaMessage(new TpaMessage("Interdiction","Update")
         {
-          Action = "Interdiction:Update",
-          Data = new JObject
+          data = new JObject
           (
             new JProperty("Interdiction", "Interdicted"),
             new JProperty("Interdictor", eventData.Interdictor),
@@ -954,10 +949,9 @@ namespace RatTracker_WPF
     {
       if (MyClient?.Rescue != null)
       {
-        var msg = new TpaMessage
+        var msg = new TpaMessage("Interdiction","Update")
         {
-          Action = "Interdiction:Update",
-          Data = new JObject
+          data = new JObject
           (
             new JProperty("Interdiction", "Interdicting"),
             new JProperty("Interdicted", eventData.Interdicted),
@@ -981,10 +975,9 @@ namespace RatTracker_WPF
           return;
         }
 
-        apiWorker.SendTpaMessage(new TpaMessage
+        apiWorker.SendTpaMessage(new TpaMessage("Communication","Update")
         {
-          Action = "Communication:Update",
-          Data = new JObject
+          data = new JObject
           (
             new JProperty("Communication", "True"),
             new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
@@ -1001,10 +994,9 @@ namespace RatTracker_WPF
     {
       if (MyClient?.Rescue != null)
       {
-        apiWorker.SendTpaMessage(new TpaMessage
+        apiWorker.SendTpaMessage(new TpaMessage("Supercruise","Update")
         {
-          Action = "Supercruise:Update",
-          Data = new JObject
+          data = new JObject
           (
             new JProperty("Supercruise", "Entering"),
             new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
@@ -1019,10 +1011,9 @@ namespace RatTracker_WPF
     {
       if (MyClient?.Rescue != null)
       {
-        apiWorker.SendTpaMessage(new TpaMessage
+        apiWorker.SendTpaMessage(new TpaMessage("Supercruise","Update")
         {
-          Action = "Supercruise:Update",
-          Data = new JObject
+          data = new JObject
           (
             new JProperty("Supercruise", "Exiting"),
             new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
@@ -1041,10 +1032,9 @@ namespace RatTracker_WPF
         {
           return;
         }
-        apiWorker.SendTpaMessage(new TpaMessage
+        apiWorker.SendTpaMessage(new TpaMessage("WingRequest","Update")
         {
-          Action = "WingRequest:Update",
-          Data = new JObject
+          data = new JObject
           (
             new JProperty("WingRequest", "True"),
             new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
@@ -1103,10 +1093,9 @@ namespace RatTracker_WPF
         {
           AppendStatus("Arrived in client system. Notifying dispatch.");
           Logger.Info("Sending 3PA sys+ message!");
-          var sysmsg = new TpaMessage
+          var sysmsg = new TpaMessage("SysArrived","update")
           {
-            Action = "SysArrived:update",
-            Data = new JObject
+            data = new JObject
             (
               new JProperty("SysArrived", "true"),
               new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
@@ -1277,10 +1266,9 @@ namespace RatTracker_WPF
       }
       try
       {
-        var dutymessage = new TpaMessage
+        var dutymessage = new TpaMessage("OnDuty","update")
         {
-          Action = "OnDuty:update",
-          Data = new JObject
+          data = new JObject
           (
             new JProperty("OnDuty", MyPlayer.OnDuty.ToString()),
             new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
@@ -1316,10 +1304,9 @@ namespace RatTracker_WPF
         return;
       }
 
-      var systemmessage = new TpaMessage
+      var systemmessage = new TpaMessage("ClientSystem","update")
       {
-        Action = "ClientSystem:update",
-        Data = new JObject
+        data = new JObject
         (
           new JProperty("SystemName", SystemName.Text),
           new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
@@ -1546,14 +1533,15 @@ namespace RatTracker_WPF
     /// TODO review api messages
     private void frButton_Click(object sender, RoutedEventArgs e)
     {
+      if (MyClient?.Rescue == null){return;}
+
       var ratState = GetRatStateForButton(sender, FrButton, FrButtonCopy, FrButtonCopy1);
-      var frmsg = new TpaMessage {Data = new JObject()};
-      if (MyClient?.Rescue != null)
+      var frmsg = new TpaMessage("FriendRequest","update")
       {
-        frmsg.Action = "FriendRequest:update";
-        frmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-        frmsg.Data.Add("RescueID", MyClient.Rescue.Id);
-      }
+        data = new JObject()
+      };
+      frmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
+      frmsg.data.Add("RescueID", MyClient.Rescue.Id);
 
       switch (ratState.FriendRequest)
       {
@@ -1563,18 +1551,18 @@ namespace RatTracker_WPF
         case RequestState.Recieved:
           ratState.FriendRequest = RequestState.Accepted;
           AppendStatus("Sending Friend Request acknowledgement.");
-          frmsg.Data.Add("FriendRequest", "true");
+          frmsg.data.Add("FriendRequest", "true");
           break;
         case RequestState.Accepted:
           AppendStatus("Cancelling FR status.");
           ratState.FriendRequest = RequestState.NotRecieved;
-          frmsg.Data.Add("FriendRequest", "false");
+          frmsg.data.Add("FriendRequest", "false");
           break;
         default:
           throw new ArgumentOutOfRangeException();
       }
 
-      if (frmsg.Action != null && ratState.FriendRequest != RequestState.Recieved)
+      if (frmsg.@event != null && ratState.FriendRequest != RequestState.Recieved)
       {
         apiWorker.SendTpaMessage(frmsg);
       }
@@ -1582,14 +1570,15 @@ namespace RatTracker_WPF
 
     private void wrButton_Click(object sender, RoutedEventArgs e)
     {
+      if (MyClient?.Rescue == null){return; }
+
       var ratState = GetRatStateForButton(sender, WrButton, WrButtonCopy, WrButtonCopy1);
-      var frmsg = new TpaMessage {Data = new JObject()};
-      if (MyClient?.Rescue != null)
+      var frmsg = new TpaMessage("WingRequest", "update")
       {
-        frmsg.Action = "WingRequest:update";
-        frmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-        frmsg.Data.Add("RescueID", MyClient.Rescue.Id);
-      }
+        data = new JObject()
+      };
+      frmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
+      frmsg.data.Add("RescueID", MyClient.Rescue.Id);
 
       switch (ratState.WingRequest)
       {
@@ -1598,18 +1587,18 @@ namespace RatTracker_WPF
           break;
         case RequestState.Recieved:
           AppendStatus("Sending Wing Request acknowledgement.");
-          frmsg.Data.Add("WingRequest", "true");
+          frmsg.data.Add("WingRequest", "true");
           ratState.WingRequest = RequestState.Accepted;
           break;
         case RequestState.Accepted:
           ratState.WingRequest = RequestState.NotRecieved;
           AppendStatus("Cancelled WR status.");
-          frmsg.Data.Add("WingRequest", "false");
+          frmsg.data.Add("WingRequest", "false");
           break;
         default:
           throw new ArgumentOutOfRangeException();
       }
-      if (frmsg.Action != null && ratState.WingRequest != RequestState.Recieved)
+      if (frmsg.@event != null && ratState.WingRequest != RequestState.Recieved)
       {
         apiWorker.SendTpaMessage(frmsg);
       }
@@ -1617,57 +1606,55 @@ namespace RatTracker_WPF
 
     private void sysButton_Click(object sender, RoutedEventArgs e)
     {
-      var ratState = GetRatStateForButton(sender, SysButton, SysButtonCopy, SysButtonCopy1);
-      var frmsg = new TpaMessage {Data = new JObject()};
-      frmsg.Action = "SysArrived:update";
+      //var ratState = GetRatStateForButton(sender, SysButton, SysButtonCopy, SysButtonCopy1);
+      var frmsg = new TpaMessage("SysArrived","update") {data = new JObject()};
       if (MyClient?.Rescue != null)
       {
-        frmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-        frmsg.Data.Add("RescueID", MyClient.Rescue.Id);
+        frmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
+        frmsg.data.Add("RescueID", MyClient.Rescue.Id);
       }
 
-      if (ratState.InSystem == false)
+      //if (ratState.InSystem == false)
       {
         AppendStatus("Sending System acknowledgement.");
-        frmsg.Data.Add("ArrivedSystem", "true");
+        frmsg.data.Add("ArrivedSystem", "true");
       }
-      else
-      {
-        AppendStatus("Cancelling System status.");
-        frmsg.Data.Add("ArrivedSystem", "false");
-      }
+      //else
+      //{
+      //  AppendStatus("Cancelling System status.");
+      //  frmsg.Data.Add("ArrivedSystem", "false");
+      //}
 
-      if (frmsg.Action != null)
+      if (frmsg.@event != null)
       {
         apiWorker.SendTpaMessage(frmsg);
       }
 
-      ratState.InSystem = !ratState.InSystem;
+      //ratState.InSystem = !ratState.InSystem;
     }
 
     private void bcnButton_Click(object sender, RoutedEventArgs e)
     {
       var ratState = GetRatStateForButton(sender, BcnButton, BcnButtonCopy, BcnButtonCopy1);
-      var frmsg = new TpaMessage {Data = new JObject()};
+      var frmsg = new TpaMessage("BeaconSpotted","update") {data = new JObject()};
       if (MyClient?.Rescue != null)
       {
-        frmsg.Action = "BeaconSpotted:update";
-        frmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-        frmsg.Data.Add("RescueID", MyClient.Rescue.Id);
+        frmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
+        frmsg.data.Add("RescueID", MyClient.Rescue.Id);
       }
 
       if (ratState.Beacon == false)
       {
         AppendStatus("Sending Beacon acknowledgement.");
-        frmsg.Data.Add("BeaconSpotted", "true");
+        frmsg.data.Add("BeaconSpotted", "true");
       }
       else
       {
         AppendStatus("Cancelling Beacon status.");
-        frmsg.Data.Add("BeaconSpotted", "false");
+        frmsg.data.Add("BeaconSpotted", "false");
       }
 
-      if (frmsg.Action != null && ratState.FriendRequest != RequestState.Recieved)
+      if (frmsg.@event != null && ratState.FriendRequest != RequestState.Recieved)
       {
         apiWorker.SendTpaMessage(frmsg);
       }
@@ -1678,26 +1665,25 @@ namespace RatTracker_WPF
     private void instButton_Click(object sender, RoutedEventArgs e)
     {
       var ratState = GetRatStateForButton(sender, InstButton, InstButtonCopy, InstButtonCopy1);
-      var frmsg = new TpaMessage {Data = new JObject()};
+      var frmsg = new TpaMessage("InstanceSuccessful:update") {data = new JObject()};
       if (MyClient?.Rescue != null)
       {
-        frmsg.Action = "InstanceSuccessful:update";
-        frmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-        frmsg.Data.Add("RescueID", MyClient.Rescue.Id);
+        frmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
+        frmsg.data.Add("RescueID", MyClient.Rescue.Id);
       }
 
       if (ratState.InInstance == false)
       {
         AppendStatus("Sending Good Instance message.");
-        frmsg.Data.Add("InstanceSuccessful", "true");
+        frmsg.data.Add("InstanceSuccessful", "true");
       }
       else
       {
         AppendStatus("Cancelling Good instance message.");
-        frmsg.Data.Add("InstanceSuccessful", "false");
+        frmsg.data.Add("InstanceSuccessful", "false");
       }
 
-      if (frmsg.Action != null && ratState.FriendRequest != RequestState.Recieved)
+      if (frmsg.@event != null && ratState.FriendRequest != RequestState.Recieved)
       {
         apiWorker.SendTpaMessage(frmsg);
       }
@@ -1736,23 +1722,22 @@ namespace RatTracker_WPF
         return;
       }
 
-      var fuelmsg = new TpaMessage {Data = new JObject()};
-      fuelmsg.Action = "fueled:update";
-      fuelmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-      fuelmsg.Data.Add("RescueID", MyClient.Rescue.Id);
+      var fuelmsg = new TpaMessage("fueled:update") {data = new JObject()};
+      fuelmsg.data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
+      fuelmsg.data.Add("RescueID", MyClient.Rescue.Id);
 
       if (Equals(FueledButton.Background, Brushes.Red))
       {
         AppendStatus("Reporting fueled status, requesting paperwork link...");
         FueledButton.Background = Brushes.Green;
-        fuelmsg.Data.Add("Fueled", "true");
+        fuelmsg.data.Add("Fueled", "true");
         /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
       }
       else
       {
         AppendStatus("Fueled status now negative.");
         FueledButton.Background = Brushes.Red;
-        fuelmsg.Data.Add("Fueled", "false");
+        fuelmsg.data.Add("Fueled", "false");
       }
 
       apiWorker.SendTpaMessage(fuelmsg);
@@ -1865,13 +1850,12 @@ namespace RatTracker_WPF
       //ClientDistance distance = new ClientDistance {Distance = 500};
       AppendStatus("Sending jumps to IRC...");
       Logger.Debug("Constructing TPA message...");
-      var jumpmessage = new TpaMessage();
+      var jumpmessage = new TpaMessage("CallJumps","update");
       Logger.Debug("Setting action.");
-      jumpmessage.Action = "CallJumps:update";
-      jumpmessage.ApplicationId = "0xDEADBEEF";
+      jumpmessage.id = "0xDEADBEEF";
       Logger.Debug("Set appID");
       Logger.Debug("Constructing TPA for " + assignedRescue.Id + " with " + _myplayer.RatId.First());
-      jumpmessage.Data = new JObject(
+      jumpmessage.data = new JObject(
         new JProperty("CallJumps",
           Math.Ceiling(distance.Distance / _myplayer.JumpRange).ToString(CultureInfo.InvariantCulture)),
         new JProperty("RescueID", assignedRescue.Id),
