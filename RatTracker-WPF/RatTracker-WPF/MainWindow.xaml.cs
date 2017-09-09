@@ -65,7 +65,92 @@ namespace RatTracker_WPF
     }
 
     public ObservableCollection<Rescue> VisibleRescues { get; } = new ObservableCollection<Rescue>();
-    
+
+    private async void OnRescueClosed(object sender, Rescue rescue)
+    {
+      AppendStatus("Rescue closed: " + rescue.Client);
+      Logger.Debug("Rescue closed: " + rescue.Client);
+      // TODO MA OWN CASE INTEGRATION
+      //if (rescue.Id == MyClient.ClientId)
+      //{
+      //  Logger.Debug("Our active rescue was closed.");
+      //}
+      Logger.Debug("Updating rescue grid.");
+      await Dispatcher.InvokeAsync(() => VisibleRescues.Remove(rescue), DispatcherPriority.Normal);
+    }
+
+    private async void OnRescueUpdated(object sender, Rescue rescue)
+    {
+      // TODO MA TRACK ASSIGNED CASE
+      //if (rescue.Id == MyClient.ClientId)
+      //{
+      //  Logger.Debug("Our active rescue was updated!");
+      //  if (assignedRescue.Rats != null)
+      //  {
+      //    Logger.Debug("Non-null myrescue rats. Parsing");
+      //    var trackedrats = 0;
+      //    foreach (var ratid in assignedRescue.Rats)
+      //    {
+      //      Logger.Debug("Processing id " + ratid);
+      //      if (MyPlayer.RatId.Contains(ratid))
+      //      {
+      //        Logger.Debug("Found own rat in selected rescue, we're assigned");
+      //      }
+      //      else
+      //      {
+      //        if (trackedrats > 1)
+      //        {
+      //          Logger.Debug("More than two rats in addition to ourselves, not added.");
+      //        }
+      //        else if (trackedrats == 0)
+      //        {
+      //          Logger.Debug("Rat2 set.");
+      //          MyClient.Rat2.RatName = await GetRatName(ratid);
+      //          trackedrats++;
+      //        }
+      //        else
+      //        {
+      //          Logger.Debug("Rat3 set.");
+      //          MyClient.Rat3.RatName = await GetRatName(ratid);
+      //        }
+      //      }
+      //    }
+      //  }
+      //}
+
+      await Dispatcher.InvokeAsync(() =>
+      {
+        var updatedRescue = VisibleRescues.SingleOrDefault(x => x.Id == rescue.Id);
+        //VisibleRescues[VisibleRescues.IndexOf(updatedRescue)] = rescue;
+
+        VisibleRescues.Remove(updatedRescue);
+        VisibleRescues.Add(rescue);
+
+      }, DispatcherPriority.Normal);
+      Logger.Debug("Rescue updated: " + rescue.Client);
+    }
+
+    private async void OnRescueCreated(object sender, Rescue rescue)
+    {
+      AppendStatus("New rescue: " + rescue.Client);
+      var nr = new OverlayMessage
+      {
+        Line1Header = "New rescue:",
+        Line1Content = rescue.Client,
+        Line2Header = "System:",
+        Line2Content = rescue.System,
+        Line3Header = "Platform:",
+        Line3Content = rescue.Platform.ToString().ToUpper(),
+        Line4Header = "Press Ctrl-Alt-C to copy system name to clipboard"
+      };
+      if (_overlay != null)
+      {
+        await Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() => _overlay.Queue_Message(nr, 30)));
+      }
+
+      await Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)(() => VisibleRescues.Add(rescue)));
+    }
+
     #region GlobalVars
 
     private const string Unknown = "unknown";
@@ -138,9 +223,7 @@ namespace RatTracker_WPF
     #endregion
 
     #region PropertyNotifiers
-
-    public static ConcurrentDictionary<string, Rat> Rats { get; } = new ConcurrentDictionary<string, Rat>();
-
+    
     public ConnectionInfo ConnInfo
     {
       get => Conninfo;
@@ -247,16 +330,19 @@ namespace RatTracker_WPF
     
     private void ReloadRescueGrid()
     {
-      VisibleRescues.Clear();
       var rescues = from rescue in cache.GetRescues()
                     where (!ShowOnlyPCCases || rescue.Platform == Platform.Pc)
                           && (!ShowOnlyActiveCases || rescue.Status == RescueState.Open)
                     select rescue;
 
-      foreach (var rescue in rescues)
+      Dispatcher.InvokeAsync(() =>
       {
-        VisibleRescues.Add(rescue);
-      }
+        VisibleRescues.Clear();
+        foreach (var rescue in rescues)
+        {
+          VisibleRescues.Add(rescue);
+        }
+      });
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
@@ -334,87 +420,6 @@ namespace RatTracker_WPF
       {
         Logger.Debug($"Exception in token parse: {ex.Message}");
       }
-    }
-
-    private async void OnRescueClosed(object sender, Rescue rescue)
-    {
-      AppendStatus("Rescue closed: " + rescue.Client);
-      Logger.Debug("Rescue closed: " + rescue.Client);
-      // TODO MA OWN CASE INTEGRATION
-      //if (rescue.Id == MyClient.ClientId)
-      //{
-      //  Logger.Debug("Our active rescue was closed.");
-      //}
-      Logger.Debug("Updating rescue grid.");
-      await Dispatcher.InvokeAsync(() => VisibleRescues.Remove(rescue), DispatcherPriority.Normal);
-    }
-
-    private async void OnRescueUpdated(object sender, Rescue rescue)
-    {
-      // TODO MA TRACK ASSIGNED CASE
-      //if (rescue.Id == MyClient.ClientId)
-      //{
-      //  Logger.Debug("Our active rescue was updated!");
-      //  if (assignedRescue.Rats != null)
-      //  {
-      //    Logger.Debug("Non-null myrescue rats. Parsing");
-      //    var trackedrats = 0;
-      //    foreach (var ratid in assignedRescue.Rats)
-      //    {
-      //      Logger.Debug("Processing id " + ratid);
-      //      if (MyPlayer.RatId.Contains(ratid))
-      //      {
-      //        Logger.Debug("Found own rat in selected rescue, we're assigned");
-      //      }
-      //      else
-      //      {
-      //        if (trackedrats > 1)
-      //        {
-      //          Logger.Debug("More than two rats in addition to ourselves, not added.");
-      //        }
-      //        else if (trackedrats == 0)
-      //        {
-      //          Logger.Debug("Rat2 set.");
-      //          MyClient.Rat2.RatName = await GetRatName(ratid);
-      //          trackedrats++;
-      //        }
-      //        else
-      //        {
-      //          Logger.Debug("Rat3 set.");
-      //          MyClient.Rat3.RatName = await GetRatName(ratid);
-      //        }
-      //      }
-      //    }
-      //  }
-      //}
-
-      await Dispatcher.InvokeAsync(() =>
-      {
-        var updatedRescue = VisibleRescues.SingleOrDefault(x=>x.Id == rescue.Id);
-        VisibleRescues[VisibleRescues.IndexOf(updatedRescue)] = rescue;
-      }, DispatcherPriority.Normal);
-      Logger.Debug("Rescue updated: " + rescue.Client);
-    }
-
-    private async void OnRescueCreated(object sender, Rescue rescue)
-    {
-      AppendStatus("New rescue: " + rescue.Client);
-      var nr = new OverlayMessage
-      {
-        Line1Header = "New rescue:",
-        Line1Content = rescue.Client,
-        Line2Header = "System:",
-        Line2Content = rescue.System,
-        Line3Header = "Platform:",
-        Line3Content = rescue.Platform.ToString().ToUpper(),
-        Line4Header = "Press Ctrl-Alt-C to copy system name to clipboard"
-      };
-      if (_overlay != null)
-      {
-        await Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action) (() => _overlay.Queue_Message(nr, 30)));
-      }
-
-      await Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action) (() => VisibleRescues.Add(rescue)));
     }
 
     public void DoInitialize()
@@ -510,6 +515,7 @@ namespace RatTracker_WPF
         if (apiWorker == null)
         {
           apiWorker = new ApiWorker();
+          cache.Init(apiWorker.ResponseHandler);
         }
 
         if (includeToken && apiWorker.Ws != null)

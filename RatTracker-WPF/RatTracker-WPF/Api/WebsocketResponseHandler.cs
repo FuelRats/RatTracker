@@ -31,9 +31,10 @@ namespace RatTracker_WPF.Api
         //logger.Debug("Raw JSON from WS: " + e.Message);
         dynamic data = JsonConvert.DeserializeObject(message);
         var meta = data.meta;
-        if (data.code == 400)
+        if (data.code >= 400)
         {
           Logger.Fatal(data);
+          return;
         }
 
         if (meta?.Action != null)

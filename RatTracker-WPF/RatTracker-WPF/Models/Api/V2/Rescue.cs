@@ -12,7 +12,7 @@ namespace RatTracker_WPF.Models.Api.V2
     // missing notes (string)
     public Platform Platform { get; set; }
 
-    public IList<string> Quotes { get; set; }
+    public IList<Quote> Quotes { get; set; }
     public RescueState Status { get; set; }
     public string System { get; set; }
 

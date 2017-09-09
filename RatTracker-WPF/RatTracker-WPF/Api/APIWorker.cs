@@ -324,33 +324,6 @@ namespace RatTracker_WPF.Api
     private void WebsocketClientMessageReceieved(object sender, MessageReceivedEventArgs e)
     {
       ResponseHandler.MessageReceived(e.Message);
-
-      /* We can let everything below this go away fairly soon, since there's not much we can do in the API Worker anyways
-             * at this point. Maybe attach a logger here?
-             */
-      dynamic data = JsonConvert.DeserializeObject(e.Message);
-      //TODO: Implement error handling.
-      if (data.errors != null)
-      {
-        logger.Fatal("The API returned an error when deserializing in APIWorker! " + data);
-        return;
-      }
-
-      //TODO: Implement actual pass to our 3PA logic.
-      if (data.application != null)
-      {
-        logger.Debug("Got an application message, pass to own parser.");
-        return;
-      }
-
-      switch ((string) data.action)
-      {
-        case "welcome":
-          logger.Info("API MOTD: " + data.data);
-          break;
-      }
-
-      //appendStatus("Direct parse. Type:" + data.type + " Data:" + data.data);
     }
   }
 }

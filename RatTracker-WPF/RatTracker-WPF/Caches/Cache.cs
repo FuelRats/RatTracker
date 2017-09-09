@@ -25,16 +25,19 @@ namespace RatTracker_WPF.Caches
 
     private void RescuesUpdated(string message)
     {
-      var rescue = JsonApi.Deserialize<Rescue>(message);
-      if (rescue.Status== RescueState.Closed)
+      var newRescues = JsonApi.Deserialize<Rescue[]>(message);
+      foreach (var rescue in newRescues)
       {
-        RemoveRescue(rescue);
-        RescueClosed?.Invoke(this, rescue);
-        return;
+        if (rescue.Status == RescueState.Closed)
+        {
+          RemoveRescue(rescue);
+          RescueClosed?.Invoke(this, rescue);
+          return;
+        }
+
+        AddRescue(rescue);
+        RescueUpdated?.Invoke(this, rescue);
       }
-      
-      AddRescue(rescue);
-      RescueUpdated?.Invoke(this, rescue);
     }
     
     public IEnumerable<Rescue> GetRescues()
@@ -61,9 +64,12 @@ namespace RatTracker_WPF.Caches
 
     private void RescuesCreated(string message)
     {
-      var rescue = JsonApi.Deserialize<Rescue>(message);
-      AddRescue(rescue);
-      RescueCreated?.Invoke(this, rescue);
+      var newRescues = JsonApi.Deserialize<Rescue[]>(message);
+      foreach (var rescue in newRescues)
+      {
+        AddRescue(rescue);
+        RescueCreated?.Invoke(this, rescue);
+      }
     }
     
     private void RescuesRead(string message)
