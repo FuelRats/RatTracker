@@ -209,6 +209,7 @@
     <Compile Include="Models\Api\V2\Quote.cs" />
     <Compile Include="Models\Api\V2\TPA\TPAMessage.cs" />
     <Compile Include="Models\Api\V1\Client.cs" />
+    <Compile Include="Models\Api\V2\User.cs" />
     <Compile Include="Models\App\ClientInfo.cs" />
     <Compile Include="Infrastructure\Converter\ClientConverter.cs" />
     <Compile Include="Models\Api\V1\Datum.cs" />
