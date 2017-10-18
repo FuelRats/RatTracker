@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:converter="clr-namespace:RatTracker_WPF.Converter"
+        xmlns:converter="clr-namespace:RatTracker_WPF.Infrastructure.Converter"
         mc:Ignorable="d"
         Title="Overlay" Height="207.026" Width="325.238" AllowsTransparency="True" WindowStyle="None"
         ResizeMode="NoResize" Background="{DynamicResource brushTransparent}"

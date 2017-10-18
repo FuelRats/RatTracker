@@ -87,5 +87,11 @@ namespace RatTracker_WPF
 		private void textBox1_TextChanged(object sender, TextChangedEventArgs e)
 		{
 		}
+
+      private void ResetOauth_OnClick(object sender, RoutedEventArgs e)
+      {
+        Properties.Settings.Default.OAuthToken = null;
+        Properties.Settings.Default.OAuthCode = null;
+      }
     }
 }

@@ -11,7 +11,7 @@ using System.Xml;
 using System.Xml.Linq;
 using log4net;
 using Microsoft.ApplicationInsights;
-using RatTracker_WPF.EventHandlers;
+using RatTracker_WPF.Infrastructure.EventHandlers;
 using RatTracker_WPF.Models.App;
 using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Properties;
@@ -65,7 +65,7 @@ namespace RatTracker_WPF
       StatusUpdateEvent?.Invoke(this, new StatusUpdateArgs {StatusMessage = message});
     }
 
-    public void TriggerSystemChange(string sysname, EdsmCoords coords)
+    public void TriggerSystemChange(string sysname, Coordinates coords)
     {
       SystemChangeUpdateEvent?.Invoke(this, new SystemChangeArgs {SystemName = sysname, Coords = coords});
     }

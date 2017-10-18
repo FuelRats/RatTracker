@@ -9,7 +9,7 @@
       <Value Profile="(Default)">C:\Program Files (x86)\Frontier\Products\elite-dangerous-64\Logs</Value>
     </Setting>
     <Setting Name="APIUsername" Type="System.String" Scope="User">
-      <Value Profile="(Default)">kenneaal@gmail.com</Value>
+      <Value Profile="(Default)">mikeon@t-online.de</Value>
     </Setting>
     <Setting Name="APIPassword" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
@@ -18,7 +18,7 @@
       <Value Profile="(Default)">False</Value>
     </Setting>
     <Setting Name="APIURL" Type="System.String" Scope="User">
-      <Value Profile="(Default)">https://api.fuelrats.com/</Value>
+      <Value Profile="(Default)">https://dev.api.fuelrats.com/</Value>
     </Setting>
     <Setting Name="EnableTTS" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
@@ -49,6 +49,9 @@
     </Setting>
     <Setting Name="CmdrLogPath" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="WEBSITEURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">https://beta.fuelrats.com/</Value>
     </Setting>
   </Settings>
 </SettingsFile>

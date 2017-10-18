@@ -3,6 +3,6 @@
   public class EdsmSystem
   {
     public string Name { get; set; }
-    public EdsmCoords Coords { get; set; }
+    public Coordinates Coords { get; set; }
   }
 }

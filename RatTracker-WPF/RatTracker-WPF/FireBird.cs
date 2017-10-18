@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FirebirdSql.Data.FirebirdClient;
 using log4net;
-using RatTracker_WPF.EventHandlers;
+using RatTracker_WPF.Infrastructure.EventHandlers;
 using RatTracker_WPF.Models.App;
 using RatTracker_WPF.Models.Eddb;
 using RatTracker_WPF.Models.Edsm;
@@ -590,7 +590,7 @@ namespace RatTracker_WPF
           while (r.Read())
           {
             var tmpsys = new EdsmSystem();
-            tmpsys.Coords = new EdsmCoords();
+            tmpsys.Coords = new Coordinates();
             tmpsys.Name = r.GetString(0);
             tmpsys.Coords.X = r.GetDouble(r.GetOrdinal("X"));
             tmpsys.Coords.Y = r.GetDouble(r.GetOrdinal("Y"));
