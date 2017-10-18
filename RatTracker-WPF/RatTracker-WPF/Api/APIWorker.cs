@@ -284,7 +284,7 @@ namespace RatTracker_WPF.Api
         apiurl = apiurl.Substring(0, apiurl.Length - 1);
       }
 
-      apiurl = $"{apiurl}:{Settings.Default.APIPort}";
+      apiurl = $"{apiurl}:{Settings.Default.APIPort}/";
       if (includeToken)
       {
         apiurl += $"?bearer={Settings.Default.OAuthToken}";
