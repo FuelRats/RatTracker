@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using log4net;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace RatTracker_WPF.Api
 {
@@ -30,16 +32,16 @@ namespace RatTracker_WPF.Api
       {
         //logger.Debug("Raw JSON from WS: " + e.Message);
         dynamic data = JsonConvert.DeserializeObject(message);
-        var meta = data.meta;
+        var meta = data.meta as JObject;
         if (data.code >= 400)
         {
-          Logger.Fatal(data);
+          Logger.Fatal($"Error on websocket: {data.code} - {data.title} - {data.status} - {data.detail}");
           return;
         }
 
-        if (meta?.Action != null)
+        if (meta != null && meta.TryGetValue("action", out var metaAction))
         {
-          string action = ParseAction(meta.Action);
+          var action = metaAction.Value<string>();
           Logger.Debug($"Received ws message with action '{action}'");
           if (allCallbacks.TryGetValue(action, out ConcurrentBag<Callback> callbackBag))
           {
@@ -66,21 +68,6 @@ namespace RatTracker_WPF.Api
       {
         HandleException(ex, "Exception in WSClient_MessageReceived: " + ex.Message);
       }
-    }
-
-    private static string ParseAction(dynamic action)
-    {
-      string value;
-      if (action is string[])
-      {
-        value = string.Join(":", action);
-      }
-      else
-      {
-        value = action.ToString();
-      }
-
-      return value;
     }
 
     private static void HandleException(Exception ex, string logMessage)

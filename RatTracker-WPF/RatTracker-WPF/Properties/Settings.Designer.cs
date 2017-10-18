@@ -12,7 +12,7 @@ namespace RatTracker_WPF.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "15.3.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "15.1.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -85,7 +85,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://192.168.1.23/")]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://dev.api.fuelrats.com/")]
         public string APIURL {
             get {
                 return ((string)(this["APIURL"]));
@@ -109,7 +109,7 @@ namespace RatTracker_WPF.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("8080")]
+        [global::System.Configuration.DefaultSettingValueAttribute("443")]
         public int APIPort {
             get {
                 return ((int)(this["APIPort"]));
@@ -164,6 +164,24 @@ namespace RatTracker_WPF.Properties {
             }
         }
         
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("ed0ed4a3a03184d8cc0e47203ee43f3da350b79710a0174a")]
+        public string AppSecret {
+            get {
+                return ((string)(this["AppSecret"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("68dee8f2-d0e9-4377-a374-b98cd2d21b94")]
+        public string ClientID {
+            get {
+                return ((string)(this["ClientID"]));
+            }
+        }
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
@@ -188,21 +206,15 @@ namespace RatTracker_WPF.Properties {
             }
         }
         
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ed0ed4a3a03184d8cc0e47203ee43f3da350b79710a0174a")]
-        public string AppSecret {
+        [global::System.Configuration.DefaultSettingValueAttribute("https://beta.fuelrats.com/")]
+        public string WEBSITEURL {
             get {
-                return ((string)(this["AppSecret"]));
+                return ((string)(this["WEBSITEURL"]));
             }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1dcb74a7-d547-4c47-9f29-b3a0af650592")]
-        public string ClientID {
-            get {
-                return ((string)(this["ClientID"]));
+            set {
+                this["WEBSITEURL"] = value;
             }
         }
     }

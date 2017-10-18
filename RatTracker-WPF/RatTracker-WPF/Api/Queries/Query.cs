@@ -11,7 +11,7 @@ namespace RatTracker_WPF.Api.Queries
     private Query()
     {
     }
-
+    
     public static Query Request(string controller, string action)
     {
       var query = new Query();
@@ -26,6 +26,7 @@ namespace RatTracker_WPF.Api.Queries
       }
 
       query.AddData("action", new[] {controller, action});
+      query.AddData("meta", Data("action", $"{controller}:{action}"));
       return query;
     }
 

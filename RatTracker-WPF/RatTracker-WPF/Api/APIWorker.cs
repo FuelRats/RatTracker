@@ -166,7 +166,7 @@ namespace RatTracker_WPF.Api
           else
           {
             logger.Debug("RatTracker URI is properly configured, launching OAuth authentication process.");
-            var authcontent = new UriBuilder(Path.Combine(Settings.Default.APIURL + "oauth2/authorize?client_id=" +
+            var authcontent = new UriBuilder(Path.Combine(Settings.Default.WEBSITEURL + "authorize?client_id=" +
                                                           Settings.Default.ClientID +
                                                           "&scope=*&redirect_uri=rattracker://auth&state=preinit&response_type=code"))
             {

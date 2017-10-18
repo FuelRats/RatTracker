@@ -50,7 +50,7 @@
           <Setter Property="Background" Value="Red" />
           <Setter Property="Foreground" Value="White" />
         </DataTrigger>
-        <DataTrigger Binding="{Binding Active}" Value="False">
+        <DataTrigger Binding="{Binding Status}" Value="Inactive">
           <Setter Property="Foreground" Value="Gray" />
         </DataTrigger>
         <DataTrigger Binding="{Binding CodeRed}" Value="False">
