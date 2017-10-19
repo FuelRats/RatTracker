@@ -92,6 +92,10 @@ namespace RatTracker_WPF.ViewModels
       }
     }
 
+    public Rescue Rescue => assignedRescue;
+
+    public RatState Self => self;
+
     public void SetClientName()
     {
     }
