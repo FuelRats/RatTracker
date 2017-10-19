@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using RatTracker_WPF.Api;
 using RatTracker_WPF.Models.Api.V2;
+using RatTracker_WPF.Models.App;
 
 namespace RatTracker_WPF.Caches
 {
@@ -11,6 +12,7 @@ namespace RatTracker_WPF.Caches
   {
     private readonly ConcurrentDictionary<Guid, Rescue> rescues = new ConcurrentDictionary<Guid, Rescue>();
     private readonly ConcurrentDictionary<Guid, Rat> rats = new ConcurrentDictionary<Guid, Rat>();
+    private PlayerInfo playerInfo;
     public event EventHandler RescuesReloaded;
     public event EventHandler<Rescue> RescueCreated; 
     public event EventHandler<Rescue> RescueUpdated; 
@@ -152,5 +154,7 @@ namespace RatTracker_WPF.Caches
     {
       rats.TryRemove(ratId, out var unused);
     }
+
+    public PlayerInfo PlayerInfo => playerInfo;
   }
 }

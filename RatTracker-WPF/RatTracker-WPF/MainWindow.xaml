@@ -4,6 +4,7 @@
   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   xmlns:converter="clr-namespace:RatTracker_WPF.Infrastructure.Converter"
+  xmlns:views="clr-namespace:RatTracker_WPF.Views"
   x:Class="RatTracker_WPF.MainWindow"
   mc:Ignorable="d"
   Title="Fuel Rats RatTracker" Height="633.686" Width="931.54" FontFamily="Rockwell"
@@ -132,6 +133,12 @@
             <Label x:Name="label_DestinationSystem" Content="Destination System" HorizontalAlignment="Left" Height="23"
                    Margin="309,253,0,0" VerticalAlignment="Top" Width="129"
                    Foreground="{DynamicResource brushEliteOrange}" />
+
+            <ContentControl Width="280" HorizontalAlignment="Left">
+              <ContentControl.Content>
+                <views:AssignedRescueView DataContext="{Binding AssignedRescueViewModel}" />
+              </ContentControl.Content>
+            </ContentControl>
           </Grid>
         </Grid>
       </GroupBox>
@@ -278,88 +285,6 @@
                      Value="{Binding Eddbworker.SystemCounter}" Background="{DynamicResource brushTransparent}"
                      BorderBrush="{DynamicResource brushEliteOrange}" />
       </StatusBar>
-    </Grid>
-    <Grid x:Name="Rat2Grid" HorizontalAlignment="Left" Margin="34,390,0,152" Width="187"
-          Visibility="{Binding AssignedRescue.Rat2.Rat, Converter={converter:EmptyStringToVisibilityConverter}}">
-      <Button x:Name="FrButtonCopy" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0"
-              VerticalAlignment="Top" Width="30"
-              Background="{Binding AssignedRescue.Rat2.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}"
-              Click="frButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="WrButtonCopy" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Rat2.WingRequest, Converter={StaticResource RequestStateToColourConverter}}"
-              Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"
-              Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="SysButtonCopy" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Rat2.InSystem, Converter={StaticResource BooleanToColourConverter}}"
-              Click="sysButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="BcnButtonCopy" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Rat2.Beacon, Converter={StaticResource BooleanToColourConverter}}"
-              Click="bcnButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="InstButtonCopy" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Rat2.InInstance, Converter={StaticResource BooleanToColourConverter}}"
-              Click="instButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Label x:Name="Label4Copy" Content="Rat2" Height="26" Margin="0,0,55,0" RenderTransformOrigin="1.221,1.029"
-             VerticalAlignment="Top" HorizontalAlignment="Right" Width="122"
-             Foreground="{DynamicResource brushEliteOrange}" />
-    </Grid>
-    <Grid x:Name="Rat3Grid" HorizontalAlignment="Left" Height="61" Margin="34,0,0,86" VerticalAlignment="Bottom"
-          Width="187"
-          Visibility="{Binding AssignedRescue.Rat3.Rat, Converter={converter:EmptyStringToVisibilityConverter}}">
-      <Button x:Name="FrButtonCopy1" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0"
-              VerticalAlignment="Top" Width="30"
-              Background="{Binding AssignedRescue.Rat3.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}"
-              Click="frButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="WrButtonCopy1" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Rat3.WingRequest, Converter={StaticResource RequestStateToColourConverter}}"
-              Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"
-              Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="SysButtonCopy1" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Rat3.InSystem, Converter={StaticResource BooleanToColourConverter}}"
-              Click="sysButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="BcnButtonCopy1" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Rat3.Beacon, Converter={StaticResource BooleanToColourConverter}}"
-              Click="bcnButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="InstButtonCopy1" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Rat3.InInstance, Converter={StaticResource BooleanToColourConverter}}"
-              Click="instButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Label x:Name="Label4Copy1" Content="Rat3" Height="26" Margin="0,0,55,0" RenderTransformOrigin="1.221,1.029"
-             VerticalAlignment="Top" HorizontalAlignment="Right" Width="122"
-             Foreground="{DynamicResource brushEliteOrange}" />
-    </Grid>
-    <Grid x:Name="SelfRatGrid" HorizontalAlignment="Left" Height="61" Margin="34,324,0,0" VerticalAlignment="Top"
-          Width="187">
-      <Button x:Name="FrButton" Content="FR" HorizontalAlignment="Right" Height="19" Margin="0,31,151,0"
-              VerticalAlignment="Top" Width="30"
-              Background="{Binding AssignedRescue.Self.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}"
-              Click="frButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="WrButton" Content="WR" HorizontalAlignment="Right" Height="19" Margin="0,31,119,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Self.WingRequest, Converter={StaticResource RequestStateToColourConverter}}"
-              Click="wrButton_Click" RenderTransformOrigin="0.086,0.579"
-              Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="SysButton" Content="SYS" HorizontalAlignment="Right" Height="19" Margin="0,31,87,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Self.InSystem, Converter={StaticResource BooleanToColourConverter}}"
-              Click="sysButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="BcnButton" Content="BCN" HorizontalAlignment="Right" Height="19" Margin="0,31,55,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Self.Beacon, Converter={StaticResource BooleanToColourConverter}}"
-              Click="bcnButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Button x:Name="InstButton" Content="INST" HorizontalAlignment="Right" Height="19" Margin="0,31,23,0"
-              VerticalAlignment="Top" Width="32"
-              Background="{Binding AssignedRescue.Self.InInstance, Converter={StaticResource BooleanToColourConverter}}"
-              Click="instButton_Click" Foreground="{DynamicResource brushEliteOrange}" />
-      <Label x:Name="SelfNameLabel" Content="{Binding MyPlayer.RatName}" Height="26" Margin="0,0,55,0"
-             RenderTransformOrigin="1.221,1.029" VerticalAlignment="Top" HorizontalAlignment="Right" Width="122"
-             Foreground="{DynamicResource brushEliteOrange}" />
     </Grid>
   </Grid>
 </Window>

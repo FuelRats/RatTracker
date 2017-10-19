@@ -38,6 +38,7 @@ using RatTracker_WPF.Models.CmdrJournal;
 using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
+using RatTracker_WPF.ViewModels;
 
 namespace RatTracker_WPF
 {
@@ -340,7 +341,17 @@ namespace RatTracker_WPF
         NotifyPropertyChanged();
       }
     }
-    
+
+    public AssignedRescueViewModel AssignedRescueViewModel
+    {
+      get => assignedRescueViewModel;
+      set
+      {
+        assignedRescueViewModel = value; 
+        NotifyPropertyChanged();
+      }
+    }
+
     private void ReloadRescueGrid()
     {
       var rescues = from rescue in cache.GetRescues()
@@ -398,6 +409,7 @@ namespace RatTracker_WPF
             _tc.Context.Component.Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             _tc.TrackPageView("MainWindow");
             InitializeComponent();
+            AssignedRescueViewModel = new AssignedRescueViewModel(apiWorker, cache);
             Loaded += Window_Loaded;
             cache.RescuesReloaded += (sender, args) => ReloadRescueGrid();
             cache.RescueCreated += OnRescueCreated;
@@ -849,6 +861,7 @@ namespace RatTracker_WPF
 
     private Thread heartBeatThread;
     private DateTime lastHullDamageEvent;
+    private AssignedRescueViewModel assignedRescueViewModel;
 
     private void CmdrJournalParser_CommitCrimeEvent(object sender, CommitCrimeLog eventData)
     {
@@ -1510,186 +1523,7 @@ namespace RatTracker_WPF
         _overlay.Topmost = true;
       }
     }
-
-    /// Rat-Button click handlers
-    /// TODO review api messages
-    private void frButton_Click(object sender, RoutedEventArgs e)
-    {
-      if (AssignedRescue?.Rescue == null){return;}
-      var rat = MyPlayer.GetDisplayRat();
-      if (rat != null)
-      {
-        var ratState = GetRatStateForButton(sender, FrButton, FrButtonCopy, FrButtonCopy1);
-        var frmsg = new TpaMessage("FriendRequest", "update")
-        {
-          Data = new JObject()
-        };
-        frmsg.Data.Add("RatID", rat.Id);
-        frmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
-
-        switch (ratState.FriendRequest)
-        {
-          case RequestState.NotRecieved:
-            ratState.FriendRequest = RequestState.Recieved;
-            break;
-          case RequestState.Recieved:
-            ratState.FriendRequest = RequestState.Accepted;
-            AppendStatus("Sending Friend Request acknowledgement.");
-            frmsg.Data.Add("FriendRequest", "true");
-            break;
-          case RequestState.Accepted:
-            AppendStatus("Cancelling FR status.");
-            ratState.FriendRequest = RequestState.NotRecieved;
-            frmsg.Data.Add("FriendRequest", "false");
-            break;
-          default:
-            throw new ArgumentOutOfRangeException();
-        }
-
-        if (frmsg.Event != null && ratState.FriendRequest != RequestState.Recieved)
-        {
-          apiWorker.SendTpaMessage(frmsg);
-        }
-      }
-    }
-
-    private void wrButton_Click(object sender, RoutedEventArgs e)
-    {
-      if (AssignedRescue?.Rescue == null){return; }
-      var rat = MyPlayer.GetDisplayRat();
-      if (rat != null)
-      {
-        var ratState = GetRatStateForButton(sender, WrButton, WrButtonCopy, WrButtonCopy1);
-        var frmsg = new TpaMessage("WingRequest", "update")
-        {
-          Data = new JObject()
-        };
-        frmsg.Data.Add("RatID", rat.Id);
-        frmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
-
-        switch (ratState.WingRequest)
-        {
-          case RequestState.NotRecieved:
-            ratState.WingRequest = RequestState.Recieved;
-            break;
-          case RequestState.Recieved:
-            AppendStatus("Sending Wing Request acknowledgement.");
-            frmsg.Data.Add("WingRequest", "true");
-            ratState.WingRequest = RequestState.Accepted;
-            break;
-          case RequestState.Accepted:
-            ratState.WingRequest = RequestState.NotRecieved;
-            AppendStatus("Cancelled WR status.");
-            frmsg.Data.Add("WingRequest", "false");
-            break;
-          default:
-            throw new ArgumentOutOfRangeException();
-        }
-        if (frmsg.Event != null && ratState.WingRequest != RequestState.Recieved)
-        {
-          apiWorker.SendTpaMessage(frmsg);
-        }
-      }
-    }
-
-    private void sysButton_Click(object sender, RoutedEventArgs e)
-    { var rat = MyPlayer.GetDisplayRat();
-      if (rat != null)
-      {
-        //var ratState = GetRatStateForButton(sender, SysButton, SysButtonCopy, SysButtonCopy1);
-        var frmsg = new TpaMessage("SysArrived", "update") {Data = new JObject()};
-        if (AssignedRescue?.Rescue != null)
-        {
-          frmsg.Data.Add("RatID", rat.Id);
-          frmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
-        }
-
-        //if (ratState.InSystem == false)
-        {
-          AppendStatus("Sending System acknowledgement.");
-          frmsg.Data.Add("ArrivedSystem", "true");
-        }
-        //else
-        //{
-        //  AppendStatus("Cancelling System status.");
-        //  frmsg.Data.Add("ArrivedSystem", "false");
-        //}
-
-        if (frmsg.Event != null)
-        {
-          apiWorker.SendTpaMessage(frmsg);
-        }
-
-        //ratState.InSystem = !ratState.InSystem;
-      }
-    }
-
-    private void bcnButton_Click(object sender, RoutedEventArgs e)
-    {
-      var ratState = GetRatStateForButton(sender, BcnButton, BcnButtonCopy, BcnButtonCopy1);
-      var rat = MyPlayer.GetDisplayRat();
-      if (rat != null)
-      {
-        var frmsg = new TpaMessage("BeaconSpotted", "update") {Data = new JObject()};
-        if (AssignedRescue?.Rescue != null)
-        {
-          frmsg.Data.Add("RatID", rat.Id);
-          frmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
-        }
-
-        if (ratState.Beacon == false)
-        {
-          AppendStatus("Sending Beacon acknowledgement.");
-          frmsg.Data.Add("BeaconSpotted", "true");
-        }
-        else
-        {
-          AppendStatus("Cancelling Beacon status.");
-          frmsg.Data.Add("BeaconSpotted", "false");
-        }
-
-        if (frmsg.Event != null && ratState.FriendRequest != RequestState.Recieved)
-        {
-          apiWorker.SendTpaMessage(frmsg);
-        }
-      }
-
-      ratState.Beacon = !ratState.Beacon;
-    }
-
-    private void instButton_Click(object sender, RoutedEventArgs e)
-    {
-      var ratState = GetRatStateForButton(sender, InstButton, InstButtonCopy, InstButtonCopy1);
-      var rat = MyPlayer.GetDisplayRat();
-      if (rat != null)
-      {
-        var frmsg = new TpaMessage("InstanceSuccessful:update") {Data = new JObject()};
-        if (AssignedRescue?.Rescue != null)
-        {
-          frmsg.Data.Add("RatID", rat.Id);
-          frmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
-        }
-
-        if (ratState.InInstance == false)
-        {
-          AppendStatus("Sending Good Instance message.");
-          frmsg.Data.Add("InstanceSuccessful", "true");
-        }
-        else
-        {
-          AppendStatus("Cancelling Good instance message.");
-          frmsg.Data.Add("InstanceSuccessful", "false");
-        }
-
-        if (frmsg.Event != null && ratState.FriendRequest != RequestState.Recieved)
-        {
-          apiWorker.SendTpaMessage(frmsg);
-        }
-      }
-
-      ratState.InInstance = !ratState.InInstance;
-    }
-
+    
     private RatState GetRatStateForButton(object sender, Button selfButton, Button rat2Button, Button rat3Button)
     {
       RatState ratState;

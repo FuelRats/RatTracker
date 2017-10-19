@@ -183,6 +183,7 @@
     <Compile Include="CmdrJournalParser.cs" />
     <Compile Include="CustomHotKey.cs" />
     <Compile Include="ConfigChecker.cs" />
+    <Compile Include="Infrastructure\Controls\RatStateControl.cs" />
     <Compile Include="Infrastructure\Converter\BooleanGridHeightConverter.cs" />
     <Compile Include="Infrastructure\Converter\BooleanToColourConverter.cs" />
     <Compile Include="Infrastructure\Converter\EmptyStringToVisibilityConverter.cs" />
@@ -202,6 +203,7 @@
     <Compile Include="GlobalHotkey.cs" />
     <Compile Include="Infrastructure\ApiExtensions.cs" />
     <Compile Include="Api\JsonApi.cs" />
+    <Compile Include="Infrastructure\RelayCommand.cs" />
     <Compile Include="Models\Api\V1\AccessToken.cs" />
     <Compile Include="Models\Api\V1\APIQuery.cs" />
     <Compile Include="Models\Api\V2\OAuth\Auth.cs" />
@@ -272,9 +274,17 @@
     <Compile Include="StringBuilderExtensions.cs" />
     <Compile Include="Models\CmdrJournal\SuperCruiseExitLog.cs" />
     <Compile Include="Api\TPA\Rescues.cs" />
+    <Compile Include="ViewModels\AssignedRescueViewModel.cs" />
+    <Compile Include="Views\AssignedRescueView.xaml.cs">
+      <DependentUpon>AssignedRescueView.xaml</DependentUpon>
+    </Compile>
     <Page Include="ErrorReporter.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Infrastructure\Styles\RatStateControlStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -293,6 +303,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Settings.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\AssignedRescueView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
