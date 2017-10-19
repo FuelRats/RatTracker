@@ -85,12 +85,12 @@
                     Background="Red" Click="fueledButton_Click" HorizontalAlignment="Right" Width="44" />
             <Label x:Name="Label2" Content="Client" Height="26" Margin="0,62,212,0" VerticalAlignment="Top"
                    HorizontalAlignment="Right" Width="59" Foreground="{DynamicResource brushEliteOrange}" />
-            <TextBox x:Name="ClientName" Height="19" Margin="0,88,59,0" TextWrapping="Wrap" Text="TextBox"
+            <TextBox x:Name="ClientName" Height="19" Margin="0,88,59,0" TextWrapping="Wrap" Text="{Binding AssignedRescue.ClientName}"
                      VerticalAlignment="Top" HorizontalAlignment="Right" Width="212"
                      Foreground="{DynamicResource brushEliteOrange}" Background="{DynamicResource brushTransparent}" />
             <Label x:Name="Label3" Content="System" Height="26" Margin="0,112,220,0" VerticalAlignment="Top"
                    HorizontalAlignment="Right" Width="51" Foreground="{DynamicResource brushEliteOrange}" />
-            <TextBox x:Name="SystemName" Height="17" Margin="0,138,57,0" TextWrapping="Wrap" Text="TextBox"
+            <TextBox x:Name="SystemName" Height="17" Margin="0,138,57,0" TextWrapping="Wrap" Text="{Binding AssignedRescue.ClientSystem}"
                      VerticalAlignment="Top" HorizontalAlignment="Right" Width="214"
                      Background="{DynamicResource brushTransparent}" Foreground="{DynamicResource brushEliteOrange}" />
             <Button x:Name="StartButton" Content="Start" HorizontalAlignment="Right" Height="23" Margin="0,85,22,0"
@@ -108,7 +108,7 @@
             <Label x:Name="Label3Copy" Content="Assigned Rats" Height="26" Margin="0,160,168,0" VerticalAlignment="Top"
                    HorizontalAlignment="Right" Width="103" Foreground="{DynamicResource brushEliteOrange}" />
             <TextBlock x:Name="AssignedRatsLabel" HorizontalAlignment="Left" Height="17" Margin="311,186,0,0"
-                       TextWrapping="Wrap" Text="{Binding AssignedRats}" VerticalAlignment="Top" Width="212" />
+                       TextWrapping="Wrap" Text="{Binding AssignedRescue.Rats, Mode=OneWay, Converter={converter:RatNameConcatConverter}}" VerticalAlignment="Top" Width="212" />
             <Label x:Name="label" Content="Distance to client" HorizontalAlignment="Left" Height="23"
                    Margin="310,203,0,0" VerticalAlignment="Top" Width="129"
                    Foreground="{DynamicResource brushEliteOrange}" />

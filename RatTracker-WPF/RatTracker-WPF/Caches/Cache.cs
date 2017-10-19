@@ -19,8 +19,8 @@ namespace RatTracker_WPF.Caches
     public void Init(WebsocketResponseHandler responseHandler)
     {
       responseHandler.AddCallback("rescues:read", RescuesRead);
-      responseHandler.AddCallback("rescues:created", RescuesCreated);
-      responseHandler.AddCallback("rescues:updated", RescuesUpdated);
+      responseHandler.AddCallback("rescueCreated", RescuesCreated);
+      responseHandler.AddCallback("rescueUpdated", RescuesUpdated);
     }
 
     private void RescuesUpdated(string message)

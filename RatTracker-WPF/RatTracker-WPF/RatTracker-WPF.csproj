@@ -186,6 +186,7 @@
     <Compile Include="Infrastructure\Converter\BooleanGridHeightConverter.cs" />
     <Compile Include="Infrastructure\Converter\BooleanToColourConverter.cs" />
     <Compile Include="Infrastructure\Converter\EmptyStringToVisibilityConverter.cs" />
+    <Compile Include="Infrastructure\Converter\RatNameConcatConverter.cs" />
     <Compile Include="Infrastructure\Converter\RequestStateToColourConverter.cs" />
     <Compile Include="EDDBData.cs" />
     <Compile Include="ErrorReporter.xaml.cs">

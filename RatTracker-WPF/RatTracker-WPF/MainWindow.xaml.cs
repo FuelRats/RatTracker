@@ -80,6 +80,7 @@ namespace RatTracker_WPF
       set
       {
         selectedRescue = value; 
+        UpdateAssignedRescue(value);
         NotifyPropertyChanged();
       }
     }
@@ -100,7 +101,9 @@ namespace RatTracker_WPF
 
     private async void OnRescueUpdated(object sender, Rescue rescue)
     {
-      if (rescue.Id == assignedRescue.Rescue.Id)
+      UpdateAssignedRescue(rescue);
+
+      if (rescue.Id == assignedRescue?.Rescue.Id)
       {
         Logger.Debug("Our active rescue was updated!");
         var trackedrats = 0;
@@ -140,6 +143,26 @@ namespace RatTracker_WPF
 
       }, DispatcherPriority.Normal);
       Logger.Debug("Rescue updated: " + rescue.Client);
+    }
+
+    private void UpdateAssignedRescue(Rescue rescue)
+    {
+      if (rescue.Rats.Any(x => x.Id == MyPlayer.GetDisplayRat().Id))
+      {
+        if (AssignedRescue?.Rescue?.Id == rescue.Id)
+        {
+          AssignedRescue.Rescue = rescue;
+        }
+        else
+        {
+          AssignedRescue = new RescueInfo
+          {
+            Rescue = rescue,
+            ClientName = rescue.Client,
+            ClientSystem = rescue.System
+          };
+        }
+      }
     }
 
     private async void OnRescueCreated(object sender, Rescue rescue)

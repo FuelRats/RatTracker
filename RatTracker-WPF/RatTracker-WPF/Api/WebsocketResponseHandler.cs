@@ -39,7 +39,7 @@ namespace RatTracker_WPF.Api
           return;
         }
 
-        if (meta != null && meta.TryGetValue("action", out var metaAction))
+        if (meta != null && (meta.TryGetValue("action", out var metaAction) || meta.TryGetValue("event", out metaAction)))
         {
           var action = metaAction.Value<string>();
           Logger.Debug($"Received ws message with action '{action}'");
