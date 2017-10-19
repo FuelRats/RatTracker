@@ -587,9 +587,9 @@ namespace RatTracker_WPF
 /*
  * This needs refactoring to get the client name from the main thread instead.
 
-                            if (Encoding.UTF8.GetString(byteenc) == MyClient.ClientName)
+                            if (Encoding.UTF8.GetString(byteenc) == MyRescue.ClientName)
                             {
-                                MyClient.Self.FriendRequest = RequestState.Recieved;
+                                MyRescue.Self.FriendRequest = RequestState.Recieved;
                                 AppendStatus("FR is from our client. Notifying Dispatch.");
                                 TPAMessage frmsg = new TPAMessage
                                 {
@@ -628,7 +628,7 @@ namespace RatTracker_WPF
             continue;
           }
           AppendStatus("Friend request accepted.");
-          //MyClient.Self.FriendRequest = RequestState.Accepted;
+          //MyRescue.Self.FriendRequest = RequestState.Accepted;
         }
 
         //AppendStatus("Parsed " + count + " friends in FRXML."); //Spammy!
@@ -669,23 +669,23 @@ namespace RatTracker_WPF
                               if (!string.Equals(Encoding.UTF8.GetString(byteenc), _myrescue.Client, StringComparison.CurrentCultureIgnoreCase)) continue;
                               AppendStatus("This data matches our current client! Storing information...");
                               XElement element = wingdata.Element("id");
-                              if (element != null) MyClient.ClientId = element.Value;
+                              if (element != null) MyRescue.ClientId = element.Value;
                               AppendStatus("Wingmember IP data:" + xdoc.Element("connectionDetails"));
                               const string wingIpPattern = "IP4NAT:([0-9.]+):\\d+\\,";
                               Match wingMatch = Regex.Match(wingInvite, wingIpPattern, RegexOptions.IgnoreCase);
                               if (wingMatch.Success)
                               {
                                   AppendStatus("Successful IP data match: " + wingMatch.Groups[1]);
-                                  MyClient.ClientIp = wingMatch.Groups[1].Value;
+                                  MyRescue.ClientIp = wingMatch.Groups[1].Value;
                               }
 
                               /* If the friend request matches the client name, store his session ID. */
           /*
 XElement o = wingdata.Element("commander_id");
-if (o != null) MyClient.ClientId = o.Value;
+if (o != null) MyRescue.ClientId = o.Value;
 XElement xElement1 = wingdata.Element("session_runid");
-if (xElement1 != null) MyClient.SessionId = xElement1.Value;
-MyClient.Self.WingRequest = RequestState.Recieved;
+if (xElement1 != null) MyRescue.SessionId = xElement1.Value;
+MyRescue.Self.WingRequest = RequestState.Recieved;
 TPAMessage wrmsg = new TPAMessage
 {
 action = "WingRequest:update",

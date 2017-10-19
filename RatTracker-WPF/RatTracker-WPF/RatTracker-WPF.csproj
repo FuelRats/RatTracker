@@ -210,7 +210,7 @@
     <Compile Include="Models\Api\V2\TPA\TPAMessage.cs" />
     <Compile Include="Models\Api\V1\Client.cs" />
     <Compile Include="Models\Api\V2\User.cs" />
-    <Compile Include="Models\App\ClientInfo.cs" />
+    <Compile Include="Models\App\RescueInfo.cs" />
     <Compile Include="Infrastructure\Converter\ClientConverter.cs" />
     <Compile Include="Models\Api\V1\Datum.cs" />
     <Compile Include="Models\Api\V1\User.cs" />

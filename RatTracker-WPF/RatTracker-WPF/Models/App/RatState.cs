@@ -1,3 +1,5 @@
+using RatTracker_WPF.Models.Api.V2;
+
 namespace RatTracker_WPF.Models.App
 {
   public class RatState : PropertyChangedBase
@@ -8,14 +10,14 @@ namespace RatTracker_WPF.Models.App
     private bool inInstance;
     private bool inSystem;
     private RequestState wingRequest;
-    private string ratname;
+    private Rat rat;
 
-    public string RatName
+    public Rat Rat
     {
-      get => ratname;
+      get => rat;
       set
       {
-        ratname = value;
+        rat = value;
         NotifyPropertyChanged();
       }
     }

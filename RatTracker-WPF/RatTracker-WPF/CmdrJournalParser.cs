@@ -15,7 +15,7 @@ namespace RatTracker_WPF
 {
   #region delegates
 
-  // TODO do these properly and use event args. Passing the data is functional for now.
+  // TODO Clapton do these properly and use event args. Passing the data is functional for now.
   // I'll just let absolver hate me later for this. I'LL FIX WHATEVER I BREAK!!1 -clap
   public delegate void CommitCrimeEvent(object sender, CommitCrimeLog eventData);
 
@@ -69,7 +69,7 @@ namespace RatTracker_WPF
 
       // filePath and Settings.Default.CmderLogPath should ALWAYS have the location at this point.
 
-      // TODO add better handling for this. Attempt to re-find the file path again, or notify the user to manually find it.
+      // TODO Clapton add better handling for this. Attempt to re-find the file path again, or notify the user to manually find it.
       if (!Directory.Exists(filePath))
       {
         Logger.Fatal("Commander log file path is invalid. Could not setup CmdrLogParser.");

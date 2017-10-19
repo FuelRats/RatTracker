@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -39,7 +38,6 @@ using RatTracker_WPF.Models.CmdrJournal;
 using RatTracker_WPF.Models.Edsm;
 using RatTracker_WPF.Models.NetLog;
 using RatTracker_WPF.Properties;
-using WebSocket4Net;
 
 namespace RatTracker_WPF
 {
@@ -52,8 +50,30 @@ namespace RatTracker_WPF
   {
     private readonly Cache cache = new Cache();
     private Rescue selectedRescue;
-    private Rescue assignedRescue;
-    
+
+    private PlayerInfo myPlayer = new PlayerInfo(); // Playerinfo, bound to various UI elements
+    public PlayerInfo MyPlayer
+    {
+      get => myPlayer;
+      set
+      {
+        myPlayer = value;
+        NotifyPropertyChanged();
+      }
+    }
+
+    private RescueInfo assignedRescue;
+
+    public RescueInfo AssignedRescue
+    {
+      get => assignedRescue;
+      set
+      {
+        assignedRescue = value;
+        NotifyPropertyChanged();
+      }
+    }
+
     public Rescue SelectedRescue
     {
       get => selectedRescue;
@@ -70,59 +90,51 @@ namespace RatTracker_WPF
     {
       AppendStatus("Rescue closed: " + rescue.Client);
       Logger.Debug("Rescue closed: " + rescue.Client);
-      // TODO MA OWN CASE INTEGRATION
-      //if (rescue.Id == MyClient.ClientId)
-      //{
-      //  Logger.Debug("Our active rescue was closed.");
-      //}
+      if (rescue.Id == assignedRescue.Rescue.Id)
+      {
+        Logger.Debug("Our active rescue was closed.");
+      }
       Logger.Debug("Updating rescue grid.");
       await Dispatcher.InvokeAsync(() => VisibleRescues.Remove(rescue), DispatcherPriority.Normal);
     }
 
     private async void OnRescueUpdated(object sender, Rescue rescue)
     {
-      // TODO MA TRACK ASSIGNED CASE
-      //if (rescue.Id == MyClient.ClientId)
-      //{
-      //  Logger.Debug("Our active rescue was updated!");
-      //  if (assignedRescue.Rats != null)
-      //  {
-      //    Logger.Debug("Non-null myrescue rats. Parsing");
-      //    var trackedrats = 0;
-      //    foreach (var ratid in assignedRescue.Rats)
-      //    {
-      //      Logger.Debug("Processing id " + ratid);
-      //      if (MyPlayer.RatId.Contains(ratid))
-      //      {
-      //        Logger.Debug("Found own rat in selected rescue, we're assigned");
-      //      }
-      //      else
-      //      {
-      //        if (trackedrats > 1)
-      //        {
-      //          Logger.Debug("More than two rats in addition to ourselves, not added.");
-      //        }
-      //        else if (trackedrats == 0)
-      //        {
-      //          Logger.Debug("Rat2 set.");
-      //          MyClient.Rat2.RatName = await GetRatName(ratid);
-      //          trackedrats++;
-      //        }
-      //        else
-      //        {
-      //          Logger.Debug("Rat3 set.");
-      //          MyClient.Rat3.RatName = await GetRatName(ratid);
-      //        }
-      //      }
-      //    }
-      //  }
-      //}
+      if (rescue.Id == assignedRescue.Rescue.Id)
+      {
+        Logger.Debug("Our active rescue was updated!");
+        var trackedrats = 0;
+        foreach (var rat in rescue.Rats)
+        {
+          Logger.Debug("Processing id " + rat.Id);
+          if (MyPlayer.User.Rats.Contains(rat))
+          {
+            Logger.Debug("Found own rat in selected rescue, we're assigned");
+          }
+          else
+          {
+            if (trackedrats > 1)
+            {
+              Logger.Debug("More than two rats in addition to ourselves, not added.");
+            }
+            else if (trackedrats == 0)
+            {
+              Logger.Debug("Rat2 set.");
+              AssignedRescue.Rat2.Rat = rat;
+              trackedrats++;
+            }
+            else
+            {
+              Logger.Debug("Rat3 set.");
+              AssignedRescue.Rat3.Rat = rat;
+            }
+          }
+        }
+      }
 
       await Dispatcher.InvokeAsync(() =>
       {
         var updatedRescue = VisibleRescues.SingleOrDefault(x => x.Id == rescue.Id);
-        //VisibleRescues[VisibleRescues.IndexOf(updatedRescue)] = rescue;
-
         VisibleRescues.Remove(updatedRescue);
         VisibleRescues.Add(rescue);
 
@@ -183,7 +195,6 @@ namespace RatTracker_WPF
     // TODO: Remove this assignment and pull live from Settings, have the logfile watcher reaquire file if settings are changed.
 
 
-    private PlayerInfo _myplayer = new PlayerInfo(); // Playerinfo, bound to various UI elements
     private ICollection<TravelLog> _myTravelLog; // Log of recently visited systems.
     private Overlay _overlay; // Pointer to UI overlay
     public bool StopNetLog; // Used to terminate netlog reader thread.
@@ -234,17 +245,6 @@ namespace RatTracker_WPF
       }
     }
 
-    private ClientInfo myClient;
-
-    public ClientInfo MyClient
-    {
-      get => myClient;
-      set
-      {
-        myClient = value;
-        NotifyPropertyChanged();
-      }
-    }
 
     public string JumpsToClient
     {
@@ -287,16 +287,6 @@ namespace RatTracker_WPF
       set
       {
         _assignedRats = value;
-        NotifyPropertyChanged();
-      }
-    }
-
-    public PlayerInfo MyPlayer
-    {
-      get => _myplayer;
-      set
-      {
-        _myplayer = value;
         NotifyPropertyChanged();
       }
     }
@@ -435,7 +425,7 @@ namespace RatTracker_WPF
         apiWorker.DoWork += (s, args) =>
         {
           Logger.Debug("Initialize API...");
-          InitApi(false, true);
+          InitApi(true);
         };
         eddbWorker.DoWork += async delegate
         {
@@ -501,13 +491,13 @@ namespace RatTracker_WPF
           "RatTracker does not have a valid path to your E:D directory. This will probably break RT! Please check your settings.");
       }
 
-      InitApi(true, true);
+      InitApi(true);
       await InitEddb(true);
       await InitPlayer();
       Logger.Debug("Reinitialization complete.");
     }
 
-    private void InitApi(bool reinitialize, bool includeToken)
+    private void InitApi(bool includeToken)
     {
       try
       {
@@ -516,19 +506,14 @@ namespace RatTracker_WPF
         {
           apiWorker = new ApiWorker();
           cache.Init(apiWorker.ResponseHandler);
+          apiWorker.ResponseHandler.AddCallback("users:profile", message =>
+          {
+            MyPlayer.User = JsonApi.Deserialize<User>(message);
+          });
         }
-
-        if (includeToken && apiWorker.Ws != null)
-        {
-          apiWorker.Ws.MessageReceived -= websocketClient_MessageReceieved;
-        }
-
+        
         apiWorker.InitWs(includeToken);
         apiWorker.OpenWs();
-        if (!reinitialize)
-        {
-          apiWorker.Ws.MessageReceived += websocketClient_MessageReceieved;
-        }
 
         if (_oAuthCode != null)
         {
@@ -547,8 +532,8 @@ namespace RatTracker_WPF
 
     public Task InitPlayer()
     {
-      _myplayer.JumpRange = Settings.Default.JumpRange > 0 ? Settings.Default.JumpRange : 30;
-      _myplayer.CurrentSystem = "Fuelum";
+      MyPlayer.JumpRange = Settings.Default.JumpRange > 0 ? Settings.Default.JumpRange : 30;
+      MyPlayer.CurrentSystem = "Fuelum";
       return Task.FromResult(true);
     }
 
@@ -844,59 +829,71 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_CommitCrimeEvent(object sender, CommitCrimeLog eventData)
     {
-      var msg = new TpaMessage("CommitCrime")
+      var rat = MyPlayer.GetDisplayRat();
+      if (rat != null)
       {
-        Data = new JObject
-        (
-          new JProperty("CrimeType", eventData.CrimeType),
-          new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-          new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-          new JProperty("RescueID", MyClient.Rescue.Id)
-        )
-      };
+        var msg = new TpaMessage("CommitCrime")
+        {
+          Data = new JObject
+          (
+            new JProperty("CrimeType", eventData.CrimeType),
+            new JProperty("RatID", rat.Id),
+            new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+            new JProperty("RescueID", AssignedRescue.Rescue.Id)
+          )
+        };
 
-      if (eventData.Victim != null)
-      {
-        msg.Data.Add("Victim", eventData.Victim);
+        if (eventData.Victim != null)
+        {
+          msg.Data.Add("Victim", eventData.Victim);
+        }
+
+        apiWorker.SendTpaMessage(msg);
       }
-
-      apiWorker.SendTpaMessage(msg);
     }
 
     private void CmdrJournalParser_DiedEvent(object sender, DiedLog eventData)
     {
-      if (MyClient?.Rescue != null)
+      if (AssignedRescue?.Rescue != null)
       {
-        apiWorker.SendTpaMessage(new TpaMessage("RatDeath")
+        var rat = MyPlayer.GetDisplayRat();
+        if (rat != null)
         {
-          Data = new JObject
-          (
-            new JProperty("Killers", eventData.KillersList?.Select(k => k.Name).ToArray()),
-            new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-            new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-            new JProperty("RescueID", MyClient.Rescue.Id)
-          )
-        });
+          apiWorker.SendTpaMessage(new TpaMessage("RatDeath")
+          {
+            Data = new JObject
+            (
+              new JProperty("Killers", eventData.KillersList?.Select(k => k.Name).ToList()),
+              new JProperty("RatID", rat.Id),
+              new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+              new JProperty("RescueID", AssignedRescue.Rescue.Id)
+            )
+          });
         AppendStatus("Sending death notice.");
+        }
       }
     }
 
     private void _cmdrJournalParser_EscapeInterdictionEvent(object sender, EscapeInterdictionLog eventData)
     {
-      if (MyClient?.Rescue != null)
+      if (AssignedRescue?.Rescue != null)
       {
-        apiWorker.SendTpaMessage(new TpaMessage("Interdiction","Update")
+        var rat = MyPlayer.User.Rats.FirstOrDefault(x => x.Platform == Platform.Pc);
+        if (rat != null)
         {
-          Data = new JObject
-          (
-            new JProperty("Interdiction", "Escaped"),
-            new JProperty("Interdictor", eventData.Interdictor),
-            new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-            new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-            new JProperty("RescueID", MyClient.Rescue.Id)
-          )
-        });
+          apiWorker.SendTpaMessage(new TpaMessage("Interdiction", "Update")
+          {
+            Data = new JObject
+            (
+              new JProperty("Interdiction", "Escaped"),
+              new JProperty("Interdictor", eventData.Interdictor),
+              new JProperty("RatID", rat.Id),
+              new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+              new JProperty("RescueID", AssignedRescue.Rescue.Id)
+            )
+          });
         AppendStatus("Sending Escape Interdiction Noticiation.");
+        }
       }
     }
 
@@ -907,7 +904,7 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_HullDamageEvent(object sender, HullDamageLog eventData)
     {
-      if (MyClient?.Rescue != null)
+      if (AssignedRescue?.Rescue != null)
       {
         if ((eventData.Timestamp - lastHullDamageEvent).TotalMinutes < 1)
         {
@@ -916,142 +913,168 @@ namespace RatTracker_WPF
 
         lastHullDamageEvent = eventData.Timestamp;
 
-        apiWorker.SendTpaMessage(new TpaMessage("UnderAttack","Update")
+        var rat = MyPlayer.GetDisplayRat();
+        if (rat != null)
         {
-          Data = new JObject
-          (
-            new JProperty("UnderAttack", "True"),
-            new JProperty("RatHealth", eventData.Health),
-            new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-            new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-            new JProperty("RescueID", MyClient.Rescue.Id)
-          )
-        });
-        AppendStatus("Sending Under Attack notification.");
+          apiWorker.SendTpaMessage(new TpaMessage("UnderAttack", "Update")
+          {
+            Data = new JObject
+            (
+              new JProperty("UnderAttack", "True"),
+              new JProperty("RatHealth", eventData.Health),
+              new JProperty("RatID", rat),
+              new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+              new JProperty("RescueID", AssignedRescue.Rescue.Id)
+            )
+          });
+          AppendStatus("Sending Under Attack notification.");
+        }
       }
     }
 
     private void CmdrJournalParser_InterdictedEvent(object sender, InterdictedLog eventData)
     {
-      if (MyClient?.Rescue != null)
+      if (AssignedRescue?.Rescue != null)
       {
-        apiWorker.SendTpaMessage(new TpaMessage("Interdiction","Update")
+        var rat = MyPlayer.GetDisplayRat();
+        if (rat != null)
         {
-          Data = new JObject
-          (
-            new JProperty("Interdiction", "Interdicted"),
-            new JProperty("Interdictor", eventData.Interdictor),
-            new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-            new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-            new JProperty("RescueID", MyClient.Rescue.Id)
-          )
-        });
-        AppendStatus("Sending interdicted notification.");
+          apiWorker.SendTpaMessage(new TpaMessage("Interdiction", "Update")
+          {
+            Data = new JObject
+            (
+              new JProperty("Interdiction", "Interdicted"),
+              new JProperty("Interdictor", eventData.Interdictor),
+              new JProperty("RatID", rat.Id),
+              new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+              new JProperty("RescueID", AssignedRescue.Rescue.Id)
+            )
+          });
+          AppendStatus("Sending interdicted notification.");
+        }
       }
     }
 
     private void CmdrJournalParser_InterdictionEvent(object sender, InterdictionLog eventData)
     {
-      if (MyClient?.Rescue != null)
+      if (AssignedRescue?.Rescue != null)
       {
-        var msg = new TpaMessage("Interdiction","Update")
+        var rat = MyPlayer.GetDisplayRat();
+        if (rat != null)
         {
-          Data = new JObject
-          (
-            new JProperty("Interdiction", "Interdicting"),
-            new JProperty("Interdicted", eventData.Interdicted),
-            new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-            new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-            new JProperty("RescueID", MyClient.Rescue.Id)
-          )
-        };
-        apiWorker.SendTpaMessage(msg);
+          var msg = new TpaMessage("Interdiction", "Update")
+          {
+            Data = new JObject
+            (
+              new JProperty("Interdiction", "Interdicting"),
+              new JProperty("Interdicted", eventData.Interdicted),
+              new JProperty("RatID", rat.Id),
+              new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
+              new JProperty("RescueID", AssignedRescue.Rescue.Id)
+            )
+          };
+          apiWorker.SendTpaMessage(msg);
+        }
       }
     }
 
     private void CmdrJournalParser_ReceiveTextEvent(object sender, ReceiveTextLog eventData)
     {
-      if (MyClient?.Rescue != null)
+      if (AssignedRescue?.Rescue != null)
       {
         // We need to clean the string up for cmdr name comparison. The cmdr name is not consistant, and appears as "CMDR cmdrName" or "&cmdrName" depending on how it was recieved.
         if (!eventData.FromText.Replace("CMDR", "").Replace("&", "").Trim()
-          .Equals(MyClient.Rescue.Client, StringComparison.InvariantCultureIgnoreCase))
+          .Equals(AssignedRescue.Rescue.Client, StringComparison.InvariantCultureIgnoreCase))
         {
           return;
         }
-
-        apiWorker.SendTpaMessage(new TpaMessage("Communication","Update")
+        var rat = MyPlayer.GetDisplayRat();
+        if (rat != null)
         {
-          Data = new JObject
-          (
-            new JProperty("Communication", "True"),
-            new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-            new JProperty("RescueID", MyClient.Rescue.Id)
-          )
-        });
-        AppendStatus("Sending comms+ confirmation.");
+          apiWorker.SendTpaMessage(new TpaMessage("Communication", "Update")
+          {
+            Data = new JObject
+            (
+              new JProperty("Communication", "True"),
+              new JProperty("RatID", rat.Id),
+              new JProperty("RescueID", AssignedRescue.Rescue.Id)
+            )
+          });
+          AppendStatus("Sending comms+ confirmation.");
 
-        //TODO add in "Comms+" status and update it here.
+          //TODO add in "Comms+" status and update it here.
+        }
       }
     }
 
     private void CmdrJournalParser_SupercruiseEntryEvent(object sender, SupercruiseEntryLog eventData)
     {
-      if (MyClient?.Rescue != null)
+      if (AssignedRescue?.Rescue != null)
       {
-        apiWorker.SendTpaMessage(new TpaMessage("Supercruise","Update")
+        var rat = MyPlayer.GetDisplayRat();
+        if (rat != null)
         {
-          Data = new JObject
-          (
-            new JProperty("Supercruise", "Entering"),
-            new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-            new JProperty("RescueID", MyClient.Rescue.Id)
-          )
-        });
-        AppendStatus("Sending supercrise entry notification.");
+          apiWorker.SendTpaMessage(new TpaMessage("Supercruise", "Update")
+          {
+            Data = new JObject
+            (
+              new JProperty("Supercruise", "Entering"),
+              new JProperty("RatID", rat.Id),
+              new JProperty("RescueID", AssignedRescue.Rescue.Id)
+            )
+          });
+          AppendStatus("Sending supercrise entry notification.");
+        }
       }
     }
 
     private void CmdrJournalParser_SuperCruiseExitEvent(object sender, SuperCruiseExitLog eventData)
     {
-      if (MyClient?.Rescue != null)
+      if (AssignedRescue?.Rescue != null)
       {
-        apiWorker.SendTpaMessage(new TpaMessage("Supercruise","Update")
+        var rat = MyPlayer.GetDisplayRat();
+        if (rat != null)
         {
-          Data = new JObject
-          (
-            new JProperty("Supercruise", "Exiting"),
-            new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-            new JProperty("RescueID", MyClient.Rescue.Id)
-          )
-        });
-        AppendStatus("Sending supercruise exit noticiation.");
+          apiWorker.SendTpaMessage(new TpaMessage("Supercruise", "Update")
+          {
+            Data = new JObject
+            (
+              new JProperty("Supercruise", "Exiting"),
+              new JProperty("RatID", rat.Id),
+              new JProperty("RescueID", AssignedRescue.Rescue.Id)
+            )
+          });
+          AppendStatus("Sending supercruise exit noticiation.");
+        }
       }
     }
 
     private void CmdrJournalParser_WingAddEvent(object sender, WingAddLog eventData)
     {
-      if (MyClient?.Rescue != null)
+      if (AssignedRescue?.Rescue != null)
       {
-        if (!MyClient.Rescue.Client.Equals(eventData.Name, StringComparison.InvariantCultureIgnoreCase))
+        if (!AssignedRescue.Rescue.Client.Equals(eventData.Name, StringComparison.InvariantCultureIgnoreCase))
         {
           return;
         }
-        apiWorker.SendTpaMessage(new TpaMessage("WingRequest","Update")
+        var rat = MyPlayer.GetDisplayRat();
+        if (rat != null)
         {
-          Data = new JObject
-          (
-            new JProperty("WingRequest", "True"),
-            new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-            new JProperty("RescueID", MyClient.Rescue.Id)
-          )
-        });
-        AppendStatus("Sending Wing Request acknowledgement.");
-        MyClient.Self.WingRequest = RequestState.Accepted;
+          apiWorker.SendTpaMessage(new TpaMessage("WingRequest", "Update")
+          {
+            Data = new JObject
+            (
+              new JProperty("WingRequest", "True"),
+              new JProperty("RatID", rat.Id),
+              new JProperty("RescueID", AssignedRescue.Rescue.Id)
+            )
+          });
+          AppendStatus("Sending Wing Request acknowledgement.");
+          AssignedRescue.Self.WingRequest = RequestState.Accepted;
+        }
       }
     }
-
-
+    
     private async void TriggerSystemChange(string value)
     {
       var disp = Dispatcher;
@@ -1094,21 +1117,24 @@ namespace RatTracker_WPF
           disp.BeginInvoke(DispatcherPriority.Normal,
             (Action)(() => DistanceLabel.Content = distance + "LY from Fuelum"));
         Logger.Debug("Added system to TravelLog.");
-        if (assignedRescue != null && assignedRescue.System == value)
-        {
-          AppendStatus("Arrived in client system. Notifying dispatch.");
-          Logger.Info("Sending 3PA sys+ message!");
-          var sysmsg = new TpaMessage("SysArrived","update")
+        if (assignedRescue != null && assignedRescue.Rescue.System == value)
+        { var rat = MyPlayer.GetDisplayRat();
+          if (rat != null)
           {
-            Data = new JObject
-            (
-              new JProperty("SysArrived", "true"),
-              new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-              new JProperty("RescueID", assignedRescue.Id)
-            )
-          };
-          apiWorker.SendTpaMessage(sysmsg);
-          MyClient.Self.InSystem = true;
+            AppendStatus("Arrived in client system. Notifying dispatch.");
+            Logger.Info("Sending 3PA sys+ message!");
+            var sysmsg = new TpaMessage("SysArrived", "update")
+            {
+              Data = new JObject
+              (
+                new JProperty("SysArrived", "true"),
+                new JProperty("RatID", rat.Id),
+                new JProperty("RescueID", assignedRescue.Rescue.Id)
+              )
+            };
+            apiWorker.SendTpaMessage(sysmsg);
+          }
+          AssignedRescue.Self.InSystem = true;
         }
 
         await disp.BeginInvoke(DispatcherPriority.Normal, (Action)(() => SystemNameLabel.Content = firstsys.Name));
@@ -1164,86 +1190,7 @@ namespace RatTracker_WPF
     }
 
     #endregion Heartbeat
-
-    #region WebSocket
-
-    /// <summary>
-    /// Moved WS connection to the apworker, but to actually parse the messages we have to hook the event handler here too.
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private async void websocketClient_MessageReceieved(object sender, MessageReceivedEventArgs e)
-    {
-      // TODO MA Refactor this shit to use a callback version.
-
-      //logger.Debug("Raw JSON from WS: " + e.Message);
-      dynamic data = JsonConvert.DeserializeObject(e.Message);
-      var meta = data.meta;
-      var realdata = data.Data;
-      Logger.Debug("Meta data from API: " + meta);
-      switch ((string) meta?.Action)
-      {
-        case "users:read":
-          Logger.Info("Parsing login information..." + meta.count + " elements");
-          if (!realdata)
-          {
-            Logger.Debug("Null realdata during login! Data element: " + data.ToString());
-            AppendStatus(
-              "RatTracker failed to get your user data from the API. This makes RatTracker unable to verify your identity for jump calls and messages.");
-            break;
-          }
-          AppendStatus("Got user data for " + realdata[0].email);
-          MyPlayer.RatId = new List<string>();
-          foreach (var cmdrdata in realdata[0].CMDRs)
-          {
-            AppendStatus("RatID " + cmdrdata + " added to identity list.");
-            MyPlayer.RatId.Add(cmdrdata.ToString());
-          }
-         // _myplayer.RatName =
-         //   await GetRatName(MyPlayer.RatId
-         //     .FirstOrDefault()); // This will have to be redone when we go WS, as we can't load the variable then.
-          break;
-          
-        case "authorization":
-          Logger.Debug("Authorization callback: " + realdata.ToString());
-          /* TODO
-            * This fucking breaks. Someone explain to me why this breaks (While it certainly didn't before), and I'll be happy.
-            *                     if (realdata.errors)
-                                  {
-                                      AppendStatus("Error during WS Authentication: " + realdata.errors.code + ": " + realdata.errors.detail);
-                                      Logger.Error("Error during WS Authentication: " + realdata.errors.code + ": " + realdata.errors.detail);
-                                      MessageBoxResult reauth = MessageBox.Show("RatTracker has failed to authenticate with WebSocket. This is usually caused by an invalid OAuth token. If you would like to retry the OAuth process, press OK. To leave the OAuth token intact, press cancel.");
-                                      if (reauth==MessageBoxResult.Yes)
-                                      {
-                                          Logger.Info("Clearing OAuth keys...");
-                                          Settings.Default.OAuthToken = "";
-                                          Settings.Default.Save();
-                                          string rtPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                                          if (File.Exists(rtPath + @"\RatTracker\OAuthToken.tmp"))
-                                              File.Delete(rtPath+@"\RatTracker\OAuthToken.tmp");
-                                          AppendStatus("OAuth information cleared. Please restart RatTracker to reauthenticate it.");
-                                      }
-                                  }
-                                  else */
-          if (realdata.email != "")
-          {
-            Logger.Debug("Passed error check for auth callback.");
-            AppendStatus("Got user data for " + realdata.email);
-            MyPlayer.RatId = new List<string>();
-            foreach (var cmdrdata in realdata.rats)
-            {
-              AppendStatus("RatID " + cmdrdata.Id + " added to identity list.");
-              MyPlayer.RatId.Add(cmdrdata.I.ToString());
-            }
-           // _myplayer.RatName = await GetRatName(MyPlayer.RatId.FirstOrDefault());
-          }
-
-          break;
-      }
-    }
-
-    #endregion WebSocket
-
+    
     private void MainWindow_Closing(object sender, CancelEventArgs e)
     {
       StopNetLog = true;
@@ -1271,16 +1218,20 @@ namespace RatTracker_WPF
       }
       try
       {
-        var dutymessage = new TpaMessage("OnDuty","update")
+        var rat = MyPlayer.GetDisplayRat();
+        if (rat != null)
         {
-          Data = new JObject
-          (
-            new JProperty("OnDuty", MyPlayer.OnDuty.ToString()),
-            new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-            new JProperty("currentSystem", MyPlayer.CurrentSystem)
-          )
-        };
-        // apiWorker.SendTpaMessage(dutymessage); // Disabled while testing, it's spammy.
+          var dutymessage = new TpaMessage("OnDuty", "update")
+          {
+            Data = new JObject
+            (
+              new JProperty("OnDuty", MyPlayer.OnDuty.ToString()),
+              new JProperty("RatID", rat.Id),
+              new JProperty("currentSystem", MyPlayer.CurrentSystem)
+            )
+          };
+          // apiWorker.SendTpaMessage(dutymessage); // Disabled while testing, it's spammy.
+        }
       }
       catch (Exception ex)
       {
@@ -1296,29 +1247,32 @@ namespace RatTracker_WPF
 
     private void currentButton_Click(object sender, RoutedEventArgs e)
     {
-      AppendStatus("Setting client location to current system: " + _myplayer.CurrentSystem);
+      AppendStatus("Setting client location to current system: " + MyPlayer.CurrentSystem);
       // SystemName.Text = "Fuelum";
       // TODO: Do actual system name update through Mecha with 3PAM
     }
 
     private void UpdateButton_Click(object sender, RoutedEventArgs e)
     {
-      if (MyClient == null)
+      if (AssignedRescue == null)
       {
         Logger.Debug("No current rescue, ignoring system update request.");
         return;
       }
-
-      var systemmessage = new TpaMessage("ClientSystem","update")
+      var rat = MyPlayer.GetDisplayRat();
+      if (rat != null)
       {
-        Data = new JObject
-        (
-          new JProperty("SystemName", SystemName.Text),
-          new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
-          new JProperty("RescueID", MyClient.Rescue.Id)
-        )
-      };
-      apiWorker.SendTpaMessage(systemmessage);
+        var systemmessage = new TpaMessage("ClientSystem", "update")
+        {
+          Data = new JObject
+          (
+            new JProperty("SystemName", SystemName.Text),
+            new JProperty("RatID", rat.Id),
+            new JProperty("RescueID", AssignedRescue.Rescue.Id)
+          )
+        };
+        apiWorker.SendTpaMessage(systemmessage);
+      }
     }
     
     // TODO MA KA WTF?
@@ -1337,19 +1291,19 @@ namespace RatTracker_WPF
     //  var count = rats.Count;
 
     //  /* TODO: Fix this. Needs to be smrt about figuring out if your own ratID is assigned. */
-    //  MyClient = new ClientInfo {Rescue = myrow};
+    //  AssignedRescue = new RescueInfo {Rescue = myrow};
     //  if (count > 0)
     //  {
-    //    MyClient.Self.RatName =
+    //    AssignedRescue.Self.Rat =
     //      rats[0]; // TODO: Fix this. We have no guarantee that the first listed rat in the rescue is ourself.
     //  }
     //  if (count > 1)
     //  {
-    //    MyClient.Rat2.RatName = rats[1];
+    //    AssignedRescue.Rat2.Rat = rats[1];
     //  }
     //  if (count > 2)
     //  {
-    //    MyClient.Rat3.RatName = rats[2];
+    //    AssignedRescue.Rat3.Rat = rats[2];
     //  }
 
     //  var disp = Dispatcher;
@@ -1428,7 +1382,7 @@ namespace RatTracker_WPF
       if (_overlay == null)
       {
         _overlay = new Overlay();
-        _overlay.SetCurrentClient(MyClient);
+        _overlay.SetCurrentClient(AssignedRescue);
         _overlay.Show();
         var monitors = Monitor.AllMonitors;
         if (Settings.Default.OverlayMonitor != "")
@@ -1508,9 +1462,9 @@ namespace RatTracker_WPF
 
       if (e.HotKey.Key == Key.C)
       {
-        if (MyClient.ClientSystem != null)
+        if (AssignedRescue.ClientSystem != null)
         {
-          Clipboard.SetText(MyClient.ClientSystem);
+          Clipboard.SetText(AssignedRescue.ClientSystem);
           AppendStatus("Client system copied to clipboard.");
         }
         else
@@ -1538,130 +1492,143 @@ namespace RatTracker_WPF
     /// TODO review api messages
     private void frButton_Click(object sender, RoutedEventArgs e)
     {
-      if (MyClient?.Rescue == null){return;}
-
-      var ratState = GetRatStateForButton(sender, FrButton, FrButtonCopy, FrButtonCopy1);
-      var frmsg = new TpaMessage("FriendRequest","update")
+      if (AssignedRescue?.Rescue == null){return;}
+      var rat = MyPlayer.GetDisplayRat();
+      if (rat != null)
       {
-        Data = new JObject()
-      };
-      frmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-      frmsg.Data.Add("RescueID", MyClient.Rescue.Id);
+        var ratState = GetRatStateForButton(sender, FrButton, FrButtonCopy, FrButtonCopy1);
+        var frmsg = new TpaMessage("FriendRequest", "update")
+        {
+          Data = new JObject()
+        };
+        frmsg.Data.Add("RatID", rat.Id);
+        frmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
 
-      switch (ratState.FriendRequest)
-      {
-        case RequestState.NotRecieved:
-          ratState.FriendRequest = RequestState.Recieved;
-          break;
-        case RequestState.Recieved:
-          ratState.FriendRequest = RequestState.Accepted;
-          AppendStatus("Sending Friend Request acknowledgement.");
-          frmsg.Data.Add("FriendRequest", "true");
-          break;
-        case RequestState.Accepted:
-          AppendStatus("Cancelling FR status.");
-          ratState.FriendRequest = RequestState.NotRecieved;
-          frmsg.Data.Add("FriendRequest", "false");
-          break;
-        default:
-          throw new ArgumentOutOfRangeException();
-      }
+        switch (ratState.FriendRequest)
+        {
+          case RequestState.NotRecieved:
+            ratState.FriendRequest = RequestState.Recieved;
+            break;
+          case RequestState.Recieved:
+            ratState.FriendRequest = RequestState.Accepted;
+            AppendStatus("Sending Friend Request acknowledgement.");
+            frmsg.Data.Add("FriendRequest", "true");
+            break;
+          case RequestState.Accepted:
+            AppendStatus("Cancelling FR status.");
+            ratState.FriendRequest = RequestState.NotRecieved;
+            frmsg.Data.Add("FriendRequest", "false");
+            break;
+          default:
+            throw new ArgumentOutOfRangeException();
+        }
 
-      if (frmsg.Event != null && ratState.FriendRequest != RequestState.Recieved)
-      {
-        apiWorker.SendTpaMessage(frmsg);
+        if (frmsg.Event != null && ratState.FriendRequest != RequestState.Recieved)
+        {
+          apiWorker.SendTpaMessage(frmsg);
+        }
       }
     }
 
     private void wrButton_Click(object sender, RoutedEventArgs e)
     {
-      if (MyClient?.Rescue == null){return; }
+      if (AssignedRescue?.Rescue == null){return; }
+      var rat = MyPlayer.GetDisplayRat();
+      if (rat != null)
+      {
+        var ratState = GetRatStateForButton(sender, WrButton, WrButtonCopy, WrButtonCopy1);
+        var frmsg = new TpaMessage("WingRequest", "update")
+        {
+          Data = new JObject()
+        };
+        frmsg.Data.Add("RatID", rat.Id);
+        frmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
 
-      var ratState = GetRatStateForButton(sender, WrButton, WrButtonCopy, WrButtonCopy1);
-      var frmsg = new TpaMessage("WingRequest", "update")
-      {
-        Data = new JObject()
-      };
-      frmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-      frmsg.Data.Add("RescueID", MyClient.Rescue.Id);
-
-      switch (ratState.WingRequest)
-      {
-        case RequestState.NotRecieved:
-          ratState.WingRequest = RequestState.Recieved;
-          break;
-        case RequestState.Recieved:
-          AppendStatus("Sending Wing Request acknowledgement.");
-          frmsg.Data.Add("WingRequest", "true");
-          ratState.WingRequest = RequestState.Accepted;
-          break;
-        case RequestState.Accepted:
-          ratState.WingRequest = RequestState.NotRecieved;
-          AppendStatus("Cancelled WR status.");
-          frmsg.Data.Add("WingRequest", "false");
-          break;
-        default:
-          throw new ArgumentOutOfRangeException();
-      }
-      if (frmsg.Event != null && ratState.WingRequest != RequestState.Recieved)
-      {
-        apiWorker.SendTpaMessage(frmsg);
+        switch (ratState.WingRequest)
+        {
+          case RequestState.NotRecieved:
+            ratState.WingRequest = RequestState.Recieved;
+            break;
+          case RequestState.Recieved:
+            AppendStatus("Sending Wing Request acknowledgement.");
+            frmsg.Data.Add("WingRequest", "true");
+            ratState.WingRequest = RequestState.Accepted;
+            break;
+          case RequestState.Accepted:
+            ratState.WingRequest = RequestState.NotRecieved;
+            AppendStatus("Cancelled WR status.");
+            frmsg.Data.Add("WingRequest", "false");
+            break;
+          default:
+            throw new ArgumentOutOfRangeException();
+        }
+        if (frmsg.Event != null && ratState.WingRequest != RequestState.Recieved)
+        {
+          apiWorker.SendTpaMessage(frmsg);
+        }
       }
     }
 
     private void sysButton_Click(object sender, RoutedEventArgs e)
-    {
-      //var ratState = GetRatStateForButton(sender, SysButton, SysButtonCopy, SysButtonCopy1);
-      var frmsg = new TpaMessage("SysArrived","update") {Data = new JObject()};
-      if (MyClient?.Rescue != null)
+    { var rat = MyPlayer.GetDisplayRat();
+      if (rat != null)
       {
-        frmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-        frmsg.Data.Add("RescueID", MyClient.Rescue.Id);
-      }
+        //var ratState = GetRatStateForButton(sender, SysButton, SysButtonCopy, SysButtonCopy1);
+        var frmsg = new TpaMessage("SysArrived", "update") {Data = new JObject()};
+        if (AssignedRescue?.Rescue != null)
+        {
+          frmsg.Data.Add("RatID", rat.Id);
+          frmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
+        }
 
-      //if (ratState.InSystem == false)
-      {
-        AppendStatus("Sending System acknowledgement.");
-        frmsg.Data.Add("ArrivedSystem", "true");
-      }
-      //else
-      //{
-      //  AppendStatus("Cancelling System status.");
-      //  frmsg.Data.Add("ArrivedSystem", "false");
-      //}
+        //if (ratState.InSystem == false)
+        {
+          AppendStatus("Sending System acknowledgement.");
+          frmsg.Data.Add("ArrivedSystem", "true");
+        }
+        //else
+        //{
+        //  AppendStatus("Cancelling System status.");
+        //  frmsg.Data.Add("ArrivedSystem", "false");
+        //}
 
-      if (frmsg.Event != null)
-      {
-        apiWorker.SendTpaMessage(frmsg);
-      }
+        if (frmsg.Event != null)
+        {
+          apiWorker.SendTpaMessage(frmsg);
+        }
 
-      //ratState.InSystem = !ratState.InSystem;
+        //ratState.InSystem = !ratState.InSystem;
+      }
     }
 
     private void bcnButton_Click(object sender, RoutedEventArgs e)
     {
       var ratState = GetRatStateForButton(sender, BcnButton, BcnButtonCopy, BcnButtonCopy1);
-      var frmsg = new TpaMessage("BeaconSpotted","update") {Data = new JObject()};
-      if (MyClient?.Rescue != null)
+      var rat = MyPlayer.GetDisplayRat();
+      if (rat != null)
       {
-        frmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-        frmsg.Data.Add("RescueID", MyClient.Rescue.Id);
-      }
+        var frmsg = new TpaMessage("BeaconSpotted", "update") {Data = new JObject()};
+        if (AssignedRescue?.Rescue != null)
+        {
+          frmsg.Data.Add("RatID", rat.Id);
+          frmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
+        }
 
-      if (ratState.Beacon == false)
-      {
-        AppendStatus("Sending Beacon acknowledgement.");
-        frmsg.Data.Add("BeaconSpotted", "true");
-      }
-      else
-      {
-        AppendStatus("Cancelling Beacon status.");
-        frmsg.Data.Add("BeaconSpotted", "false");
-      }
+        if (ratState.Beacon == false)
+        {
+          AppendStatus("Sending Beacon acknowledgement.");
+          frmsg.Data.Add("BeaconSpotted", "true");
+        }
+        else
+        {
+          AppendStatus("Cancelling Beacon status.");
+          frmsg.Data.Add("BeaconSpotted", "false");
+        }
 
-      if (frmsg.Event != null && ratState.FriendRequest != RequestState.Recieved)
-      {
-        apiWorker.SendTpaMessage(frmsg);
+        if (frmsg.Event != null && ratState.FriendRequest != RequestState.Recieved)
+        {
+          apiWorker.SendTpaMessage(frmsg);
+        }
       }
 
       ratState.Beacon = !ratState.Beacon;
@@ -1670,27 +1637,31 @@ namespace RatTracker_WPF
     private void instButton_Click(object sender, RoutedEventArgs e)
     {
       var ratState = GetRatStateForButton(sender, InstButton, InstButtonCopy, InstButtonCopy1);
-      var frmsg = new TpaMessage("InstanceSuccessful:update") {Data = new JObject()};
-      if (MyClient?.Rescue != null)
+      var rat = MyPlayer.GetDisplayRat();
+      if (rat != null)
       {
-        frmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-        frmsg.Data.Add("RescueID", MyClient.Rescue.Id);
-      }
+        var frmsg = new TpaMessage("InstanceSuccessful:update") {Data = new JObject()};
+        if (AssignedRescue?.Rescue != null)
+        {
+          frmsg.Data.Add("RatID", rat.Id);
+          frmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
+        }
 
-      if (ratState.InInstance == false)
-      {
-        AppendStatus("Sending Good Instance message.");
-        frmsg.Data.Add("InstanceSuccessful", "true");
-      }
-      else
-      {
-        AppendStatus("Cancelling Good instance message.");
-        frmsg.Data.Add("InstanceSuccessful", "false");
-      }
+        if (ratState.InInstance == false)
+        {
+          AppendStatus("Sending Good Instance message.");
+          frmsg.Data.Add("InstanceSuccessful", "true");
+        }
+        else
+        {
+          AppendStatus("Cancelling Good instance message.");
+          frmsg.Data.Add("InstanceSuccessful", "false");
+        }
 
-      if (frmsg.Event != null && ratState.FriendRequest != RequestState.Recieved)
-      {
-        apiWorker.SendTpaMessage(frmsg);
+        if (frmsg.Event != null && ratState.FriendRequest != RequestState.Recieved)
+        {
+          apiWorker.SendTpaMessage(frmsg);
+        }
       }
 
       ratState.InInstance = !ratState.InInstance;
@@ -1701,51 +1672,54 @@ namespace RatTracker_WPF
       RatState ratState;
       if (Equals(sender, selfButton))
       {
-        ratState = MyClient.Self;
+        ratState = AssignedRescue.Self;
       }
       else if (Equals(sender, rat2Button))
       {
-        ratState = MyClient.Rat2;
+        ratState = AssignedRescue.Rat2;
       }
       else if (Equals(sender, rat3Button))
       {
-        ratState = MyClient.Rat3;
+        ratState = AssignedRescue.Rat3;
       }
       else
       {
-        ratState = MyClient.Self;
+        ratState = AssignedRescue.Self;
       }
 
       return ratState;
     }
 
     private void fueledButton_Click(object sender, RoutedEventArgs e)
-    {
-      if (MyClient.Rescue == null || MyPlayer.RatId.FirstOrDefault() == null)
+    { var rat = MyPlayer.GetDisplayRat();
+      if (rat != null)
       {
-        Logger.Debug("Null rescue or RatID, not doin' nothing.");
-        return;
-      }
+        if (AssignedRescue.Rescue == null)
+        {
+          Logger.Debug("Null rescue or RatID, not doin' nothing.");
+          return;
+        }
 
-      var fuelmsg = new TpaMessage("fueled:update") {Data = new JObject()};
-      fuelmsg.Data.Add("RatID", MyPlayer.RatId.FirstOrDefault());
-      fuelmsg.Data.Add("RescueID", MyClient.Rescue.Id);
+        var fuelmsg = new TpaMessage("fueled:update") {Data = new JObject()};
+        fuelmsg.Data.Add("RatID", rat.Id);
+        fuelmsg.Data.Add("RescueID", AssignedRescue.Rescue.Id);
 
-      if (Equals(FueledButton.Background, Brushes.Red))
-      {
-        AppendStatus("Reporting fueled status, requesting paperwork link...");
-        FueledButton.Background = Brushes.Green;
-        fuelmsg.Data.Add("Fueled", "true");
-        /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
-      }
-      else
-      {
-        AppendStatus("Fueled status now negative.");
-        FueledButton.Background = Brushes.Red;
-        fuelmsg.Data.Add("Fueled", "false");
-      }
+        if (Equals(FueledButton.Background, Brushes.Red))
+        {
+          AppendStatus("Reporting fueled status, requesting paperwork link...");
+          FueledButton.Background = Brushes.Green;
+          fuelmsg.Data.Add("Fueled", "true");
+          /* image.Source = new BitmapImage(RatTracker_WPF.Properties.Resources.yellow_light); */
+        }
+        else
+        {
+          AppendStatus("Fueled status now negative.");
+          FueledButton.Background = Brushes.Red;
+          fuelmsg.Data.Add("Fueled", "false");
+        }
 
-      apiWorker.SendTpaMessage(fuelmsg);
+        apiWorker.SendTpaMessage(fuelmsg);
+      }
     }
 
     private void Runtests_button_click(object sender, RoutedEventArgs e)
@@ -1791,41 +1765,43 @@ namespace RatTracker_WPF
         AppendStatus("Null myrescue! Failing.");
         return;
       }
-      if (assignedRescue != null && assignedRescue.Id == null)
+      if (assignedRescue != null && assignedRescue.Rescue.Id == null)
       {
         Logger.Debug("Rescue ID is null!");
         return;
       }
-      if (assignedRescue.Client == null)
+      if (assignedRescue.Rescue.Client == null)
       {
         AppendStatus("Null client.");
         return;
       }
 
-      if (assignedRescue.System == null)
+      if (assignedRescue.Rescue.System == null)
       {
         AppendStatus("Null system.");
         return;
       }
-      if (_myplayer.RatId == null)
+
+      var rat = MyPlayer.GetDisplayRat();
+      if (rat == null)
       {
         Logger.Debug(
           "I have no ratID for myself! That's bad, can't carry on..."); // Enforce a check for who we really are.
         return;
       }
       Logger.Debug("Null tests completed");
-      AppendStatus("Tracking rescue. System: " + assignedRescue.System + " Client: " + assignedRescue.Client);
-      MyClient = new ClientInfo
+      AppendStatus("Tracking rescue. System: " + assignedRescue.Rescue.System + " Client: " + assignedRescue.Rescue.Client);
+      AssignedRescue = new RescueInfo
       {
-        ClientName = assignedRescue.Client,
-        Rescue = assignedRescue,
-        ClientSystem = assignedRescue.System
+        ClientName = assignedRescue.Rescue.Client,
+        Rescue = assignedRescue.Rescue,
+        ClientSystem = assignedRescue.Rescue.System
       };
-      if (assignedRescue.Rats != null)
+      if (assignedRescue.Rescue.Rats != null)
       {
         Logger.Debug("Non-null myrescue rats. Parsing");
         var trackedrats = 0;
-        foreach (var ratid in assignedRescue.Rats)
+        foreach (var ratid in assignedRescue.Rescue.Rats)
         {
           Logger.Debug("Processing id " + ratid);
           //if (MyPlayer.RatId.Contains(ratid))
@@ -1849,9 +1825,9 @@ namespace RatTracker_WPF
           }
         }
       }
-      Logger.Debug("Client info loaded:" + MyClient.ClientName + " in " + MyClient.ClientSystem);
-      _overlay?.SetCurrentClient(MyClient);
-      var distance = await GetDistanceToClient(MyClient.ClientSystem);
+      Logger.Debug("Client info loaded:" + AssignedRescue.ClientName + " in " + AssignedRescue.ClientSystem);
+      _overlay?.SetCurrentClient(AssignedRescue);
+      var distance = await GetDistanceToClient(AssignedRescue.ClientSystem);
       //ClientDistance distance = new ClientDistance {Distance = 500};
       AppendStatus("Sending jumps to IRC...");
       Logger.Debug("Constructing TPA message...");
@@ -1859,12 +1835,12 @@ namespace RatTracker_WPF
       Logger.Debug("Setting action.");
       jumpmessage.Id = "0xDEADBEEF";
       Logger.Debug("Set appID");
-      Logger.Debug("Constructing TPA for " + assignedRescue.Id + " with " + _myplayer.RatId.First());
+      Logger.Debug("Constructing TPA for " + assignedRescue.Rescue.Id + " with " + rat.Id);
       jumpmessage.Data = new JObject(
         new JProperty("CallJumps",
-          Math.Ceiling(distance.Distance / _myplayer.JumpRange).ToString(CultureInfo.InvariantCulture)),
-        new JProperty("RescueID", assignedRescue.Id),
-        new JProperty("RatID", _myplayer.RatId.FirstOrDefault()),
+          Math.Ceiling(distance.Distance / MyPlayer.JumpRange).ToString(CultureInfo.InvariantCulture)),
+        new JProperty("RescueID", assignedRescue.Rescue.Id),
+        new JProperty("RatID", rat.Id),
         new JProperty("Lightyears", distance.Distance.ToString(CultureInfo.InvariantCulture)),
         new JProperty("SourceCertainty", distance.SourceCertainty),
         new JProperty("DestinationCertainty", distance.TargetCertainty)
@@ -1875,17 +1851,17 @@ namespace RatTracker_WPF
 
     private async void Button2_Click(object sender, RoutedEventArgs e)
     {
-      Logger.Debug("Querying EDDB for closest station to " + _myplayer.CurrentSystem);
-      IEnumerable<EdsmSystem> mysys = await QueryEdsmSystem(_myplayer.CurrentSystem);
+      Logger.Debug("Querying EDDB for closest station to " + MyPlayer.CurrentSystem);
+      IEnumerable<EdsmSystem> mysys = await QueryEdsmSystem(MyPlayer.CurrentSystem);
       var edsmSystems = mysys.ToArray();
       if (edsmSystems.Any())
       {
         Logger.Debug("Got a mysys with " + edsmSystems.Count() + " elements");
         var station = Eddbworker.GetClosestStation(edsmSystems.First().Coords);
         var system = Eddbworker.GetSystemById(station.system_id);
-        AppendStatus("Closest populated system to '" + _myplayer.CurrentSystem + "' is '" + system.name +
+        AppendStatus("Closest populated system to '" + MyPlayer.CurrentSystem + "' is '" + system.name +
                      "', closest station to star with known coordinates is '" + station.name + "'.");
-        var distance = await CalculateEdsmDistance(_myplayer.CurrentSystem, edsmSystems.First().Name);
+        var distance = await CalculateEdsmDistance(MyPlayer.CurrentSystem, edsmSystems.First().Name);
         var mymessage = new OverlayMessage
         {
           Line1Header = "Nearest station:",
@@ -1903,7 +1879,7 @@ namespace RatTracker_WPF
         return;
       }
 
-      AppendStatus("Unable to find a candidate system for location " + MyClient.ClientSystem);
+      AppendStatus("Unable to find a candidate system for location " + AssignedRescue.ClientSystem);
     }
 
     private void ErrorReportClick(object sender, RoutedEventArgs e)

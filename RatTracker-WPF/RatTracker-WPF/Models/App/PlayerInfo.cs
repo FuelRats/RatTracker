@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using RatTracker_WPF.Models.Api.V2;
 
 namespace RatTracker_WPF.Models.App
 {
@@ -8,8 +11,8 @@ namespace RatTracker_WPF.Models.App
     private float jumpRange;
     private bool onDuty;
     private bool superCruise;
-    private List<string> ratId;
     private string ratname;
+    private User user;
 
     public string RatName
     {
@@ -21,12 +24,12 @@ namespace RatTracker_WPF.Models.App
       }
     }
 
-    public List<string> RatId
+    public User User
     {
-      get => ratId;
+      get => user;
       set
       {
-        ratId = value;
+        user = value; 
         NotifyPropertyChanged();
       }
     }
@@ -69,6 +72,12 @@ namespace RatTracker_WPF.Models.App
         superCruise = value;
         NotifyPropertyChanged();
       }
+    }
+
+    public Rat GetDisplayRat()
+    {
+      if(User == null) { throw new Exception("Rats not usable until profile information received");}
+      return User.DisplayRat?.Platform == Platform.Pc ? User.DisplayRat : User.Rats.FirstOrDefault(x => x.Platform == Platform.Pc);
     }
   }
 }

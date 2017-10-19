@@ -2,7 +2,7 @@ using RatTracker_WPF.Models.Api.V2;
 
 namespace RatTracker_WPF.Models.App
 {
-  public class ClientInfo
+  public class RescueInfo
   {
     public string ClientName { get; set; }
     public string ClientId { get; set; }

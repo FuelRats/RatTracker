@@ -35,13 +35,13 @@
                 <StackPanel Orientation="Horizontal">
                     <Label x:Name="ActiveClientLabelHeader" Content="Client:"
                            Foreground="{DynamicResource brushEliteOrange}" />
-                    <Label x:Name="ActiveClientLabel" Content="{Binding ClientInfo.ClientName}"
+                    <Label x:Name="ActiveClientLabel" Content="{Binding RescueInfo.ClientName}"
                            Foreground="{DynamicResource brushEliteOrange}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <Label x:Name="ActiveSystemLabelHeader" Content="System:"
                            Foreground="{DynamicResource brushEliteOrange}" />
-                    <Label x:Name="ActiveSystemLabel" Content="{Binding ClientInfo.ClientSystem}" Foreground="{DynamicResource brushEliteOrange}" />
+                    <Label x:Name="ActiveSystemLabel" Content="{Binding RescueInfo.ClientSystem}" Foreground="{DynamicResource brushEliteOrange}" />
                 </StackPanel>
             </StackPanel>
 
@@ -50,19 +50,19 @@
                         VerticalAlignment="Top">
                 <Label Content="My state:" Foreground="{DynamicResource brushEliteOrange}" />
                 <StackPanel Orientation="Horizontal" Height="20">
-                    <Button x:Name="Rat1FrButton" Content="FR" Background="{Binding ClientInfo.Self.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" 
+                    <Button x:Name="Rat1FrButton" Content="FR" Background="{Binding RescueInfo.Self.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" 
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat1WrButton" Content="WR" Background="{Binding ClientInfo.Self.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" 
+                    <Button x:Name="Rat1WrButton" Content="WR" Background="{Binding RescueInfo.Self.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" 
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat1SysButton" Content="SYS" Background="{Binding ClientInfo.Self.InSystem, Converter={StaticResource BooleanToColourConverter}}" 
+                    <Button x:Name="Rat1SysButton" Content="SYS" Background="{Binding RescueInfo.Self.InSystem, Converter={StaticResource BooleanToColourConverter}}" 
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat1BcnButton" Content="BCN" Background="{Binding ClientInfo.Self.Beacon, Converter={StaticResource BooleanToColourConverter}}" 
+                    <Button x:Name="Rat1BcnButton" Content="BCN" Background="{Binding RescueInfo.Self.Beacon, Converter={StaticResource BooleanToColourConverter}}" 
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat1InstButton" Content="INST" Background="{Binding ClientInfo.Self.InInstance, Converter={StaticResource BooleanToColourConverter}}" 
+                    <Button x:Name="Rat1InstButton" Content="INST" Background="{Binding RescueInfo.Self.InInstance, Converter={StaticResource BooleanToColourConverter}}" 
                             BorderBrush="{DynamicResource brushEliteOrange}"
                             Foreground="{DynamicResource brushEliteOrange}" />
                 </StackPanel>
@@ -76,19 +76,19 @@
                     <Label x:Name="Rat2NameLabel" Content="Ravenov" Foreground="{DynamicResource brushEliteOrange}" />
                 </StackPanel>
                 <StackPanel x:Name="Rat2Buttons" Orientation="Horizontal">
-                    <Button x:Name="Rat2FrButton" Content="FR" Background="{Binding ClientInfo.Rat2.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" 
+                    <Button x:Name="Rat2FrButton" Content="FR" Background="{Binding RescueInfo.Rat2.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}" 
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat2WrButton" Content="WR" Background="{Binding ClientInfo.Rat2.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" 
+                    <Button x:Name="Rat2WrButton" Content="WR" Background="{Binding RescueInfo.Rat2.WingRequest, Converter={StaticResource RequestStateToColourConverter}}" 
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat2SysButton" Content="SYS" Background="{Binding ClientInfo.Rat2.InSystem, Converter={StaticResource BooleanToColourConverter}}" 
+                    <Button x:Name="Rat2SysButton" Content="SYS" Background="{Binding RescueInfo.Rat2.InSystem, Converter={StaticResource BooleanToColourConverter}}" 
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat2BcnButton" Content="BCN" Background="{Binding ClientInfo.Rat2.Beacon, Converter={StaticResource BooleanToColourConverter}}"
+                    <Button x:Name="Rat2BcnButton" Content="BCN" Background="{Binding RescueInfo.Rat2.Beacon, Converter={StaticResource BooleanToColourConverter}}"
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat2InstButton" Content="INST"  Background="{Binding ClientInfo.Rat2.InInstance, Converter={StaticResource BooleanToColourConverter}}"
+                    <Button x:Name="Rat2InstButton" Content="INST"  Background="{Binding RescueInfo.Rat2.InInstance, Converter={StaticResource BooleanToColourConverter}}"
                             BorderBrush="{DynamicResource brushEliteOrange}"
                             Foreground="{DynamicResource brushEliteOrange}" />
                 </StackPanel>
@@ -99,19 +99,19 @@
                     <Label x:Name="Rat3NameLabel" Content="Amolin" Foreground="{DynamicResource brushEliteOrange}" />
                 </StackPanel>
                 <StackPanel x:Name="Rat3Buttons" Orientation="Horizontal">
-                    <Button x:Name="Rat3FrButton" Content="FR" Background="{Binding ClientInfo.Rat3.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}"
+                    <Button x:Name="Rat3FrButton" Content="FR" Background="{Binding RescueInfo.Rat3.FriendRequest, Converter={StaticResource RequestStateToColourConverter}}"
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat3WrButton" Content="WR"  Background="{Binding ClientInfo.Rat3.WingRequest, Converter={StaticResource RequestStateToColourConverter}}"
+                    <Button x:Name="Rat3WrButton" Content="WR"  Background="{Binding RescueInfo.Rat3.WingRequest, Converter={StaticResource RequestStateToColourConverter}}"
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat3SysButton" Content="SYS"  Background="{Binding ClientInfo.Rat3.InSystem, Converter={StaticResource BooleanToColourConverter}}"
+                    <Button x:Name="Rat3SysButton" Content="SYS"  Background="{Binding RescueInfo.Rat3.InSystem, Converter={StaticResource BooleanToColourConverter}}"
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat3BcnButton" Content="BCN"  Background="{Binding ClientInfo.Rat3.Beacon, Converter={StaticResource BooleanToColourConverter}}"
+                    <Button x:Name="Rat3BcnButton" Content="BCN"  Background="{Binding RescueInfo.Rat3.Beacon, Converter={StaticResource BooleanToColourConverter}}"
                             BorderBrush="{DynamicResource brushEliteOrange}" Margin="0,0,2,0"
                             Foreground="{DynamicResource brushEliteOrange}" />
-                    <Button x:Name="Rat3InstButton" Content="INST"  Background="{Binding ClientInfo.Rat3.InInstance, Converter={StaticResource BooleanToColourConverter}}"
+                    <Button x:Name="Rat3InstButton" Content="INST"  Background="{Binding RescueInfo.Rat3.InInstance, Converter={StaticResource BooleanToColourConverter}}"
                             BorderBrush="{DynamicResource brushEliteOrange}"
                             Foreground="{DynamicResource brushEliteOrange}" />
                 </StackPanel>
