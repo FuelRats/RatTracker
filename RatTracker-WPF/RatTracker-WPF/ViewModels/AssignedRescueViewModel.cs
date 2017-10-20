@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows.Threading;
 using Newtonsoft.Json.Linq;
 using RatTracker_WPF.Api;
 using RatTracker_WPF.Caches;
 using RatTracker_WPF.Infrastructure;
+using RatTracker_WPF.Infrastructure.Extensions;
 using RatTracker_WPF.Models.Api.V2;
 using RatTracker_WPF.Models.Api.V2.TPA;
 using RatTracker_WPF.Models.App;
@@ -17,84 +20,40 @@ namespace RatTracker_WPF.ViewModels
     private string clientName;
     private string systemName;
     private Rescue assignedRescue;
-    private RatState self;
-    private RatState rat1;
-    private RatState rat2;
-    private RatState rat3;
 
     public AssignedRescueViewModel(ApiWorker apiWorker, Cache cache)
     {
       this.apiWorker = apiWorker;
       this.cache = cache;
       cache.RescueUpdated += RescueUpdated;
-      ClientName = "TestClient";
-      SystemName= "TestSystem";
-      Rat1 = new RatState{Rat = new Rat{Name = "Rat1"}, InSystem = true};
-      Rat2 = new RatState{Rat = new Rat{Name = "Rat2"}, WingRequest = RequestState.Recieved};
-      Rat3 = new RatState{Rat = new Rat{Name = "Rat3 -  longer name"}, Beacon = true};
+      Rats = new ObservableCollection<RatState>();
     }
 
-    private void RescueUpdated(object sender, Rescue rescue)
-    {
-      if (rescue.Rats.Any(x => x.Id == cache.PlayerInfo.GetDisplayRat().Id))
-      {
-        assignedRescue = rescue;
-      }
-    }
-    
+    public ObservableCollection<RatState> Rats { get; }
+
     public string ClientName
     {
-      get => clientName;
-      set
-      {
-        clientName = value;
-        NotifyPropertyChanged();
-      }
+      get => AssignedRescue?.Client;
+      set => AssignedRescue.Client = value;
     }
 
     public string SystemName
     {
-      get => systemName;
-      set
-      {
-        systemName = value;
-        NotifyPropertyChanged();
-      }
+      get => AssignedRescue?.System;
+      set => AssignedRescue.System = value;
     }
 
-    public RatState Rat1
+    public Rescue AssignedRescue
     {
-      get => rat1;
-      set
+      get => assignedRescue;
+      private set
       {
-        rat1 = value;
+        assignedRescue = value;
         NotifyPropertyChanged();
       }
     }
 
-    public RatState Rat2
-    {
-      get => rat2;
-      set
-      {
-        rat2 = value;
-        NotifyPropertyChanged();
-      }
-    }
-
-    public RatState Rat3
-    {
-      get => rat3;
-      set
-      {
-        rat3 = value;
-        NotifyPropertyChanged();
-      }
-    }
-
-    public Rescue Rescue => assignedRescue;
-
-    public RatState Self => self;
+    public RatState Self { get; private set; }
 
     public void SetClientName()
     {
@@ -159,16 +118,48 @@ namespace RatTracker_WPF.ViewModels
     public void ToggleInInstance(RatState ratState)
     {
       ratState.InInstance = !ratState.InInstance;
-      SendTpaMessage("InstanceSuccessful","update", ratState.InInstance);
+      SendTpaMessage("InstanceSuccessful", "update", ratState.InInstance);
     }
 
+    private void RescueUpdated(object sender, Rescue rescue)
+    {
+      // if my rat assigned
+      var displayRat = cache.PlayerInfo.GetDisplayRat();
+      if (rescue.Rats.Contains(displayRat))
+      {
+        if (assignedRescue != null && assignedRescue.Id != rescue.Id && assignedRescue.Status != RescueState.Closed)
+        {
+          DialogHelper.ShowWarning("There is already an open rescue assigned to you. Keeping current rescue.");
+          return;
+        }
+
+        if (assignedRescue?.Id == rescue.Id)
+        {
+        }
+
+        AssignedRescue = rescue;
+        Rats.AddAll(rescue.Rats.Select(rat => new RatState {Rat = rat}));
+        Self = Rats.Single(x => x.Rat == displayRat);
+      }
+      else
+      {
+        // if id = assignedrescue.id
+        if (rescue.Id == assignedRescue?.Id)
+        {
+          // -> I was unassigned
+          AssignedRescue = null;
+          Rats.Clear();
+        }
+      }
+    }
+    
     private void SendTpaMessage(string controller, string action, bool value)
     {
       var frmsg = new TpaMessage(controller, action)
       {
         Data = new JObject()
       };
-      frmsg.Data.Add("RatID", self?.Rat.Id);
+      frmsg.Data.Add("RatID", Self?.Rat.Id);
       frmsg.Data.Add("RescueID", assignedRescue?.Id);
       frmsg.Data.Add(controller, value.ToApiName());
 

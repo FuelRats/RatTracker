@@ -193,6 +193,7 @@
     <Compile Include="ErrorReporter.xaml.cs">
       <DependentUpon>ErrorReporter.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Infrastructure\DialogHelper.cs" />
     <Compile Include="Infrastructure\EventHandlers\ConnInfo.cs" />
     <Compile Include="Infrastructure\EventHandlers\FireBirdLoaded.cs" />
     <Compile Include="Infrastructure\EventHandlers\FriendRequest.cs" />
@@ -203,6 +204,7 @@
     <Compile Include="GlobalHotkey.cs" />
     <Compile Include="Infrastructure\ApiExtensions.cs" />
     <Compile Include="Api\JsonApi.cs" />
+    <Compile Include="Infrastructure\Extensions\EnumerableExtensions.cs" />
     <Compile Include="Infrastructure\RelayCommand.cs" />
     <Compile Include="Models\Api\V1\AccessToken.cs" />
     <Compile Include="Models\Api\V1\APIQuery.cs" />
