@@ -29,7 +29,6 @@
       </Grid.RowDefinitions>
 
       <ContentControl Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" cal:View.Model="{Binding Rescues}" />
-
       <ContentControl Grid.Column="0" Grid.Row="1" cal:View.Model="{Binding AssignedRescue}" />
 
     </Grid>
