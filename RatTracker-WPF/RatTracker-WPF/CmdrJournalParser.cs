@@ -241,7 +241,7 @@ namespace RatTracker_WPF
 
       try
       {
-        newLines = File.ReadLines(fi.FullName).Skip(_lineOffset).ToArray();
+        newLines = WriteSafeReadAllLines(fi.FullName).Skip(_lineOffset).ToArray();
       }
       catch (Exception e)
       {
@@ -426,6 +426,8 @@ namespace RatTracker_WPF
           file.Add(sr.ReadLine());
         }
 
+        sr.Close();
+        journal.Close();
         return file.ToArray();
       }
     }
