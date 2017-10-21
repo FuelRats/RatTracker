@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Data;
 using System.Windows.Markup;
 using RatTracker.Models.Api;
+using RatTracker.Models.Api.Rescues;
 
 namespace RatTracker.Infrastructure.Converter
 {

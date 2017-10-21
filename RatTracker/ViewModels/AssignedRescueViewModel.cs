@@ -4,6 +4,7 @@ using Caliburn.Micro;
 using Newtonsoft.Json.Linq;
 using RatTracker.Infrastructure.Extensions;
 using RatTracker.Models.Api;
+using RatTracker.Models.Api.Rescues;
 using RatTracker.Models.Api.TPA;
 using RatTracker.Models.App;
 

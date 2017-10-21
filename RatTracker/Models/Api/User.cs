@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using RatTracker.Models.Api.Rescues;
 
 namespace RatTracker.Models.Api
 {

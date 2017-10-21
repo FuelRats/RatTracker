@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace RatTracker.Models.Api
+namespace RatTracker.Models.Api.Rescues
 {
   public enum RescueState
   {

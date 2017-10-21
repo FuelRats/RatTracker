@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RatTracker.Models.Api
+namespace RatTracker.Models.Api.Rescues
 {
   public class Quote
   {

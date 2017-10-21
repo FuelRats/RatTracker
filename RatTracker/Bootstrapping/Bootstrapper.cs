@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows;
 using Caliburn.Micro;
 using Ninject;
+using RatTracker.Api;
 using RatTracker.ViewModels;
 
 namespace RatTracker.Bootstrapping
@@ -36,6 +38,10 @@ namespace RatTracker.Bootstrapping
     protected override void OnStartup(object sender, StartupEventArgs e)
     {
       DisplayRootViewFor<RatTrackerViewModel>();
+      kernel.Get<EventBus>();
+      kernel.Get<Cache>();
+      var websocketHandler = kernel.Get<WebsocketHandler>();
+      Task.Run(() => { websocketHandler.Initialize(true); });
     }
   }
 }

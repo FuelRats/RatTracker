@@ -1,4 +1,5 @@
 using RatTracker.Models.Api;
+using RatTracker.Models.Api.Rescues;
 using RatTracker_WPF.Models.App;
 
 namespace RatTracker.Models.App

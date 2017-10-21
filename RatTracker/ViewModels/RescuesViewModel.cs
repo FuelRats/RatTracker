@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using Caliburn.Micro;
-using RatTracker.Models.Api;
+using RatTracker.Api;
+using RatTracker.Infrastructure.Extensions;
+using RatTracker.Models.Api.Rescues;
 
 namespace RatTracker.ViewModels
 {
@@ -10,13 +14,25 @@ namespace RatTracker.ViewModels
     private Rescue selectedRescue;
     private double distance;
     private int jumps;
+    private readonly ObservableCollection<Rescue> rescues = new ObservableCollection<Rescue>();
 
-    public RescuesViewModel()
+    public RescuesViewModel(EventBus eventBus)
     {
-      Rescues.Add(new Rescue {System = "Sol", Client = "TestClient", Rats = new List<Rat>{new Rat{Name = "Rat1"}}});
+      eventBus.RescueCreated += EventBusOnRescueCreated;
+      eventBus.RescueUpdated += EventBusOnRescueUpdated;
+      eventBus.RescuesReloaded += EventBusOnRescuesReloaded;
     }
 
-    public ObservableCollection<Rescue> Rescues { get; } = new ObservableCollection<Rescue>();
+    private void EventBusOnRescuesReloaded(object sender, IEnumerable<Rescue> rescues)
+    {
+      Rescues.Clear();
+      Rescues.AddAll(rescues);
+    }
+
+    public ObservableCollection<Rescue> Rescues
+    {
+      get { return rescues; }
+    }
 
     public Rescue SelectedRescue
     {
@@ -50,7 +66,25 @@ namespace RatTracker.ViewModels
 
     public void FindNearestStation()
     {
-      
+    }
+
+    private void EventBusOnRescueUpdated(object sender, Rescue rescue)
+    {
+      var oldRescue = Rescues.SingleOrDefault(x => x.Id == rescue.Id);
+      if (oldRescue != null)
+      {
+        var index = Rescues.IndexOf(oldRescue);
+        Rescues[index] = rescue;
+      }
+      else
+      {
+        Rescues.Add(rescue);
+      }
+    }
+
+    private void EventBusOnRescueCreated(object sender, Rescue rescue)
+    {
+      Rescues.Add(rescue);
     }
   }
 }

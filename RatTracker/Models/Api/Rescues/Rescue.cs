@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace RatTracker.Models.Api
+namespace RatTracker.Models.Api.Rescues
 {
   public class Rescue : ModelBase
   {

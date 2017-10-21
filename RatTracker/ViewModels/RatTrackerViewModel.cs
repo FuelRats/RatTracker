@@ -7,10 +7,10 @@ namespace RatTracker.ViewModels
     private AssignedRescueViewModel assignedRescue;
     private RescuesViewModel rescues;
 
-    public RatTrackerViewModel()
+    public RatTrackerViewModel(AssignedRescueViewModel assignedRescueViewModel, RescuesViewModel rescuesViewModel)
     {
-      AssignedRescue = new AssignedRescueViewModel();
-      Rescues = new RescuesViewModel();
+      AssignedRescue = assignedRescueViewModel;
+      Rescues = rescuesViewModel;
     }
 
     public AssignedRescueViewModel AssignedRescue
