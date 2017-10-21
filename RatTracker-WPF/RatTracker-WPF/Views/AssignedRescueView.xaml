@@ -9,7 +9,7 @@
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
              d:DataContext="{d:DesignInstance viewModels:AssignedRescueViewModel}">
-  <GroupBox Header="Assigned Rescue" Foreground="{DynamicResource brushEliteOrange}">
+  <GroupBox Header="Assigned Rescue" Foreground="{DynamicResource BrushEliteOrange}">
     <StackPanel Grid.IsSharedSizeScope="True">
       <Grid>
         <Grid.ColumnDefinitions>

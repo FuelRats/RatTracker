@@ -21,6 +21,11 @@ namespace RatTracker_WPF.ViewModels
     private string systemName;
     private Rescue assignedRescue;
 
+    public AssignedRescueViewModel()
+    {
+      
+    }
+
     public AssignedRescueViewModel(ApiWorker apiWorker, Cache cache)
     {
       this.apiWorker = apiWorker;
