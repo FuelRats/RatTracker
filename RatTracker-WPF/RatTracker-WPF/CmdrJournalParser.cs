@@ -426,8 +426,6 @@ namespace RatTracker_WPF
           file.Add(sr.ReadLine());
         }
 
-        sr.Close();
-        journal.Close();
         return file.ToArray();
       }
     }
