@@ -112,5 +112,53 @@ namespace RatTracker.Properties {
                 this["WebSitePort"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string OverlayMonitor {
+            get {
+                return ((string)(this["OverlayMonitor"]));
+            }
+            set {
+                this["OverlayMonitor"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Program Files (x86)\\Frontier\\")]
+        public string LauncherDirectory {
+            get {
+                return ((string)(this["LauncherDirectory"]));
+            }
+            set {
+                this["LauncherDirectory"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Program Files (x86)\\Frontier\\Products\\elite-dangerous-64\\Logs")]
+        public string LogDirectory {
+            get {
+                return ((string)(this["LogDirectory"]));
+            }
+            set {
+                this["LogDirectory"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        public double JumpRange {
+            get {
+                return ((double)(this["JumpRange"]));
+            }
+            set {
+                this["JumpRange"] = value;
+            }
+        }
     }
 }

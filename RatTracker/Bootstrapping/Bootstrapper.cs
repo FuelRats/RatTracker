@@ -40,7 +40,6 @@ namespace RatTracker.Bootstrapping
 
     protected override async void OnStartup(object sender, StartupEventArgs e)
     {
-      Debugger.Launch();
       var commandLineArgs = Environment.GetCommandLineArgs();
       var oauthArg = commandLineArgs.FirstOrDefault(x => x.StartsWith("rattracker"));
       if (oauthArg != null)

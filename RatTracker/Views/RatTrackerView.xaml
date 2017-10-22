@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:viewModels="clr-namespace:RatTracker.ViewModels"
-        Style="{StaticResource WindowStyle}"
+        Style="{StaticResource WindowStyle}" WindowStartupLocation="CenterScreen"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:RatTrackerViewModel}"
         Height="650" Width="950">
   <DockPanel>
@@ -14,7 +14,7 @@
         <MenuItem Header="Send error report" />
         <MenuItem Header="Refresh EDDB data" />
       </MenuItem>
-      <MenuItem Header="Settings" />
+      <MenuItem Header="Settings" cal:Message.Attach="OpenSettings" />
       <MenuItem x:Name="OverlayMenu" Header="Overlay" />
     </Menu>
 

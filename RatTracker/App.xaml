@@ -12,6 +12,7 @@
         <ResourceDictionary Source="Infrastructure/Resources/Styles/Colours.xaml" />
         <ResourceDictionary Source="Infrastructure/Resources/Styles/SeparatorStyle.xaml" />
         <ResourceDictionary Source="Infrastructure/Resources/Styles/GroupBoxStyle.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/ComboBoxStyle.xaml" />
         <ResourceDictionary Source="Infrastructure/Resources/Styles/TextBlockStyle.xaml" />
         <ResourceDictionary Source="Infrastructure/Resources/Styles/TextBoxStyle.xaml" />
         <ResourceDictionary Source="Infrastructure/Resources/Styles/WindowStyle.xaml" />

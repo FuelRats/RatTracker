@@ -78,6 +78,24 @@ namespace RatTracker.Api
       }
     }
 
+    public void RestartRatTracker(bool elevated = false)
+    {
+      var proc = new ProcessStartInfo
+      {
+        UseShellExecute = true,
+        WorkingDirectory = Environment.CurrentDirectory,
+        FileName = Process.GetCurrentProcess().MainModule.FileName
+      };
+
+      if (elevated)
+      {
+        proc.Verb = "runas";
+      }
+
+      Process.Start(proc);
+      CloseRatTracker();
+    }
+
     private void SetURIHandlerIfNecessary()
     {
       var programFileName = Process.GetCurrentProcess().MainModule.FileName;
@@ -142,24 +160,6 @@ namespace RatTracker.Api
         default:
           throw new ArgumentOutOfRangeException();
       }
-    }
-
-    private static void RestartRatTracker(bool elevated)
-    {
-      var proc = new ProcessStartInfo
-      {
-        UseShellExecute = true,
-        WorkingDirectory = Environment.CurrentDirectory,
-        FileName = Process.GetCurrentProcess().MainModule.FileName
-      };
-
-      if (elevated)
-      {
-        proc.Verb = "runas";
-      }
-
-      Process.Start(proc);
-      CloseRatTracker();
     }
 
     private static void CloseRatTracker()

@@ -4,11 +4,15 @@ namespace RatTracker.ViewModels
 {
   public sealed class RatTrackerViewModel : Screen
   {
+    private readonly IWindowManager windowManager;
+    private readonly SettingsViewModel settingsViewModel;
     private AssignedRescueViewModel assignedRescue;
     private RescuesViewModel rescues;
 
-    public RatTrackerViewModel(AssignedRescueViewModel assignedRescueViewModel, RescuesViewModel rescuesViewModel)
+    public RatTrackerViewModel(IWindowManager windowManager, AssignedRescueViewModel assignedRescueViewModel, RescuesViewModel rescuesViewModel, SettingsViewModel settingsViewModel)
     {
+      this.windowManager = windowManager;
+      this.settingsViewModel = settingsViewModel;
       DisplayName = "RatTracker";
       AssignedRescue = assignedRescueViewModel;
       Rescues = rescuesViewModel;
@@ -32,6 +36,11 @@ namespace RatTracker.ViewModels
         rescues = value;
         NotifyOfPropertyChange();
       }
+    }
+
+    public void OpenSettings()
+    {
+      windowManager.ShowDialog(settingsViewModel);
     }
   }
 }
