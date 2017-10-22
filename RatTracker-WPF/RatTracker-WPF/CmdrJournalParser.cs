@@ -25,6 +25,8 @@ namespace RatTracker_WPF
 
   public delegate void FsdJumpEvent(object sender, FsdJumpLog eventData);
 
+  public delegate void LocationEvent(object sender, LocationLog eventData);
+
   public delegate void FuelScoopEvent(object sender, FuelScoopLog eventData);
 
   public delegate void HullDamageEvent(object sender, HullDamageLog eventData);
@@ -116,6 +118,7 @@ namespace RatTracker_WPF
     public event DiedEvent DiedEvent;
     public event EscapeInterdictionEvent EscapeInterdictionEvent;
     public event FsdJumpEvent FsdJumpEvent;
+    public event LocationEvent LocationEvent;
     public event FuelScoopEvent FuelScoopEvent;
     public event HullDamageEvent HullDamageEvent;
     public event InterdictedEvent InterdictedEvent;
@@ -136,6 +139,7 @@ namespace RatTracker_WPF
     private volatile bool _newFile = true;
     private static readonly ILog Logger = LogManager.GetLogger(Assembly.GetCallingAssembly().GetName().Name);
     private int _lineOffset;
+    private LocationLog lastlocation = null;
 
     public bool IsListening => _fileListeningActive;
 
@@ -233,6 +237,10 @@ namespace RatTracker_WPF
         {
           ReadJObjectString(line, true);
         }
+        if (lastlocation != null)
+        {
+          LocationEvent?.Invoke(this, lastlocation);
+        }
         _newFile = false;
         return;
       }
@@ -300,6 +308,18 @@ namespace RatTracker_WPF
           }
           _currentLogFile.CmdrLogEntries.Add(fsdJumpObj);
           break;
+        case "Location":
+          var locationObj = JsonConvert.DeserializeObject<LocationLog>(jObjectString);
+          if (!suppressEvents)
+          {
+            LocationEvent?.Invoke(this, locationObj);
+          }
+          else
+          {
+            lastlocation = locationObj; //Used to wait till we've parsed the whole log, and only use the most recent load event for position setting.
+          }
+          _currentLogFile.CmdrLogEntries.Add(locationObj);
+          break;
         case "FuelScoop":
           var fuelScoopObj = JsonConvert.DeserializeObject<FuelScoopLog>(jObjectString);
           if (!suppressEvents)
@@ -348,7 +368,7 @@ namespace RatTracker_WPF
           }
           _currentLogFile.CmdrLogEntries.Add(supercruiseEntryObj);
           break;
-        case "SuperCruiseExit":
+        case "SupercruiseExit":
           var superCruiseExitObj = JsonConvert.DeserializeObject<SuperCruiseExitLog>(jObjectString);
           if (!suppressEvents)
           {
