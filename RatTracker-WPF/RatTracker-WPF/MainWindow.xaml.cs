@@ -79,7 +79,7 @@ namespace RatTracker_WPF
     {
       AppendStatus("Rescue closed: " + rescue.Client);
       Logger.Debug("Rescue closed: " + rescue.Client);
-      if (rescue.Id == AssignedRescueViewModel.Rescue?.Id)
+      if (rescue.Id == AssignedRescueViewModel.AssignedRescue?.Id)
       {
         Logger.Debug("Our active rescue was closed.");
       }
@@ -809,7 +809,7 @@ namespace RatTracker_WPF
             new JProperty("CrimeType", eventData.CrimeType),
             new JProperty("RatID", rat.Id),
             new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-            new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+            new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
           )
         };
 
@@ -824,7 +824,7 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_DiedEvent(object sender, DiedLog eventData)
     {
-      if (AssignedRescueViewModel?.Rescue != null)
+      if (AssignedRescueViewModel?.AssignedRescue != null)
       {
         var rat = MyPlayer.GetDisplayRat();
         if (rat != null)
@@ -836,7 +836,7 @@ namespace RatTracker_WPF
               new JProperty("Killers", eventData.KillersList?.Select(k => k.Name).ToList()),
               new JProperty("RatID", rat.Id),
               new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-              new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+              new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
             )
           });
         AppendStatus("Sending death notice.");
@@ -846,7 +846,7 @@ namespace RatTracker_WPF
 
     private void _cmdrJournalParser_EscapeInterdictionEvent(object sender, EscapeInterdictionLog eventData)
     {
-      if (AssignedRescueViewModel?.Rescue != null)
+      if (AssignedRescueViewModel?.AssignedRescue != null)
       {
         var rat = MyPlayer.User.Rats.FirstOrDefault(x => x.Platform == Platform.Pc);
         if (rat != null)
@@ -859,7 +859,7 @@ namespace RatTracker_WPF
               new JProperty("Interdictor", eventData.Interdictor),
               new JProperty("RatID", rat.Id),
               new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-              new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+              new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
             )
           });
         AppendStatus("Sending Escape Interdiction Noticiation.");
@@ -879,7 +879,7 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_HullDamageEvent(object sender, HullDamageLog eventData)
     {
-      if (AssignedRescueViewModel?.Rescue != null)
+      if (AssignedRescueViewModel?.AssignedRescue != null)
       {
         if ((eventData.Timestamp - lastHullDamageEvent).TotalMinutes < 1)
         {
@@ -899,7 +899,7 @@ namespace RatTracker_WPF
               new JProperty("RatHealth", eventData.Health),
               new JProperty("RatID", rat),
               new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-              new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+              new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
             )
           });
           AppendStatus("Sending Under Attack notification.");
@@ -909,7 +909,7 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_InterdictedEvent(object sender, InterdictedLog eventData)
     {
-      if (AssignedRescueViewModel?.Rescue != null)
+      if (AssignedRescueViewModel?.AssignedRescue != null)
       {
         var rat = MyPlayer.GetDisplayRat();
         if (rat != null)
@@ -922,7 +922,7 @@ namespace RatTracker_WPF
               new JProperty("Interdictor", eventData.Interdictor),
               new JProperty("RatID", rat.Id),
               new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-              new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+              new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
             )
           });
           AppendStatus("Sending interdicted notification.");
@@ -932,7 +932,7 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_InterdictionEvent(object sender, InterdictionLog eventData)
     {
-      if (AssignedRescueViewModel?.Rescue != null)
+      if (AssignedRescueViewModel?.AssignedRescue != null)
       {
         var rat = MyPlayer.GetDisplayRat();
         if (rat != null)
@@ -945,7 +945,7 @@ namespace RatTracker_WPF
               new JProperty("Interdicted", eventData.Interdicted),
               new JProperty("RatID", rat.Id),
               new JProperty("CurrentSystem", MyPlayer.CurrentSystem),
-              new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+              new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
             )
           };
           apiWorker.SendTpaMessage(msg);
@@ -955,11 +955,11 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_ReceiveTextEvent(object sender, ReceiveTextLog eventData)
     {
-      if (AssignedRescueViewModel?.Rescue != null)
+      if (AssignedRescueViewModel?.AssignedRescue != null)
       {
         // We need to clean the string up for cmdr name comparison. The cmdr name is not consistant, and appears as "CMDR cmdrName" or "&cmdrName" depending on how it was recieved.
         if (!eventData.FromText.Replace("CMDR", "").Replace("&", "").Trim()
-          .Equals(AssignedRescueViewModel.Rescue.Client, StringComparison.InvariantCultureIgnoreCase))
+          .Equals(AssignedRescueViewModel.AssignedRescue.Client, StringComparison.InvariantCultureIgnoreCase))
         {
           return;
         }
@@ -972,7 +972,7 @@ namespace RatTracker_WPF
             (
               new JProperty("Communication", "True"),
               new JProperty("RatID", rat.Id),
-              new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+              new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
             )
           });
           AppendStatus("Sending comms+ confirmation.");
@@ -984,7 +984,7 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_SupercruiseEntryEvent(object sender, SupercruiseEntryLog eventData)
     {
-      if (AssignedRescueViewModel?.Rescue != null)
+      if (AssignedRescueViewModel?.AssignedRescue != null)
       {
         var rat = MyPlayer.GetDisplayRat();
         if (rat != null)
@@ -995,7 +995,7 @@ namespace RatTracker_WPF
             (
               new JProperty("Supercruise", "Entering"),
               new JProperty("RatID", rat.Id),
-              new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+              new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
             )
           });
           AppendStatus("Sending supercrise entry notification.");
@@ -1005,7 +1005,7 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_SuperCruiseExitEvent(object sender, SuperCruiseExitLog eventData)
     {
-      if (AssignedRescueViewModel?.Rescue != null)
+      if (AssignedRescueViewModel?.AssignedRescue != null)
       {
         var rat = MyPlayer.GetDisplayRat();
         if (rat != null)
@@ -1016,7 +1016,7 @@ namespace RatTracker_WPF
             (
               new JProperty("Supercruise", "Exiting"),
               new JProperty("RatID", rat.Id),
-              new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+              new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
             )
           });
           AppendStatus("Sending supercruise exit noticiation.");
@@ -1026,9 +1026,9 @@ namespace RatTracker_WPF
 
     private void CmdrJournalParser_WingAddEvent(object sender, WingAddLog eventData)
     {
-      if (AssignedRescueViewModel?.Rescue != null)
+      if (AssignedRescueViewModel?.AssignedRescue != null)
       {
-        if (!AssignedRescueViewModel.Rescue.Client.Equals(eventData.Name, StringComparison.InvariantCultureIgnoreCase))
+        if (!AssignedRescueViewModel.AssignedRescue.Client.Equals(eventData.Name, StringComparison.InvariantCultureIgnoreCase))
         {
           return;
         }
@@ -1041,7 +1041,7 @@ namespace RatTracker_WPF
             (
               new JProperty("WingRequest", "True"),
               new JProperty("RatID", rat.Id),
-              new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+              new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
             )
           });
           AppendStatus("Sending Wing Request acknowledgement.");
@@ -1092,7 +1092,7 @@ namespace RatTracker_WPF
           disp.BeginInvoke(DispatcherPriority.Normal,
             (Action)(() => DistanceLabel.Content = distance + "LY from Fuelum"));
         Logger.Debug("Added system to TravelLog.");
-        if (AssignedRescueViewModel.Rescue?.System == value)
+        if (AssignedRescueViewModel.AssignedRescue?.System == value)
         { var rat = MyPlayer.GetDisplayRat();
           if (rat != null)
           {
@@ -1104,7 +1104,7 @@ namespace RatTracker_WPF
               (
                 new JProperty("SysArrived", "true"),
                 new JProperty("RatID", rat.Id),
-                new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+                new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
               )
             };
             apiWorker.SendTpaMessage(sysmsg);
@@ -1243,7 +1243,7 @@ namespace RatTracker_WPF
           (
             new JProperty("SystemName", SystemName.Text),
             new JProperty("RatID", rat.Id),
-            new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id)
+            new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id)
           )
         };
         apiWorker.SendTpaMessage(systemmessage);
@@ -1463,34 +1463,11 @@ namespace RatTracker_WPF
       }
     }
     
-    private RatState GetRatStateForButton(object sender, Button selfButton, Button rat2Button, Button rat3Button)
-    {
-      RatState ratState;
-      if (Equals(sender, selfButton))
-      {
-        ratState = AssignedRescueViewModel.Self;
-      }
-      else if (Equals(sender, rat2Button))
-      {
-        ratState = AssignedRescueViewModel.Rat2;
-      }
-      else if (Equals(sender, rat3Button))
-      {
-        ratState = AssignedRescueViewModel.Rat3;
-      }
-      else
-      {
-        ratState = AssignedRescueViewModel.Self;
-      }
-
-      return ratState;
-    }
-
     private void fueledButton_Click(object sender, RoutedEventArgs e)
     { var rat = MyPlayer.GetDisplayRat();
       if (rat != null)
       {
-        if (AssignedRescueViewModel.Rescue == null)
+        if (AssignedRescueViewModel.AssignedRescue == null)
         {
           Logger.Debug("Null rescue or RatID, not doin' nothing.");
           return;
@@ -1498,7 +1475,7 @@ namespace RatTracker_WPF
 
         var fuelmsg = new TpaMessage("fueled:update") {Data = new JObject()};
         fuelmsg.Data.Add("RatID", rat.Id);
-        fuelmsg.Data.Add("RescueID", AssignedRescueViewModel.Rescue.Id);
+        fuelmsg.Data.Add("RescueID", AssignedRescueViewModel.AssignedRescue.Id);
 
         if (Equals(FueledButton.Background, Brushes.Red))
         {
@@ -1561,18 +1538,18 @@ namespace RatTracker_WPF
         AppendStatus("Null myrescue! Failing.");
         return;
       }
-      if (AssignedRescueViewModel != null && AssignedRescueViewModel.Rescue.Id == null)
+      if (AssignedRescueViewModel != null && AssignedRescueViewModel.AssignedRescue.Id == null)
       {
         Logger.Debug("Rescue ID is null!");
         return;
       }
-      if (AssignedRescueViewModel.Rescue.Client == null)
+      if (AssignedRescueViewModel.AssignedRescue.Client == null)
       {
         AppendStatus("Null client.");
         return;
       }
 
-      if (AssignedRescueViewModel.Rescue.System == null)
+      if (AssignedRescueViewModel.AssignedRescue.System == null)
       {
         AppendStatus("Null system.");
         return;
@@ -1586,7 +1563,7 @@ namespace RatTracker_WPF
         return;
       }
       Logger.Debug("Null tests completed");
-      AppendStatus("Tracking rescue. System: " + AssignedRescueViewModel.Rescue.System + " Client: " + AssignedRescueViewModel.Rescue.Client);
+      AppendStatus("Tracking rescue. System: " + AssignedRescueViewModel.AssignedRescue.System + " Client: " + AssignedRescueViewModel.AssignedRescue.Client);
       // TODO MA fix
       //AssignedRescueViewModel = new RescueInfo
       //{
@@ -1594,11 +1571,11 @@ namespace RatTracker_WPF
       //  Rescue = AssignedRescueViewModel.Rescue,
       //  ClientSystem = AssignedRescueViewModel.Rescue.System
       //};
-      if (AssignedRescueViewModel.Rescue.Rats != null)
+      if (AssignedRescueViewModel.AssignedRescue.Rats != null)
       {
         Logger.Debug("Non-null myrescue rats. Parsing");
         var trackedrats = 0;
-        foreach (var ratid in AssignedRescueViewModel.Rescue.Rats)
+        foreach (var ratid in AssignedRescueViewModel.AssignedRescue.Rats)
         {
           Logger.Debug("Processing id " + ratid);
           //if (MyPlayer.RatId.Contains(ratid))
@@ -1632,11 +1609,11 @@ namespace RatTracker_WPF
       Logger.Debug("Setting action.");
       jumpmessage.Id = "0xDEADBEEF";
       Logger.Debug("Set appID");
-      Logger.Debug("Constructing TPA for " + AssignedRescueViewModel.Rescue.Id + " with " + rat.Id);
+      Logger.Debug("Constructing TPA for " + AssignedRescueViewModel.AssignedRescue.Id + " with " + rat.Id);
       jumpmessage.Data = new JObject(
         new JProperty("CallJumps",
           Math.Ceiling(distance.Distance / MyPlayer.JumpRange).ToString(CultureInfo.InvariantCulture)),
-        new JProperty("RescueID", AssignedRescueViewModel.Rescue.Id),
+        new JProperty("RescueID", AssignedRescueViewModel.AssignedRescue.Id),
         new JProperty("RatID", rat.Id),
         new JProperty("Lightyears", distance.Distance.ToString(CultureInfo.InvariantCulture)),
         new JProperty("SourceCertainty", distance.SourceCertainty),

@@ -12,36 +12,23 @@ namespace RatTracker_WPF.Caches
   {
     private readonly ConcurrentDictionary<Guid, Rescue> rescues = new ConcurrentDictionary<Guid, Rescue>();
     private readonly ConcurrentDictionary<Guid, Rat> rats = new ConcurrentDictionary<Guid, Rat>();
-    private PlayerInfo playerInfo;
+
+    public PlayerInfo PlayerInfo { get; private set; }
+
     public event EventHandler RescuesReloaded;
-    public event EventHandler<Rescue> RescueCreated; 
-    public event EventHandler<Rescue> RescueUpdated; 
-    public event EventHandler<Rescue> RescueClosed; 
+    public event EventHandler<Rescue> RescueCreated;
+    public event EventHandler<Rescue> RescueUpdated;
+    public event EventHandler<Rescue> RescueClosed;
 
     public void Init(WebsocketResponseHandler responseHandler)
     {
       responseHandler.AddCallback("rescues:read", RescuesRead);
       responseHandler.AddCallback("rescueCreated", RescuesCreated);
       responseHandler.AddCallback("rescueUpdated", RescuesUpdated);
+
+      responseHandler.AddCallback("users:profile", message => { PlayerInfo = new PlayerInfo {User = JsonApi.Deserialize<User>(message)}; });
     }
 
-    private void RescuesUpdated(string message)
-    {
-      var newRescues = JsonApi.Deserialize<Rescue[]>(message);
-      foreach (var rescue in newRescues)
-      {
-        if (rescue.Status == RescueState.Closed)
-        {
-          RemoveRescue(rescue);
-          RescueClosed?.Invoke(this, rescue);
-          return;
-        }
-
-        AddRescue(rescue);
-        RescueUpdated?.Invoke(this, rescue);
-      }
-    }
-    
     public IEnumerable<Rescue> GetRescues()
     {
       return rescues.Values.ToList().OrderBy(x => x.Data.BoardIndex);
@@ -64,6 +51,23 @@ namespace RatTracker_WPF.Caches
       return rats.Values.ToList();
     }
 
+    private void RescuesUpdated(string message)
+    {
+      var newRescues = JsonApi.Deserialize<Rescue[]>(message);
+      foreach (var rescue in newRescues)
+      {
+        if (rescue.Status == RescueState.Closed)
+        {
+          RemoveRescue(rescue);
+          RescueClosed?.Invoke(this, rescue);
+          return;
+        }
+
+        AddRescue(rescue);
+        RescueUpdated?.Invoke(this, rescue);
+      }
+    }
+
     private void RescuesCreated(string message)
     {
       var newRescues = JsonApi.Deserialize<Rescue[]>(message);
@@ -73,7 +77,7 @@ namespace RatTracker_WPF.Caches
         RescueCreated?.Invoke(this, rescue);
       }
     }
-    
+
     private void RescuesRead(string message)
     {
       var newRescues = JsonApi.Deserialize<Rescue[]>(message);
@@ -154,7 +158,5 @@ namespace RatTracker_WPF.Caches
     {
       rats.TryRemove(ratId, out var unused);
     }
-
-    public PlayerInfo PlayerInfo => playerInfo;
   }
 }

@@ -1,0 +1,97 @@
+﻿<UserControl x:Class="RatTracker_WPF.Views.RescuesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converter="clr-namespace:RatTracker_WPF.Infrastructure.Converter"
+             xmlns:viewModels="clr-namespace:RatTracker_WPF.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:RescuesViewModel}"
+             d:DesignHeight="300" d:DesignWidth="900">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="2*" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <GroupBox Header="Active Rescues" Grid.Column="0">
+      <GroupBox.Effect>
+        <DropShadowEffect />
+      </GroupBox.Effect>
+      <DataGrid ItemsSource="{Binding Rescues}" IsReadOnly="True"
+                AutoGenerateColumns="False" SelectionMode="Single" SelectedItem="{Binding SelectedRescue}">
+        <DataGrid.Columns>
+          <DataGridTextColumn Binding="{Binding Platform}" ClipboardContentBinding="{x:Null}" Header="Platform" />
+          <DataGridTextColumn Binding="{Binding Client, Converter={converter:ClientConverter}}"
+                              ClipboardContentBinding="{x:Null}" Header="Client" />
+          <DataGridTextColumn Binding="{Binding Rats, Converter={converter:RatNameConcatConverter}}" Header="Rats" />
+          <DataGridTextColumn Binding="{Binding System}" ClipboardContentBinding="{x:Null}" Header="System" />
+          <DataGridCheckBoxColumn Binding="{Binding CodeRed}" ClipboardContentBinding="{x:Null}" Header="Code Red"
+                                  Visibility="Hidden" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </GroupBox>
+
+    <GroupBox Header="Selected Rescue" Grid.Column="1">
+      <Grid>
+        <Grid.Resources>
+          <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
+            <Setter Property="Margin" Value="5,1,0,1" />
+          </Style>
+          <Style TargetType="TextBox" BasedOn="{StaticResource TextBoxStyle}">
+            <Setter Property="Margin" Value="0,1" />
+          </Style>
+          <Style TargetType="TextBlock" BasedOn="{StaticResource TextBlockStyle}">
+            <Setter Property="Margin" Value="0,1,5,1" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+          </Style>
+        </Grid.Resources>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Client:" />
+        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SelectedRescue.Client}" IsReadOnly="True" />
+        <Button Grid.Row="0" Grid.Column="2" x:Name="CopyClientName" Content="C" />
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="System:" />
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SelectedRescue.System}" IsReadOnly="True" />
+        <Button Grid.Row="1" Grid.Column="2" x:Name="CopySystemName" Content="C" />
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Status:" />
+        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedRescue.Status}" Grid.ColumnSpan="2" />
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Rats:" />
+        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding SelectedRescue.Rats, Converter={converter:RatNameConcatConverter}}" Grid.ColumnSpan="2" />
+        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding SelectedRescue.Rats, Converter={converter:RatNameConcatConverter}}" Grid.ColumnSpan="2" />
+        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding SelectedRescue.Rats, Converter={converter:RatNameConcatConverter}}" Grid.ColumnSpan="2" />
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Distance:" />
+        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Distance}" Grid.ColumnSpan="2" />
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Jumps:" />
+        <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Jumps}" Grid.ColumnSpan="2" />
+        <UniformGrid Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3" Columns="2">
+          <UniformGrid.Resources>
+            <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}" x:Key="NearestStationButtonStyle">
+              <Setter Property="Margin" Value="0,1,1,0" />
+            </Style>
+            <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}" x:Key="CallJumpsButtonsStyle">
+              <Setter Property="Margin" Value="1,1,0,0" />
+            </Style>
+          </UniformGrid.Resources>
+          <Button x:Name="FindNearestStation" Content="Nearest station" Style="{StaticResource NearestStationButtonStyle}" />
+          <Button x:Name="CallJumps" Content="Call jumps" Style="{StaticResource CallJumpsButtonsStyle}"/>
+        </UniformGrid>
+      </Grid>
+    </GroupBox>
+  </Grid>
+</UserControl>
