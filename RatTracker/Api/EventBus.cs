@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using Caliburn.Micro;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -97,7 +95,6 @@ namespace RatTracker.Api
               log.Debug($"Received unmapped message: event '{eventName}', message '{message}'");
               break;
           }
-          
         }
       }
       catch (Exception ex)

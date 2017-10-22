@@ -12,10 +12,6 @@ namespace RatTracker.ViewModels
 {
   public class AssignedRescueViewModel : Screen
   {
-//    private readonly Cache cache;
-    private string clientName;
-
-    private string systemName;
     private Rescue assignedRescue;
 
     public AssignedRescueViewModel()

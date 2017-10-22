@@ -20,13 +20,12 @@
       <DataGrid ItemsSource="{Binding Rescues}" IsReadOnly="True"
                 AutoGenerateColumns="False" SelectionMode="Single" SelectedItem="{Binding SelectedRescue}">
         <DataGrid.Columns>
-          <DataGridTextColumn Binding="{Binding Platform}" ClipboardContentBinding="{x:Null}" Header="Platform" />
-          <DataGridTextColumn Binding="{Binding Client, Converter={converter:ClientConverter}}"
+          <DataGridTextColumn Binding="{Binding Rescue.Platform}" ClipboardContentBinding="{x:Null}" Header="Platform" />
+          <DataGridTextColumn Binding="{Binding Rescue.Client, Converter={converter:ClientConverter}}"
                               ClipboardContentBinding="{x:Null}" Header="Client" />
-          <DataGridTextColumn Binding="{Binding Rats, Converter={converter:RatNameConcatConverter}}" Header="Rats" />
-          <DataGridTextColumn Binding="{Binding System}" ClipboardContentBinding="{x:Null}" Header="System" />
-          <DataGridCheckBoxColumn Binding="{Binding CodeRed}" ClipboardContentBinding="{x:Null}" Header="Code Red"
-                                  Visibility="Hidden" />
+          <DataGridTextColumn Binding="{Binding Rescue.Rats, Converter={converter:RatNameConcatConverter}}" Header="Rats" />
+          <DataGridTextColumn Binding="{Binding Rescue.System}" ClipboardContentBinding="{x:Null}" Header="System" />
+          <DataGridCheckBoxColumn Binding="{Binding Rescue.CodeRed}" ClipboardContentBinding="{x:Null}" Header="Code Red" />
         </DataGrid.Columns>
       </DataGrid>
     </GroupBox>
@@ -64,17 +63,17 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Client:" />
-        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SelectedRescue.Client}" IsReadOnly="True" />
+        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SelectedRescue.Rescue.Client}" IsReadOnly="True" />
         <Button Grid.Row="0" Grid.Column="2" x:Name="CopyClientName" Content="C" />
         <TextBlock Grid.Row="1" Grid.Column="0" Text="System:" />
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SelectedRescue.System}" IsReadOnly="True" />
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SelectedRescue.Rescue.System}" IsReadOnly="True" />
         <Button Grid.Row="1" Grid.Column="2" x:Name="CopySystemName" Content="C" />
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Status:" />
-        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedRescue.Status}" Grid.ColumnSpan="2" />
+        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedRescue.Rescue.Status}" Grid.ColumnSpan="2" />
         <TextBlock Grid.Row="3" Grid.Column="0" Text="Rats:" />
-        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding SelectedRescue.Rats, Converter={converter:RatNameConcatConverter}}" Grid.ColumnSpan="2" />
-        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding SelectedRescue.Rats, Converter={converter:RatNameConcatConverter}}" Grid.ColumnSpan="2" />
-        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding SelectedRescue.Rats, Converter={converter:RatNameConcatConverter}}" Grid.ColumnSpan="2" />
+        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding SelectedRescue.Rat1.Name}" Grid.ColumnSpan="2" />
+        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding SelectedRescue.Rat2.Name}" Grid.ColumnSpan="2" />
+        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding SelectedRescue.Rat3.Name}" Grid.ColumnSpan="2" />
         <TextBlock Grid.Row="6" Grid.Column="0" Text="Distance:" />
         <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Distance}" Grid.ColumnSpan="2" />
         <TextBlock Grid.Row="7" Grid.Column="0" Text="Jumps:" />

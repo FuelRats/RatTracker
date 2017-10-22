@@ -1,40 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Caliburn.Micro;
 using RatTracker.Api;
 using RatTracker.Infrastructure.Extensions;
 using RatTracker.Models.Api.Rescues;
+using RatTracker.Models.App;
 
 namespace RatTracker.ViewModels
 {
   public class RescuesViewModel : Screen
   {
-    private Rescue selectedRescue;
+    private RescueModel selectedRescue;
     private double distance;
     private int jumps;
-    private readonly ObservableCollection<Rescue> rescues = new ObservableCollection<Rescue>();
 
     public RescuesViewModel(EventBus eventBus)
     {
+      Rescues = new ObservableCollection<RescueModel>();
       eventBus.RescueCreated += EventBusOnRescueCreated;
       eventBus.RescueUpdated += EventBusOnRescueUpdated;
       eventBus.RescuesReloaded += EventBusOnRescuesReloaded;
     }
 
-    private void EventBusOnRescuesReloaded(object sender, IEnumerable<Rescue> rescues)
-    {
-      Rescues.Clear();
-      Rescues.AddAll(rescues);
-    }
+    public ObservableCollection<RescueModel> Rescues { get; }
 
-    public ObservableCollection<Rescue> Rescues
-    {
-      get { return rescues; }
-    }
-
-    public Rescue SelectedRescue
+    public RescueModel SelectedRescue
     {
       get => selectedRescue;
       set
@@ -68,23 +59,32 @@ namespace RatTracker.ViewModels
     {
     }
 
+    public void CallJumps()
+    {
+    }
+
+    private void EventBusOnRescuesReloaded(object sender, IEnumerable<Rescue> rescues)
+    {
+      Rescues.Clear();
+      Rescues.AddAll(rescues.Select(x=>new RescueModel(x)));
+    }
+
     private void EventBusOnRescueUpdated(object sender, Rescue rescue)
     {
-      var oldRescue = Rescues.SingleOrDefault(x => x.Id == rescue.Id);
-      if (oldRescue != null)
+      var rescueModel = Rescues.SingleOrDefault(x => x.Rescue.Id == rescue.Id);
+      if (rescueModel != null)
       {
-        var index = Rescues.IndexOf(oldRescue);
-        Rescues[index] = rescue;
+        rescueModel.Rescue = rescue;
       }
       else
       {
-        Rescues.Add(rescue);
+        Rescues.Add(new RescueModel(rescue));
       }
     }
 
     private void EventBusOnRescueCreated(object sender, Rescue rescue)
     {
-      Rescues.Add(rescue);
+      Rescues.Add(new RescueModel(rescue));
     }
   }
 }

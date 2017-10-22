@@ -2,8 +2,6 @@
 using System.Net;
 using log4net;
 using Newtonsoft.Json;
-using RatTracker.Infrastructure.Extensions;
-using RatTracker.Models.Api.Rescues;
 using RatTracker.Properties;
 using SuperSocket.ClientEngine;
 using WebSocket4Net;

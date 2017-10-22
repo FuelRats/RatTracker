@@ -158,6 +158,7 @@
     <Compile Include="Models\App\PlayerInfo.cs" />
     <Compile Include="Models\App\RatState.cs" />
     <Compile Include="Models\App\RequestState.cs" />
+    <Compile Include="Models\App\RescueModel.cs" />
     <Compile Include="Models\PropertyChangedBase.cs" />
     <Compile Include="ViewModels\AssignedRescueViewModel.cs" />
     <Compile Include="ViewModels\RatTrackerViewModel.cs" />
