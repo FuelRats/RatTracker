@@ -17,7 +17,7 @@
       <GroupBox.Effect>
         <DropShadowEffect />
       </GroupBox.Effect>
-      <DataGrid ItemsSource="{Binding Rescues}" IsReadOnly="True"
+      <DataGrid ItemsSource="{Binding Rescues}" IsReadOnly="True" RowHeaderWidth="0"
                 AutoGenerateColumns="False" SelectionMode="Single" SelectedItem="{Binding SelectedRescue}">
         <DataGrid.Columns>
           <DataGridTextColumn Binding="{Binding Rescue.Platform}" ClipboardContentBinding="{x:Null}" Header="Platform" />

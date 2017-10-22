@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using Caliburn.Micro;
 using RatTracker.Api;
 using RatTracker.Infrastructure.Extensions;
@@ -32,6 +34,7 @@ namespace RatTracker.ViewModels
       {
         selectedRescue = value;
         NotifyOfPropertyChange();
+        RecalculateJumps(value.Rescue.System);
       }
     }
 
@@ -63,10 +66,21 @@ namespace RatTracker.ViewModels
     {
     }
 
+    private async void RecalculateJumps(string rescueSystem)
+    {
+      // TODO implement jump calculation
+      var jumpCount = await Task.Run(() => !string.IsNullOrWhiteSpace(rescueSystem) ? new Random().Next(10) : 0);
+
+      if (SelectedRescue?.Rescue.System == rescueSystem)
+      {
+        Jumps = jumpCount;
+      }
+    }
+
     private void EventBusOnRescuesReloaded(object sender, IEnumerable<Rescue> rescues)
     {
       Rescues.Clear();
-      Rescues.AddAll(rescues.Select(x=>new RescueModel(x)));
+      Rescues.AddAll(rescues.Select(x => new RescueModel(x)));
     }
 
     private void EventBusOnRescueUpdated(object sender, Rescue rescue)
