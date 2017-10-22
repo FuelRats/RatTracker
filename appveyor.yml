@@ -236,6 +236,6 @@ before_build:
 #---------------------------------#
 notifications:
   - provider: GitHubPullRequest
-      auth_token:
-        secure: kBl9BlxvRMr9liHmnBs14A==
-      template: "{{#passed}}:white_check_mark:{{/passed}}{{#failed}}:x:{{/failed}} [Build {{&projectName}} {{buildVersion}} {{status}}]({{buildUrl}}) (commit {{commitUrl}} by @{{&commitAuthorUsername}})"
+    auth_token:
+      secure: kBl9BlxvRMr9liHmnBs14A==
+    template: "{{#passed}}:white_check_mark:{{/passed}}{{#failed}}:x:{{/failed}} [Build {{&projectName}} {{buildVersion}} {{status}}]({{buildUrl}}) (commit {{commitUrl}} by @{{&commitAuthorUsername}})"
