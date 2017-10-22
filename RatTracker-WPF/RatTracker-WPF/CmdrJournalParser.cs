@@ -140,6 +140,7 @@ namespace RatTracker_WPF
     private static readonly ILog Logger = LogManager.GetLogger(Assembly.GetCallingAssembly().GetName().Name);
     private int _lineOffset;
     private LocationLog lastlocation = null;
+    private FsdJumpLog lastjump = null; //I'm certain there's a far far better way to do this, I just can't think of how.
 
     public bool IsListening => _fileListeningActive;
 
@@ -241,6 +242,10 @@ namespace RatTracker_WPF
         {
           LocationEvent?.Invoke(this, lastlocation);
         }
+        else if(lastjump != null)
+        {
+          FsdJumpEvent?.Invoke(this, lastjump);
+        }
         _newFile = false;
         return;
       }
@@ -306,6 +311,11 @@ namespace RatTracker_WPF
           {
             FsdJumpEvent?.Invoke(this, fsdJumpObj);
           }
+          else
+          {
+            lastlocation = null;
+            lastjump = fsdJumpObj;
+          }
           _currentLogFile.CmdrLogEntries.Add(fsdJumpObj);
           break;
         case "Location":
@@ -317,6 +327,7 @@ namespace RatTracker_WPF
           else
           {
             lastlocation = locationObj; //Used to wait till we've parsed the whole log, and only use the most recent load event for position setting.
+            lastjump = null;
           }
           _currentLogFile.CmdrLogEntries.Add(locationObj);
           break;
