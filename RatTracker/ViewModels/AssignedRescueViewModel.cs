@@ -1,25 +1,33 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using Caliburn.Micro;
-using Newtonsoft.Json.Linq;
+using RatTracker.Api;
 using RatTracker.Infrastructure.Extensions;
 using RatTracker.Models.Api.Rescues;
-using RatTracker.Models.Api.TPA;
 using RatTracker.Models.App;
+using ILog = log4net.ILog;
 
 namespace RatTracker.ViewModels
 {
   public class AssignedRescueViewModel : Screen
   {
+    private readonly ILog log;
+    private readonly EventBus eventBus;
+    private readonly Cache cache;
     private Rescue assignedRescue;
+    private RatState self;
 
-    public AssignedRescueViewModel()
+    public AssignedRescueViewModel(ILog log, EventBus eventBus, Cache cache)
     {
+      this.log = log;
+      this.eventBus = eventBus;
+      this.cache = cache;
       Rats = new ObservableCollection<RatState>();
-      Rats.Add(new RatState {Rat = new Rat {Name = "Rat1"}, FriendRequest = RequestState.Recieved});
-      Rats.Add(new RatState {Rat = new Rat {Name = "Rat2"}, WingRequest = RequestState.Accepted});
-      Rats.Add(new RatState {Rat = new Rat {Name = "Rat3 - longer name"}, InSystem = true});
-      Self = Rats[0];
+      eventBus.RescueUpdated += EventBusOnRescueUpdated;
+      eventBus.RescuesReloaded += EventBusOnRescuesReloaded;
+      eventBus.RescueClosed += EventBusOnRescueUpdated;
     }
 
     public ObservableCollection<RatState> Rats { get; }
@@ -43,10 +51,20 @@ namespace RatTracker.ViewModels
       {
         assignedRescue = value;
         NotifyOfPropertyChange();
+        NotifyOfPropertyChange(nameof(ClientName));
+        NotifyOfPropertyChange(nameof(SystemName));
       }
     }
 
-    public RatState Self { get; }
+    public RatState Self
+    {
+      get => self;
+      private set
+      {
+        self = value;
+        NotifyOfPropertyChange();
+      }
+    }
 
     public void SetClientName()
     {
@@ -73,7 +91,7 @@ namespace RatTracker.ViewModels
           throw new ArgumentOutOfRangeException();
       }
 
-      SendTpaMessage("FriendRequest", "update", ratState.FriendRequest == RequestState.Accepted);
+      SendTpaMessage("FriendRequest", ratState.FriendRequest == RequestState.Accepted);
     }
 
     public void ToggleWingRequest(RatState ratState)
@@ -93,70 +111,88 @@ namespace RatTracker.ViewModels
           throw new ArgumentOutOfRangeException();
       }
 
-      SendTpaMessage("WingRequest", "update", ratState.WingRequest == RequestState.Accepted);
+      SendTpaMessage("WingRequest", ratState.WingRequest == RequestState.Accepted);
     }
 
     public void ToggleInSystem(RatState ratState)
     {
       ratState.InSystem = !ratState.InSystem;
-      SendTpaMessage("SysArrived", "update", ratState.InSystem);
+      SendTpaMessage("SysArrived", ratState.InSystem);
     }
 
     public void ToggleBeaconVisible(RatState ratState)
     {
       ratState.Beacon = !ratState.Beacon;
-      SendTpaMessage("BeaconSpotted", "update", ratState.Beacon);
+      SendTpaMessage("BeaconSpotted", ratState.Beacon);
     }
 
     public void ToggleInInstance(RatState ratState)
     {
       ratState.InInstance = !ratState.InInstance;
-      SendTpaMessage("InstanceSuccessful", "update", ratState.InInstance);
+      SendTpaMessage("InstanceSuccessful", ratState.InInstance);
     }
 
-    private void RescueUpdated(object sender, Rescue rescue)
+    private void EventBusOnRescuesReloaded(object sender, IEnumerable<Rescue> rescues)
     {
-      // if my rat assigned
-      //var displayRat = cache.PlayerInfo.GetDisplayRat();
-      //if (rescue.Rats.Contains(displayRat))
-      //{
-      //  if (assignedRescue != null && assignedRescue.Id != rescue.Id && assignedRescue.Status != RescueState.Closed)
-      //  {
-      //    DialogHelper.ShowWarning("There is already an open rescue assigned to you. Keeping current rescue.");
-      //    return;
-      //  }
-
-      //  if (assignedRescue?.Id == rescue.Id)
-      //  {
-      //  }
-
-      //  AssignedRescue = rescue;
-      //  Rats.AddAll(rescue.Rats.Select(rat => new RatState {Rat = rat}));
-      //  Self = Rats.Single(x => x.Rat == displayRat);
-      //}
-      //else
-      //{
-      //  // if id = assignedrescue.id
-      //  if (rescue.Id == assignedRescue?.Id)
-      //  {
-      //    // -> I was unassigned
-      //    AssignedRescue = null;
-      //    Rats.Clear();
-      //  }
-      //}
-    }
-
-    private void SendTpaMessage(string controller, string action, bool value)
-    {
-      var frmsg = new TpaMessage(controller, action)
+      var displayRat = cache.GetDisplayRatForUser();
+      var assignedRescues = rescues.Where(x => x.Rats.Contains(displayRat));
+      foreach (var rescue in assignedRescues)
       {
-        Data = new JObject()
-      };
-      frmsg.Data.Add("RatID", Self?.Rat.Id);
-      frmsg.Data.Add("RescueID", assignedRescue?.Id);
-      frmsg.Data.Add(controller, value.ToApiName());
+        EventBusOnRescueUpdated(sender, rescue);
+      }
+    }
 
-      //apiWorker.SendTpaMessage(frmsg);
+    private void EventBusOnRescueUpdated(object sender, Rescue rescue)
+    {
+      var displayRat = cache.GetDisplayRatForUser();
+      if (displayRat == null) { return; }
+      if (rescue.Rats.Contains(displayRat))
+      {
+        if (assignedRescue != null && assignedRescue.Id != rescue.Id && assignedRescue.Status != RescueState.Closed)
+        {
+          log.Debug("There is already an open rescue assigned to you. Keeping current rescue.");
+          return;
+        }
+
+        if (assignedRescue?.Id == rescue.Id)
+        {
+          var ratsRemovedFromRescue = Rats.Select(x => x.Rat).Except(rescue.Rats).ToList();
+          var ratStatesToRemove = Rats.Where(x => ratsRemovedFromRescue.Contains(x.Rat));
+          Rats.RemoveAll(ratStatesToRemove);
+
+          foreach (var rat in rescue.Rats)
+          {
+            var ratState = Rats.SingleOrDefault(x => x.Rat == rat) ?? new RatState();
+            ratState.Rat = rat;
+          }
+        }
+        else
+        {
+          Rats.Clear();
+          Rats.AddAll(rescue.Rats.Select(rat => new RatState {Rat = rat}));
+        }
+
+        Self = Rats.Single(x => x.Rat == displayRat);
+        AssignedRescue = rescue;
+      }
+      else
+      {
+        if (rescue.Id == assignedRescue?.Id)
+        {
+          AssignedRescue = null;
+          Rats.Clear();
+          Self = null;
+        }
+      }
+    }
+
+    private void SendTpaMessage(string eventName, bool value)
+    {
+      var tpaMessage = WebsocketMessage.CreateTpaMessage(eventName);
+      tpaMessage.AddData("RatID", Self?.Rat.Id);
+      tpaMessage.AddData("RescueID", assignedRescue?.Id);
+      tpaMessage.AddData(eventName, value.ToApiName());
+      eventBus.PostWebsocketMessage(tpaMessage);
     }
   }
 }

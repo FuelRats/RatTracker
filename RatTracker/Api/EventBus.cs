@@ -28,7 +28,7 @@ namespace RatTracker.Api
     public event EventHandler<Rescue> RescueUpdated;
     public event EventHandler<Rescue> RescueClosed;
 
-    public void PostRequest(WebsocketMessage websocketMessage)
+    public void PostWebsocketMessage(WebsocketMessage websocketMessage)
     {
       websocketHandler.SendQuery(websocketMessage);
     }

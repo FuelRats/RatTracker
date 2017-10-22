@@ -6,42 +6,66 @@
              xmlns:controls="clr-namespace:RatTracker.Infrastructure.Controls"
              xmlns:app="clr-namespace:RatTracker.Models.App"
              xmlns:viewModels="clr-namespace:RatTracker.ViewModels"
+             xmlns:converter="clr-namespace:RatTracker.Infrastructure.Converter"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
              d:DataContext="{d:DesignInstance viewModels:AssignedRescueViewModel}">
-  <GroupBox Header="Assigned Rescue" Foreground="{DynamicResource BrushEliteOrange}">
-    <StackPanel Grid.IsSharedSizeScope="True">
-      <Grid Margin="1,0,0,0">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" SharedSizeGroup="Col1" />
-          <ColumnDefinition Width="*" />
-          <ColumnDefinition Width="Auto" SharedSizeGroup="Col3" />
-        </Grid.ColumnDefinitions>
-        <TextBlock Grid.Column="0" Text="Client:" Margin="0,0,5,0" />
-        <TextBox Grid.Column="1" Text="{Binding ClientName}" Margin="0,0,5,0" />
-        <Button Grid.Column="2" Content="Set" Click="SetClientNameOnClick" />
-      </Grid>
+  <GroupBox Header="Assigned Rescue" Foreground="{DynamicResource BrushEliteOrange}" Grid.IsSharedSizeScope="True">
+    <Grid Margin="1,0,0,0">
+      <Grid.Resources>
+        <Style TargetType="TextBlock" BasedOn="{StaticResource TextBlockStyle}">
+          <Setter Property="Margin" Value="0,1,5,1" />
+        </Style>
+        <Style TargetType="TextBox" BasedOn="{StaticResource TextBoxStyle}">
+          <Setter Property="Margin" Value="0,1,0,1" />
+        </Style>
+        <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
+          <Setter Property="Margin" Value="5,1,0,1" />
+        </Style>
+      </Grid.Resources>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <TextBlock Grid.Row="0" Grid.Column="0" Text="Platform / CR:" />
+      <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding AssignedRescue.Platform}" IsReadOnly="True" />
+      <CheckBox Grid.Row="0" Grid.Column="2" IsChecked="{Binding AssignedRescue.CodeRed}" IsEnabled="False"
+                HorizontalAlignment="Right" VerticalAlignment="Center" />
 
-      <Grid Margin="1,0,0,0">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" SharedSizeGroup="Col1" />
-          <ColumnDefinition Width="*" />
-          <ColumnDefinition Width="Auto" SharedSizeGroup="Col2" />
-        </Grid.ColumnDefinitions>
-        <TextBlock Grid.Column="0" Text="System:" Margin="0,0,5,0" />
-        <TextBox Grid.Column="1" Text="{Binding SystemName}" Margin="0,0,5,0" />
-        <Button Grid.Column="2" Content="Set" Click="SetSystemNameOnClick" />
-      </Grid>
+      <TextBlock Grid.Row="2" Grid.Column="0" Text="Client:" />
+      <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ClientName}" />
+      <Button Grid.Row="2" Grid.Column="2" Content="Set" Click="SetClientNameOnClick" />
 
-      <controls:RatStateControl ViewModel="{Binding}" State="{Binding Self}" Margin="1,0,0,0" />
-      <ListView ItemsSource="{Binding Rats}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+      <TextBlock Grid.Row="3" Grid.Column="0" Text="System:" />
+      <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding SystemName}" />
+      <Button Grid.Row="3" Grid.Column="2" Content="Set" Click="SetSystemNameOnClick" />
+
+      <controls:RatStateControl Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" ViewModel="{Binding}"
+                                State="{Binding Self}" Margin="1,0,0,0"
+                                Visibility="{Binding Self, Converter={converter:NullToVisibilityConverter}}" />
+
+      <Separator Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" />
+
+      <ListView Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" ItemsSource="{Binding Rats}"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.VerticalScrollBarVisibility="Disabled" BorderThickness="0">
         <ListView.ItemTemplate>
           <DataTemplate DataType="{x:Type app:RatState}">
-            <controls:RatStateControl ViewModel="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}}" State="{Binding}" IsEnabled="False" />
+            <controls:RatStateControl State="{Binding}" IsEnabled="False"
+                                      ViewModel="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}}" />
           </DataTemplate>
         </ListView.ItemTemplate>
       </ListView>
-    </StackPanel>
+    </Grid>
   </GroupBox>
 </UserControl>

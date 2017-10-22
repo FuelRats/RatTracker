@@ -14,7 +14,7 @@ namespace RatTracker.Api
     private readonly EventBus eventBus;
     private readonly ConcurrentDictionary<Guid, Rescue> rescues = new ConcurrentDictionary<Guid, Rescue>();
     private readonly PlayerInfo playerInfo = new PlayerInfo();
-    
+
     public Cache(EventBus eventBus)
     {
       this.eventBus = eventBus;
@@ -31,15 +31,20 @@ namespace RatTracker.Api
       return rescues.Values.ToList().OrderBy(x => x.Data.BoardIndex);
     }
 
+    public Rat GetDisplayRatForUser()
+    {
+      return playerInfo?.GetDisplayRat();
+    }
+
     private void EventBusOnConnectionEstablished(object sender, Version version)
     {
       // Validate version
       var profileRequest = WebsocketMessage.Request("users", "profile", ApiEvents.UserProfile);
-      eventBus.PostRequest(profileRequest);
+      eventBus.PostWebsocketMessage(profileRequest);
 
       var rescuesRequest = WebsocketMessage.Request("rescues", "read", ApiEvents.RescueRead);
       rescuesRequest.AddData(nameof(Rescue.Status).ToApiName(), WebsocketMessage.Data("$not", RescueState.Closed.ToApiName()));
-      eventBus.PostRequest(rescuesRequest);
+      eventBus.PostWebsocketMessage(rescuesRequest);
     }
 
     private void EventBusOnProfileLoaded(object sender, User receivedUser)

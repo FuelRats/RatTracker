@@ -142,6 +142,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Infrastructure\Controls\RatStateButton.cs" />
+    <Compile Include="Infrastructure\Converter\NullToVisibilityConverter.cs" />
     <Compile Include="Infrastructure\Converter\ClientConverter.cs" />
     <Compile Include="Infrastructure\Converter\RatNameConcatConverter.cs" />
     <Compile Include="Infrastructure\Extensions\ApiExtensions.cs" />
@@ -209,6 +210,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Infrastructure\Resources\Styles\SeparatorStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Infrastructure\Resources\Styles\ListViewStyle.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

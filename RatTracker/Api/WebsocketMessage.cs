@@ -25,7 +25,7 @@ namespace RatTracker.Api
         throw new ArgumentNullException(nameof(action));
       }
 
-      query.AddData("action", new[] { controller, action });
+      query.AddData("action", new[] {controller, action});
       query.AddData("meta", Data("event", eventName));
       return query;
     }
@@ -35,6 +35,11 @@ namespace RatTracker.Api
       var query = new WebsocketMessage();
       query.AddData(key, data);
       return query;
+    }
+
+    public static WebsocketMessage CreateTpaMessage(string eventName)
+    {
+      return Request("stream", "broadcast", eventName);
     }
 
     public WebsocketMessage AddData(string key, object data)

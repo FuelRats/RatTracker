@@ -11,5 +11,13 @@ namespace RatTracker.Infrastructure.Extensions
         collection.Add(element);
       }
     }
+
+    public static void RemoveAll<T>(this ICollection<T> collection, IEnumerable<T> elementsToRemove)
+    {
+      foreach (var element in elementsToRemove)
+      {
+        collection.Remove(element);
+      }
+    }
   }
 }

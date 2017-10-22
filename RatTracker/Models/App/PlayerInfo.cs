@@ -12,18 +12,7 @@ namespace RatTracker.Models.App
     private float jumpRange;
     private bool onDuty;
     private bool superCruise;
-    private string ratname;
     private User user;
-
-    public string RatName
-    {
-      get => ratname;
-      set
-      {
-        ratname = value;
-        NotifyPropertyChanged();
-      }
-    }
 
     public User User
     {

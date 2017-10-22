@@ -23,6 +23,7 @@ namespace RatTracker.ViewModels
       eventBus.RescueCreated += EventBusOnRescueCreated;
       eventBus.RescueUpdated += EventBusOnRescueUpdated;
       eventBus.RescuesReloaded += EventBusOnRescuesReloaded;
+      eventBus.RescueClosed += EventBusOnRescueClosed;
     }
 
     public ObservableCollection<RescueModel> Rescues { get; }
@@ -99,6 +100,12 @@ namespace RatTracker.ViewModels
     private void EventBusOnRescueCreated(object sender, Rescue rescue)
     {
       Rescues.Add(new RescueModel(rescue));
+    }
+
+    private void EventBusOnRescueClosed(object sender, Rescue rescue)
+    {
+      var rescueModels = Rescues.Where(x => x.Rescue == rescue).ToList();
+      Rescues.RemoveAll(rescueModels);
     }
   }
 }
