@@ -2,13 +2,14 @@
 
 namespace RatTracker.ViewModels
 {
-  public class RatTrackerViewModel : Screen
+  public sealed class RatTrackerViewModel : Screen
   {
     private AssignedRescueViewModel assignedRescue;
     private RescuesViewModel rescues;
 
     public RatTrackerViewModel(AssignedRescueViewModel assignedRescueViewModel, RescuesViewModel rescuesViewModel)
     {
+      DisplayName = "RatTracker";
       AssignedRescue = assignedRescueViewModel;
       Rescues = rescuesViewModel;
     }
@@ -18,7 +19,7 @@ namespace RatTracker.ViewModels
       get => assignedRescue;
       set
       {
-        assignedRescue = value; 
+        assignedRescue = value;
         NotifyOfPropertyChange();
       }
     }
@@ -28,7 +29,7 @@ namespace RatTracker.ViewModels
       get => rescues;
       set
       {
-        rescues = value; 
+        rescues = value;
         NotifyOfPropertyChange();
       }
     }

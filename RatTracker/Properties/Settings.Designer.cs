@@ -38,24 +38,12 @@ namespace RatTracker.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("443")]
-        public string ApiPort {
+        public int ApiPort {
             get {
-                return ((string)(this["ApiPort"]));
+                return ((int)(this["ApiPort"]));
             }
             set {
                 this["ApiPort"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("mikeon@t-online.de")]
-        public string ApiUserEmail {
-            get {
-                return ((string)(this["ApiUserEmail"]));
-            }
-            set {
-                this["ApiUserEmail"] = value;
             }
         }
         
@@ -86,6 +74,42 @@ namespace RatTracker.Properties {
             }
             set {
                 this["OAuthToken"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ApiUserEmail {
+            get {
+                return ((string)(this["ApiUserEmail"]));
+            }
+            set {
+                this["ApiUserEmail"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://beta.fuelrats.com/")]
+        public string WebsiteUrl {
+            get {
+                return ((string)(this["WebsiteUrl"]));
+            }
+            set {
+                this["WebsiteUrl"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("443")]
+        public int WebSitePort {
+            get {
+                return ((int)(this["WebSitePort"]));
+            }
+            set {
+                this["WebSitePort"] = value;
             }
         }
     }

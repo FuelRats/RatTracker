@@ -135,6 +135,7 @@
     <Compile Include="Api\Cache.cs" />
     <Compile Include="Api\EventBus.cs" />
     <Compile Include="Api\JsonApi.cs" />
+    <Compile Include="Api\OAuthHandler.cs" />
     <Compile Include="Api\WebsocketMessage.cs" />
     <Compile Include="Api\WebsocketHandler.cs" />
     <Compile Include="App.xaml.cs">
@@ -167,10 +168,14 @@
     <Compile Include="Models\App\RescueModel.cs" />
     <Compile Include="Models\PropertyChangedBase.cs" />
     <Compile Include="ViewModels\AssignedRescueViewModel.cs" />
+    <Compile Include="ViewModels\OAuthStartupDialogViewModel.cs" />
     <Compile Include="ViewModels\RatTrackerViewModel.cs" />
     <Compile Include="ViewModels\RescuesViewModel.cs" />
     <Compile Include="Views\AssignedRescueView.xaml.cs">
       <DependentUpon>AssignedRescueView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\OAuthStartupDialogView.xaml.cs">
+      <DependentUpon>OAuthStartupDialogView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\RatTrackerView.xaml.cs">
       <DependentUpon>RatTrackerView.xaml</DependentUpon>
@@ -261,6 +266,10 @@
     <Page Include="Views\AssignedRescueView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\OAuthStartupDialogView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\RatTrackerView.xaml">
       <Generator>MSBuild:Compile</Generator>

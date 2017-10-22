@@ -5,9 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:viewModels="clr-namespace:RatTracker.ViewModels"
-        xmlns:controls="clr-namespace:RatTracker.Infrastructure.Controls"
         Style="{StaticResource WindowStyle}"
-        mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:RatTrackerViewModel, IsDesignTimeCreatable=True}"
+        mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:RatTrackerViewModel}"
         Height="650" Width="950">
   <DockPanel>
     <Menu x:Name="MenuCopy" Height="19" VerticalAlignment="Top" DockPanel.Dock="Top">
