@@ -250,6 +250,7 @@
     <Compile Include="Models\App\PlayerInfo.cs" />
     <Compile Include="Models\App\RescueData.cs" />
     <Compile Include="Models\App\SysInfo.cs" />
+    <Compile Include="Models\CmdrJournal\LocationLog.cs" />
     <Compile Include="Models\CmdrJournal\WingAddLog.cs" />
     <Compile Include="Models\CmdrJournal\CmdrJournalFile.cs" />
     <Compile Include="Models\CmdrJournal\CommitCrimeLog.cs" />

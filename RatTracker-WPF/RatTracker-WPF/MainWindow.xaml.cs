@@ -364,6 +364,7 @@ namespace RatTracker_WPF
             _cmdrJournalParser.DiedEvent += CmdrJournalParser_DiedEvent;
             _cmdrJournalParser.EscapeInterdictionEvent += _cmdrJournalParser_EscapeInterdictionEvent;
             _cmdrJournalParser.FsdJumpEvent += CmdrJournalParser_FsdJumpEvent;
+            _cmdrJournalParser.LocationEvent += CmdrJournalParser_LocationEvent;
             _cmdrJournalParser.HullDamageEvent += CmdrJournalParser_HullDamageEvent;
             _cmdrJournalParser.InterdictedEvent += CmdrJournalParser_InterdictedEvent;
             _cmdrJournalParser.InterdictionEvent += CmdrJournalParser_InterdictionEvent;
@@ -867,6 +868,11 @@ namespace RatTracker_WPF
     }
 
     private void CmdrJournalParser_FsdJumpEvent(object sender, FsdJumpLog eventData)
+    {
+      TriggerSystemChange(eventData.StarSystem);
+    }
+
+    private void CmdrJournalParser_LocationEvent(object sender, LocationLog eventData)
     {
       TriggerSystemChange(eventData.StarSystem);
     }
