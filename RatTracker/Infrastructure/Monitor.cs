@@ -1,12 +1,17 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
 namespace RatTracker.Infrastructure
 {
+  // Suppress ReSharper warning for this file as it calls unmanaged code.
+  [SuppressMessage("ReSharper", "InconsistentNaming")]
+  [SuppressMessage("ReSharper", "UnusedMember.Local")]
+  [SuppressMessage("ReSharper", "ConvertToConstant.Local")]
   public class Monitor
   {
     public static HandleRef nullHandleRef = new HandleRef(null, IntPtr.Zero);

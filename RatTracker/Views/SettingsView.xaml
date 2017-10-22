@@ -41,19 +41,18 @@
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
     <TextBlock Grid.Row="0" Grid.Column="0" Text="E:D directory" />
-    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Default.LauncherDirectory, Source={x:Static p:Settings.Default}}" />
+    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding LauncherDirectory, Source={x:Static p:Settings.Default}}" />
     <Button Grid.Row="0" Grid.Column="2" x:Name="SelectLauncherDirectory" Content="..." />
-    
+
     <TextBlock Grid.Row="1" Grid.Column="0" Text="E:D logs directory" />
-    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Default.LogDirectory, Source={x:Static p:Settings.Default}}" />
+    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LogDirectory, Source={x:Static p:Settings.Default}}" />
     <Button Grid.Row="1" Grid.Column="2" x:Name="SelectLogDirectory" Content="..." />
 
     <TextBlock Grid.Row="2" Grid.Column="0" Text="E:D logs directory" />
-    <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Default.JumpRange, Source={x:Static p:Settings.Default}}" />
-    
+    <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+             Text="{Binding JumpRange, Source={x:Static p:Settings.Default}}" />
+
     <TextBlock Grid.Row="3" Grid.Column="0" Text="Overlay screen" />
-    <ComboBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" ItemsSource="{Binding AllMonitors}" 
-              SelectedItem="{Binding Default.OverlayMonitor, Source={x:Static p:Settings.Default}}"/>
 
 
     <UniformGrid Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3" Columns="3">
@@ -69,8 +68,8 @@
         </Style>
       </UniformGrid.Resources>
       <Button x:Name="SaveAndClose" Content="Save and close" Style="{StaticResource SaveAndCloseButtonStyle}" />
-      <Button x:Name="Logout" Content="Logout" Style="{StaticResource LogoutButtonsStyle}"/>
-      <Button x:Name="Cancel" Content="Cancel" Style="{StaticResource CancelButtonsStyle}"/>
+      <Button x:Name="Logout" Content="Logout" Style="{StaticResource LogoutButtonsStyle}" />
+      <Button x:Name="Cancel" Content="Cancel" Style="{StaticResource CancelButtonsStyle}" />
     </UniformGrid>
   </Grid>
 </Window>

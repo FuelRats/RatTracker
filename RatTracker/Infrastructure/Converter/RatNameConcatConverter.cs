@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Windows.Data;
 using System.Windows.Markup;
-using RatTracker.Models.Api;
 using RatTracker.Models.Api.Rescues;
 
 namespace RatTracker.Infrastructure.Converter
@@ -20,8 +19,8 @@ namespace RatTracker.Infrastructure.Converter
       {
         return "I am a null rat.";
       }
-      
-      return string.Join(", ", rats.Select(x=>x.Name));
+
+      return string.Join(", ", rats.Select(x => x.Name));
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
