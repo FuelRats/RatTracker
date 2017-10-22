@@ -3,7 +3,6 @@ using System.Collections.ObjectModel;
 using Caliburn.Micro;
 using Newtonsoft.Json.Linq;
 using RatTracker.Infrastructure.Extensions;
-using RatTracker.Models.Api;
 using RatTracker.Models.Api.Rescues;
 using RatTracker.Models.Api.TPA;
 using RatTracker.Models.App;
@@ -16,8 +15,6 @@ namespace RatTracker.ViewModels
 
     public AssignedRescueViewModel()
     {
-      //  this.cache = cache;
-      //  cache.RescueUpdated += RescueUpdated;
       Rats = new ObservableCollection<RatState>();
       Rats.Add(new RatState {Rat = new Rat {Name = "Rat1"}, FriendRequest = RequestState.Recieved});
       Rats.Add(new RatState {Rat = new Rat {Name = "Rat2"}, WingRequest = RequestState.Accepted});
