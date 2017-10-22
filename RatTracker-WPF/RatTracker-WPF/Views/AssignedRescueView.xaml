@@ -5,11 +5,10 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:viewModels="clr-namespace:RatTracker_WPF.ViewModels"
              xmlns:controls="clr-namespace:RatTracker_WPF.Infrastructure.Controls"
-             xmlns:app="clr-namespace:RatTracker_WPF.Models.App"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
              d:DataContext="{d:DesignInstance viewModels:AssignedRescueViewModel}">
-  <GroupBox Header="Assigned Rescue" Foreground="{DynamicResource BrushEliteOrange}">
+  <GroupBox Header="Assigned Rescue" Foreground="{DynamicResource brushEliteOrange}">
     <StackPanel Grid.IsSharedSizeScope="True">
       <Grid>
         <Grid.ColumnDefinitions>
@@ -33,14 +32,9 @@
         <Button Grid.Column="2" Content="Set" Click="SetSystemNameOnClick" />
       </Grid>
       
-      <controls:RatStateControl ViewModel="{Binding}" State="{Binding Self}" />
-      <ListView ItemsSource="{Binding Rats}" >
-        <ListView.ItemTemplate>
-          <DataTemplate DataType="{x:Type app:RatState}">
-            <controls:RatStateControl ViewModel="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}}" State="{Binding}" />
-          </DataTemplate>
-        </ListView.ItemTemplate>
-      </ListView>
+      <controls:RatStateControl ViewModel="{Binding}" State="{Binding Rat1}" />
+      <controls:RatStateControl ViewModel="{Binding}" State="{Binding Rat2}" />
+      <controls:RatStateControl ViewModel="{Binding}" State="{Binding Rat3}" />
     </StackPanel>
   </GroupBox>
 </UserControl>

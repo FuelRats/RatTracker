@@ -1,11 +1,10 @@
 using System;
 using System.Globalization;
 using System.Windows.Data;
-using System.Windows.Markup;
 
 namespace RatTracker_WPF.Infrastructure.Converter
 {
-  public class ClientConverter : MarkupExtension, IValueConverter
+  public class ClientConverter : IValueConverter
   {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
@@ -16,11 +15,6 @@ namespace RatTracker_WPF.Infrastructure.Converter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
       return "I am a negative client";
-    }
-
-    public override object ProvideValue(IServiceProvider serviceProvider)
-    {
-      return this;
     }
   }
 }

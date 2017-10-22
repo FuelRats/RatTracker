@@ -81,15 +81,5 @@ namespace RatTracker_WPF.Models.App
         NotifyPropertyChanged();
       }
     }
-
-    public void Reset()
-    {
-      Rat = null;
-      FriendRequest = RequestState.NotRecieved;
-      WingRequest = RequestState.NotRecieved;
-      InSystem = false;
-      Beacon = false;
-      InInstance = false;
-    }
   }
 }

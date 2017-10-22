@@ -86,15 +86,6 @@
     <GenerateManifests>true</GenerateManifests>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Caliburn.Micro, Version=3.2.0.0, Culture=neutral, PublicKeyToken=8e5891231f2ed21f, processorArchitecture=MSIL">
-      <HintPath>..\packages\Caliburn.Micro.Core.3.2.0\lib\net45\Caliburn.Micro.dll</HintPath>
-    </Reference>
-    <Reference Include="Caliburn.Micro.Platform, Version=3.2.0.0, Culture=neutral, PublicKeyToken=8e5891231f2ed21f, processorArchitecture=MSIL">
-      <HintPath>..\packages\Caliburn.Micro.3.2.0\lib\net45\Caliburn.Micro.Platform.dll</HintPath>
-    </Reference>
-    <Reference Include="Caliburn.Micro.Platform.Core, Version=3.2.0.0, Culture=neutral, PublicKeyToken=8e5891231f2ed21f, processorArchitecture=MSIL">
-      <HintPath>..\packages\Caliburn.Micro.3.2.0\lib\net45\Caliburn.Micro.Platform.Core.dll</HintPath>
-    </Reference>
     <Reference Include="Common.Logging.Core, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
       <HintPath>..\packages\Common.Logging.Core.3.3.1\lib\net40\Common.Logging.Core.dll</HintPath>
       <Private>True</Private>
@@ -136,9 +127,6 @@
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Ninject, Version=3.3.1.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
-      <HintPath>..\packages\Ninject.3.3.1\lib\net45\Ninject.dll</HintPath>
-    </Reference>
     <Reference Include="Ookii.Dialogs.Wpf, Version=1.0.0.0, Culture=neutral, PublicKeyToken=0c15020868fd6249, processorArchitecture=MSIL">
       <HintPath>..\packages\Ookii.Dialogs.1.0\lib\net35\Ookii.Dialogs.Wpf.dll</HintPath>
       <Private>True</Private>
@@ -166,9 +154,6 @@
     <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Web" />
-    <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Caliburn.Micro.3.2.0\lib\net45\System.Windows.Interactivity.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -194,8 +179,6 @@
     <Compile Include="Api\APIWorker.cs" />
     <Compile Include="Api\Queries\Query.cs" />
     <Compile Include="Api\WebsocketResponseHandler.cs" />
-    <Compile Include="Bootstrapping\Bootstrapper.cs" />
-    <Compile Include="Bootstrapping\Module.cs" />
     <Compile Include="Caches\Cache.cs" />
     <Compile Include="CmdrJournalParser.cs" />
     <Compile Include="CustomHotKey.cs" />
@@ -210,7 +193,6 @@
     <Compile Include="ErrorReporter.xaml.cs">
       <DependentUpon>ErrorReporter.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Infrastructure\DialogHelper.cs" />
     <Compile Include="Infrastructure\EventHandlers\ConnInfo.cs" />
     <Compile Include="Infrastructure\EventHandlers\FireBirdLoaded.cs" />
     <Compile Include="Infrastructure\EventHandlers\FriendRequest.cs" />
@@ -221,7 +203,6 @@
     <Compile Include="GlobalHotkey.cs" />
     <Compile Include="Infrastructure\ApiExtensions.cs" />
     <Compile Include="Api\JsonApi.cs" />
-    <Compile Include="Infrastructure\Extensions\EnumerableExtensions.cs" />
     <Compile Include="Infrastructure\RelayCommand.cs" />
     <Compile Include="Models\Api\V1\AccessToken.cs" />
     <Compile Include="Models\Api\V1\APIQuery.cs" />
@@ -282,6 +263,7 @@
     <Compile Include="Monitor.cs" />
     <Compile Include="NetLogFile.cs" />
     <Compile Include="NetLogParser.cs" />
+    <Compile Include="Infrastructure\Converter\RatConverter.cs" />
     <Compile Include="Models\Api\V1\Rescue.cs" />
     <Compile Include="Models\Api\V1\RootObject.cs" />
     <Compile Include="Overlay.xaml.cs">
@@ -294,16 +276,8 @@
     <Compile Include="Models\CmdrJournal\SuperCruiseExitLog.cs" />
     <Compile Include="Api\TPA\Rescues.cs" />
     <Compile Include="ViewModels\AssignedRescueViewModel.cs" />
-    <Compile Include="ViewModels\RatTrackerViewModel.cs" />
-    <Compile Include="ViewModels\RescuesViewModel.cs" />
     <Compile Include="Views\AssignedRescueView.xaml.cs">
       <DependentUpon>AssignedRescueView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\RatTrackerView.xaml.cs">
-      <DependentUpon>RatTrackerView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\RescuesView.xaml.cs">
-      <DependentUpon>RescuesView.xaml</DependentUpon>
     </Compile>
     <Page Include="ErrorReporter.xaml">
       <SubType>Designer</SubType>
@@ -329,51 +303,11 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Resources\Styles\MenuStyle.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Resources\Styles\ButtonStyle.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Resources\Styles\DataGridStyle.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Resources\Styles\UserControlStyle.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Resources\Styles\WindowStyle.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Resources\Styles\TextBlockStyle.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Resources\Styles\TextBoxStyle.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Resources\Styles\GroupBoxStyle.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="Settings.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\AssignedRescueView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Views\RatTrackerView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Views\RescuesView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
