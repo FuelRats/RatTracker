@@ -8,11 +8,7 @@ to be to give them All The Fuel!
 
 ## Building the solution
 
-The solution is written in VS2015, under .NET Framework 4.5.2. You should be able to just clone
+The solution is written in VS2017, under .NET Framework 4.6.1 - language level C# 7. You should be able to just clone
 the repository, open the solution, and build it.
-NuGet requirements are:
-* Newtonsoft.JSon
-* Websocket4Net
-* Ookii.Dialogs
 
 
