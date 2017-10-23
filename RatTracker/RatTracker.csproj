@@ -147,6 +147,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Firebird\StarSystemDatabase.cs" />
     <Compile Include="Infrastructure\Controls\RatStateButton.cs" />
     <Compile Include="Infrastructure\Converter\NullToVisibilityConverter.cs" />
     <Compile Include="Infrastructure\Converter\ClientConverter.cs" />

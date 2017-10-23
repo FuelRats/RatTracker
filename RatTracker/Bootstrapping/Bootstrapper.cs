@@ -6,6 +6,7 @@ using System.Windows;
 using Caliburn.Micro;
 using Ninject;
 using RatTracker.Api;
+using RatTracker.Firebird;
 using RatTracker.Properties;
 using RatTracker.ViewModels;
 
@@ -57,7 +58,11 @@ namespace RatTracker.Bootstrapping
         kernel.Get<EventBus>();
         kernel.Get<Cache>();
         var websocketHandler = kernel.Get<WebsocketHandler>();
-        await Task.Run(() => { websocketHandler.Initialize(true); });
+        var starSystemDatabase = kernel.Get<StarSystemDatabase>();
+        var websocketTask = Task.Run(() => { websocketHandler.Initialize(true); });
+        var systemsDataBaseTask = Task.Run(() => starSystemDatabase.Initialize());
+
+        await Task.WhenAll(websocketTask, systemsDataBaseTask);
       }
     }
   }

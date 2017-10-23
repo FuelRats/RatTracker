@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Caliburn.Micro;
 using RatTracker.Api;
+using RatTracker.Firebird;
 using RatTracker.Infrastructure.Extensions;
 using RatTracker.Models.Api.Rescues;
 using RatTracker.Models.App;
@@ -13,12 +14,14 @@ namespace RatTracker.ViewModels
 {
   public class RescuesViewModel : Screen
   {
+    private readonly StarSystemDatabase starSystemDatabase;
     private RescueModel selectedRescue;
     private double distance;
     private int jumps;
 
-    public RescuesViewModel(EventBus eventBus)
+    public RescuesViewModel(EventBus eventBus, StarSystemDatabase starSystemDatabase)
     {
+      this.starSystemDatabase = starSystemDatabase;
       Rescues = new ObservableCollection<RescueModel>();
       eventBus.RescueCreated += EventBusOnRescueCreated;
       eventBus.RescueUpdated += EventBusOnRescueUpdated;
@@ -59,8 +62,9 @@ namespace RatTracker.ViewModels
       }
     }
 
-    public void FindNearestStation()
+    public async void FindNearestStation()
     {
+      await starSystemDatabase.FindNearestStationAsync();
     }
 
     public void CallJumps()
