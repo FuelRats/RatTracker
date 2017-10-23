@@ -18,6 +18,13 @@ namespace RatTracker_WPF.Caches
     public event EventHandler<Rescue> RescueUpdated; 
     public event EventHandler<Rescue> RescueClosed; 
 
+    public PlayerInfo playerinfo
+    {
+      get { return playerInfo; }
+      set { playerInfo = value; }
+    }
+
+
     public void Init(WebsocketResponseHandler responseHandler)
     {
       responseHandler.AddCallback("rescues:read", RescuesRead);
