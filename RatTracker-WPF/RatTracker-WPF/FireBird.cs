@@ -158,17 +158,17 @@ namespace RatTracker_WPF
         using (var createTable = _con.CreateCommand())
         {
           createTable.CommandText =
-            "CREATE TABLE eddb_systems (id int, name varchar(150), x float, y float, z float, faction varchar(150), population bigint, goverment varchar(130), allegiance varchar(130), state varchar(130), " +
-            "security varchar(150), primary_economy varchar(130), power varchar(130), power_state varchar(130), needs_permit boolean, updated_at bigint, simbad_ref varchar(150), lowercase_name varchar(150))";
+            "CREATE TABLE eddb_systems (id int, name varchar(150), x float, y float, z float, population bigint, " +
+            "needs_permit boolean, updated_at bigint, simbad_ref varchar(150), lowercase_name varchar(150))";
           createTable.ExecuteNonQuery();
         }
         using (var createTable = _con.CreateCommand())
         {
           createTable.CommandText =
-            "CREATE TABLE eddb_stations (id bigint, name varchar(150), system_id bigint, max_landing_pad_size varchar(5), distance_to_star bigint, faction varchar(150), government varchar(120), allegiance varchar(130), " +
-            "state varchar(120), type_id int, type varchar(130), has_blackmarket boolean, has_market boolean, has_refuel boolean, has_repair boolean, has_rearm boolean, has_outfitting boolean, has_shipyard boolean, has_docking boolean, " +
-            "has_commodities boolean, prohibited_commodities varchar(10000), economies varchar(10000), updated_at bigint, shipyard_updated_at bigint, outfitting_updated_at bigint, market_updated_at bigint, is_planetary boolean, " +
-            "selling_ships varchar(20000), selling_modules varchar(20000), lowercase_name varchar(150))";
+            "CREATE TABLE eddb_stations (id bigint, name varchar(150), system_id bigint, max_landing_pad_size varchar(5), distance_to_star bigint, " +
+            "type_id int, type varchar(130), has_blackmarket boolean, has_market boolean, has_refuel boolean, has_repair boolean, has_rearm boolean, has_outfitting boolean, has_shipyard boolean, has_docking boolean, " +
+            "has_commodities boolean, updated_at bigint, is_planetary boolean, " +
+            "lowercase_name varchar(150))";
           createTable.ExecuteNonQuery();
         }
         using (var createTable = _con.CreateCommand())
@@ -212,15 +212,13 @@ namespace RatTracker_WPF
     }
 
     public async Task AddStation(int id, string name, int system_id, string max_landing_pad_size, int? distance_to_star,
-      string faction, string government, string allegiance, string state, int? type_id, string type,
+      int? type_id, string type,
       bool? has_blackmarket,
       bool? has_market, bool? has_refuel, bool? has_repair, bool? has_rearm, bool? has_outfitting, bool? has_shipyard,
       bool? has_docking,
-      bool? has_commodities, List<string> import_commodities, List<string> export_commodities,
-      List<string> prohibited_commodities,
-      List<string> economies, int? updated_at, int? shipyard_updated_at, int? outfitting_updated_at,
-      int? market_updated_at,
-      bool is_planetary, List<string> selling_ships, List<int> selling_modules)
+      bool? has_commodities,
+      int? updated_at,
+      bool is_planetary)
     {
       if (_dbReady == false)
       {
@@ -233,19 +231,15 @@ namespace RatTracker_WPF
         using (var insertStation = _con.CreateCommand())
         {
           insertStation.CommandText =
-            "INSERT INTO eddb_stations values (@id, @name, @system_id, @max_landing_pad_size, @distance_to_star, @faction, @government, @allegiance, @state, @type_id, @type, @has_blackmarket, @has_market, " +
-            "@has_refuel, @has_repair, @has_rearm, @has_outfitting, @has_shipyard, @has_docking, @has_commodities, @prohibited_commodities, @economies, @updated_at, @shipyard_updated_at, @outfitting_updated_at, @market_updated_at, " +
-            "@is_planetary, @selling_ships, @selling_modules, @lowercase_name)";
+            "INSERT INTO eddb_stations values (@id, @name, @system_id, @max_landing_pad_size, @distance_to_star, @type_id, @type, @has_blackmarket, @has_market, " +
+            "@has_refuel, @has_repair, @has_rearm, @has_outfitting, @has_shipyard, @has_docking, @has_commodities, @updated_at, " +
+            "@is_planetary, @lowercase_name)";
           insertStation.Parameters.Clear();
           insertStation.Parameters.AddWithValue("@id", id);
           insertStation.Parameters.AddWithValue("@name", name);
           insertStation.Parameters.AddWithValue("@system_id", system_id);
           insertStation.Parameters.AddWithValue("@max_landing_pad_size", max_landing_pad_size);
           insertStation.Parameters.AddWithValue("@distance_to_star", distance_to_star);
-          insertStation.Parameters.AddWithValue("@faction", faction);
-          insertStation.Parameters.AddWithValue("@government", government);
-          insertStation.Parameters.AddWithValue("@allegiance", allegiance);
-          insertStation.Parameters.AddWithValue("@state", state);
           insertStation.Parameters.AddWithValue("@type_id", type_id);
           insertStation.Parameters.AddWithValue("@type", type);
           insertStation.Parameters.AddWithValue("@has_blackmarket", Convert.ToInt16(has_blackmarket));
@@ -257,16 +251,8 @@ namespace RatTracker_WPF
           insertStation.Parameters.AddWithValue("@has_shipyard", Convert.ToInt16(has_shipyard));
           insertStation.Parameters.AddWithValue("@has_docking", Convert.ToInt16(has_docking));
           insertStation.Parameters.AddWithValue("@has_commodities", Convert.ToInt16(has_commodities));
-          insertStation.Parameters.AddWithValue("@prohibited_commodities",
-            string.Join(", ", prohibited_commodities.ToArray()));
-          insertStation.Parameters.AddWithValue("@economies", string.Join(", ", economies.ToArray()));
           insertStation.Parameters.AddWithValue("@updated_at", updated_at);
-          insertStation.Parameters.AddWithValue("@shipyard_updated_at", shipyard_updated_at);
-          insertStation.Parameters.AddWithValue("@outfitting_updated_at", outfitting_updated_at);
-          insertStation.Parameters.AddWithValue("@market_updated_at", market_updated_at);
           insertStation.Parameters.AddWithValue("@is_planetary", Convert.ToInt16(is_planetary));
-          insertStation.Parameters.AddWithValue("@selling_ships", string.Join(", ", selling_ships.ToArray()));
-          insertStation.Parameters.AddWithValue("@selling_modules", string.Join(", ", selling_modules.ToArray()));
           insertStation.Parameters.AddWithValue("@lowercase_name", name.ToLower());
           await insertStation.ExecuteNonQueryAsync();
         }
@@ -421,9 +407,8 @@ namespace RatTracker_WPF
             }
         }
         */
-    public async Task AddSystem(int id, string name, double x, double y, double z, string faction, long? population,
-      string government, string allegiance, string state, string security,
-      string primary_economy, string power, string power_state, int needs_permit, int updated_at, string simbad_ref)
+    public async Task AddSystem(int id, string name, double x, double y, double z, long? population,
+      int needs_permit, int updated_at, string simbad_ref)
     {
       if (_dbReady == false)
       {
@@ -437,22 +422,14 @@ namespace RatTracker_WPF
         using (var insertSystem = _con.CreateCommand())
         {
           insertSystem.CommandText =
-            "INSERT INTO eddb_systems values (@id, @name, @x, @y, @z, @faction, @population, @government, @allegiance, @state, @security, @primary_economy, @power, @power_state, @needs_permit, @updated_at, @simbad_ref, @lowercase_name)";
+            "INSERT INTO eddb_systems values (@id, @name, @x, @y, @z, @population, @needs_permit, @updated_at, @simbad_ref, @lowercase_name)";
           insertSystem.Parameters.Clear();
           insertSystem.Parameters.Add("@id", FbDbType.Integer).Value = id;
           insertSystem.Parameters.Add("@name", FbDbType.VarChar, 150).Value = name;
           insertSystem.Parameters.Add("@x", FbDbType.Double).Value = x;
           insertSystem.Parameters.Add("@y", FbDbType.Double).Value = y;
           insertSystem.Parameters.Add("@z", FbDbType.Double).Value = z;
-          insertSystem.Parameters.Add("@faction", FbDbType.VarChar, 150).Value = faction;
           insertSystem.Parameters.Add("@population", FbDbType.BigInt).Value = population;
-          insertSystem.Parameters.Add("@government", FbDbType.VarChar, 130).Value = government;
-          insertSystem.Parameters.Add("@allegiance", FbDbType.VarChar, 130).Value = allegiance;
-          insertSystem.Parameters.Add("@state", FbDbType.VarChar, 130).Value = state;
-          insertSystem.Parameters.Add("@security", FbDbType.VarChar, 150).Value = security;
-          insertSystem.Parameters.Add("@primary_economy", FbDbType.VarChar, 130).Value = primary_economy;
-          insertSystem.Parameters.Add("@power", FbDbType.VarChar, 130).Value = power;
-          insertSystem.Parameters.Add("@power_state", FbDbType.VarChar, 130).Value = power_state;
           insertSystem.Parameters.Add("@needs_permit", FbDbType.Integer).Value = needs_permit;
           insertSystem.Parameters.Add("@updated_at", FbDbType.BigInt).Value = updated_at;
           insertSystem.Parameters.Add("@simbad_ref", FbDbType.VarChar, 150).Value = simbad_ref;
@@ -491,22 +468,14 @@ namespace RatTracker_WPF
         using (var insertSystem = con2.CreateCommand())
         {
           insertSystem.CommandText =
-            "INSERT INTO eddb_systems values (@id, @name, @x, @y, @z, @faction, @population, @government, @allegiance, @state, @security, @primary_economy, @power, @power_state, @needs_permit, @updated_at, @simbad_ref, @lowercase_name)";
+            "INSERT INTO eddb_systems values (@id, @name, @x, @y, @z, @population, @needs_permit, @updated_at, @simbad_ref, @lowercase_name)";
           insertSystem.Parameters.Clear();
           insertSystem.Parameters.Add("@id", FbDbType.Integer);
           insertSystem.Parameters.Add("@name", FbDbType.VarChar, 150);
           insertSystem.Parameters.Add("@x", FbDbType.Double);
           insertSystem.Parameters.Add("@y", FbDbType.Double);
           insertSystem.Parameters.Add("@z", FbDbType.Double);
-          insertSystem.Parameters.Add("@faction", FbDbType.VarChar, 150);
           insertSystem.Parameters.Add("@population", FbDbType.BigInt);
-          insertSystem.Parameters.Add("@government", FbDbType.VarChar, 130);
-          insertSystem.Parameters.Add("@allegiance", FbDbType.VarChar, 130);
-          insertSystem.Parameters.Add("@state", FbDbType.VarChar, 130);
-          insertSystem.Parameters.Add("@security", FbDbType.VarChar, 150);
-          insertSystem.Parameters.Add("@primary_economy", FbDbType.VarChar, 130);
-          insertSystem.Parameters.Add("@power", FbDbType.VarChar, 130);
-          insertSystem.Parameters.Add("@power_state", FbDbType.VarChar, 130);
           insertSystem.Parameters.Add("@needs_permit", FbDbType.Integer);
           insertSystem.Parameters.Add("@updated_at", FbDbType.BigInt);
           insertSystem.Parameters.Add("@simbad_ref", FbDbType.VarChar, 150);
@@ -526,15 +495,7 @@ namespace RatTracker_WPF
             insertSystem.Parameters["@x"].Value = system.x;
             insertSystem.Parameters["@y"].Value = system.y;
             insertSystem.Parameters["@z"].Value = system.z;
-            insertSystem.Parameters["@faction"].Value = system.faction;
             insertSystem.Parameters["@population"].Value = system.population;
-            insertSystem.Parameters["@government"].Value = system.government;
-            insertSystem.Parameters["@allegiance"].Value = system.allegiance;
-            insertSystem.Parameters["@state"].Value = system.state;
-            insertSystem.Parameters["@security"].Value = system.security;
-            insertSystem.Parameters["@primary_economy"].Value = system.primary_economy;
-            insertSystem.Parameters["@power"].Value = system.power;
-            insertSystem.Parameters["@power_state"].Value = system.power_state;
             insertSystem.Parameters["@needs_permit"].Value = system.needs_permit;
             insertSystem.Parameters["@updated_at"].Value = system.updated_at;
             insertSystem.Parameters["@simbad_ref"].Value = system.simbad_ref;
@@ -607,12 +568,11 @@ namespace RatTracker_WPF
 
     public async Task<EddbSystem> GetNearestPopulatedSystem(Coordinates coords)
     {
-      //var systemResult = new List<EddbSystem>();
       var systemResult = new EddbSystem();
       Status = "Working...";
       using (var getSystem = _con.CreateCommand())
       {
-        getSystem.CommandText = "SELECT FIRST 1 name,id,x,y,z,sqrt(power(("+coords.X+ "-x),2)+power((" + coords.Y + "-y),2)+power((" + coords.Z + "-z),2)) as distance FROM eddb_systems WHERE population > 0 Order by distance";
+        getSystem.CommandText = "SELECT FIRST 1 name,id,x,y,z,sqrt(power(("+coords.X+ "-x),2)+power((" + coords.Y + "-y),2)+power((" + coords.Z + "-z),2)) as distance FROM eddb_systems WHERE population > 0 AND needs_permit = 0 Order by distance";
         using (var r = await getSystem.ExecuteReaderAsync())
         {
           while (r.Read())
@@ -625,9 +585,6 @@ namespace RatTracker_WPF
             tmpsys.z= r.GetDouble(r.GetOrdinal("Z"));
             tmpsys.id = r.GetInt32(1);
             //tmpsys.population = r.GetInt32("population");
-            //tmpsys.Coords.X = r.GetDouble(r.GetOrdinal("X"));
-            //tmpsys.Coords.Y = r.GetDouble(r.GetOrdinal("Y"));
-            //tmpsys.Coords.Z = r.GetDouble(r.GetOrdinal("Z"));
             //systemResult.Add(tmpsys);
             systemResult = tmpsys;
             Logger.Debug("GetNearestStation added: " + r.GetString(0) + ": " + r.GetString(1) + " X: " + r.GetString(2) +
@@ -641,19 +598,16 @@ namespace RatTracker_WPF
 
     public async Task<EddbStation> GetNearestStation(EddbSystem system)
     {
-      //var systemResult = new List<EddbSystem>();
       var stationResult = new EddbStation();
       Status = "Working...";
       using (var getStation = _con.CreateCommand())
       {
-        //getStation.CommandText = "SELECT * FROM eddb_stations Order by distance_to_star";
         getStation.CommandText = "SELECT FIRST 1 name,id,distance_to_star,max_landing_pad_size,has_refuel,has_repair,has_outfitting FROM eddb_stations WHERE system_id = "+system.id+" AND distance_to_star is not null Order by distance_to_star";
         using (var r = await getStation.ExecuteReaderAsync())
         {
           while (r.Read())
           {
             var tmpsys = new EddbStation();
-            //tmpsys.Coords = new Coordinates();
             tmpsys.name = r.GetString(0);
             tmpsys.id = r.GetInt32(1);
             tmpsys.distance_to_star = r.GetInt32(2);
@@ -661,7 +615,6 @@ namespace RatTracker_WPF
             tmpsys.has_refuel = r.GetBoolean(4);
             tmpsys.has_repair = r.GetBoolean(5);
             tmpsys.has_outfitting = r.GetBoolean(6);
-            //systemResult.Add(tmpsys);
             stationResult = tmpsys;
             Logger.Debug("GetNearestStation added: " + r.GetString(0) + ": " + r.GetString(1) + " Distance: " + r.GetString(2));
           }

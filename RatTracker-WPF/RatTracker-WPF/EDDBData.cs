@@ -272,14 +272,13 @@ namespace RatTracker_WPF
         foreach (var station in stations)
         {
           await _fbworker.AddStation(station.id, station.name, station.system_id, station.max_landing_pad_size,
-            station.distance_to_star, station.faction,
-            station.government, station.allegiance, station.state, station.type_id, station.type,
+            station.distance_to_star,
+            station.type_id, station.type,
             station.has_blackmarket, station.has_market, station.has_refuel,
             station.has_repair, station.has_rearm, station.has_outfitting, station.has_shipyard, station.has_docking,
-            station.has_commodities, station.import_commodities,
-            station.export_commodities, station.prohibited_commodities, station.economies, station.updated_at,
-            station.shipyard_updated_at, station.outfitting_updated_at,
-            station.market_updated_at, station.is_planetary, station.selling_ships, station.selling_modules);
+            station.has_commodities,
+            station.updated_at,
+            station.is_planetary);
         }
 
         Logger.Info("Completed Station injection");

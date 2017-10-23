@@ -311,6 +311,7 @@ namespace RatTracker_WPF
     public MainWindow()
     {
       Logger.Info("---Starting RatTracker---");
+      cache.playerinfo = MyPlayer;
       Logger.Info("OAuth stored token is " + Settings.Default.OAuthToken);
       try
       {
@@ -1561,7 +1562,12 @@ namespace RatTracker_WPF
         AppendStatus("Null myrescue! Failing.");
         return;
       }
-      if (AssignedRescueViewModel != null && AssignedRescueViewModel.Rescue.Id == null)
+      if (AssignedRescueViewModel != null && AssignedRescueViewModel.Rescue == null)
+      {
+        Logger.Debug("Rescue is null!");
+        return;
+      }
+      if (AssignedRescueViewModel.Rescue != null && AssignedRescueViewModel.Rescue.Id == null)
       {
         Logger.Debug("Rescue ID is null!");
         return;
