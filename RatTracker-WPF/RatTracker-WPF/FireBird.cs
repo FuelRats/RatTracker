@@ -605,6 +605,73 @@ namespace RatTracker_WPF
       return systemResult;
     }
 
+    public async Task<EddbSystem> GetNearestPopulatedSystem(Coordinates coords)
+    {
+      //var systemResult = new List<EddbSystem>();
+      var systemResult = new EddbSystem();
+      Status = "Working...";
+      using (var getSystem = _con.CreateCommand())
+      {
+        getSystem.CommandText = "SELECT FIRST 1 name,id,x,y,z,sqrt(power(("+coords.X+ "-x),2)+power((" + coords.Y + "-y),2)+power((" + coords.Z + "-z),2)) as distance FROM eddb_systems WHERE population > 0 Order by distance";
+        using (var r = await getSystem.ExecuteReaderAsync())
+        {
+          while (r.Read())
+          {
+            var tmpsys = new EddbSystem();
+            //tmpsys.Coords = new Coordinates();
+            tmpsys.name = r.GetString(0);
+            tmpsys.x= r.GetDouble(r.GetOrdinal("X"));
+            tmpsys.y= r.GetDouble(r.GetOrdinal("Y"));
+            tmpsys.z= r.GetDouble(r.GetOrdinal("Z"));
+            tmpsys.id = r.GetInt32(1);
+            //tmpsys.population = r.GetInt32("population");
+            //tmpsys.Coords.X = r.GetDouble(r.GetOrdinal("X"));
+            //tmpsys.Coords.Y = r.GetDouble(r.GetOrdinal("Y"));
+            //tmpsys.Coords.Z = r.GetDouble(r.GetOrdinal("Z"));
+            //systemResult.Add(tmpsys);
+            systemResult = tmpsys;
+            Logger.Debug("GetNearestStation added: " + r.GetString(0) + ": " + r.GetString(1) + " X: " + r.GetString(2) +
+                         " Y: " + r.GetString(3) + " Z: " + r.GetString(4) + " Distance: "+r.GetString(5));
+          }
+        }
+      }
+      Status = "Ready!";
+      return systemResult;
+    }
+
+    public async Task<EddbStation> GetNearestStation(EddbSystem system)
+    {
+      //var systemResult = new List<EddbSystem>();
+      var stationResult = new EddbStation();
+      Status = "Working...";
+      using (var getStation = _con.CreateCommand())
+      {
+        //getStation.CommandText = "SELECT * FROM eddb_stations Order by distance_to_star";
+        getStation.CommandText = "SELECT FIRST 1 name,id,distance_to_star,max_landing_pad_size,has_refuel,has_repair,has_outfitting FROM eddb_stations WHERE system_id = "+system.id+" AND distance_to_star is not null Order by distance_to_star";
+        using (var r = await getStation.ExecuteReaderAsync())
+        {
+          while (r.Read())
+          {
+            var tmpsys = new EddbStation();
+            //tmpsys.Coords = new Coordinates();
+            tmpsys.name = r.GetString(0);
+            tmpsys.id = r.GetInt32(1);
+            tmpsys.distance_to_star = r.GetInt32(2);
+            tmpsys.max_landing_pad_size = r.GetString(3);
+            tmpsys.has_refuel = r.GetBoolean(4);
+            tmpsys.has_repair = r.GetBoolean(5);
+            tmpsys.has_outfitting = r.GetBoolean(6);
+            //systemResult.Add(tmpsys);
+            stationResult = tmpsys;
+            Logger.Debug("GetNearestStation added: " + r.GetString(0) + ": " + r.GetString(1) + " Distance: " + r.GetString(2));
+          }
+        }
+      }
+      Status = "Ready!";
+      return stationResult;
+    }
+
+
     public int GetSystemCount()
     {
       Logger.Debug("Counting systems...");

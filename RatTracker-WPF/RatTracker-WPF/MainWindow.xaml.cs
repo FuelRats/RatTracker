@@ -1654,8 +1654,11 @@ namespace RatTracker_WPF
       if (edsmSystems.Any())
       {
         Logger.Debug("Got a mysys with " + edsmSystems.Count() + " elements");
-        var station = Eddbworker.GetClosestStation(edsmSystems.First().Coords);
-        var system = Eddbworker.GetSystemById(station.system_id);
+        var system = await _fbworker.GetNearestPopulatedSystem(edsmSystems.First().Coords);
+
+        var station = await _fbworker.GetNearestStation(system);
+        //var station = Eddbworker.GetClosestStation(edsmSystems.First().Coords);
+        //var system = Eddbworker.GetSystemById(station.system_id);
         AppendStatus("Closest populated system to '" + MyPlayer.CurrentSystem + "' is '" + system.name +
                      "', closest station to star with known coordinates is '" + station.name + "'.");
         var distance = await CalculateEdsmDistance(MyPlayer.CurrentSystem, edsmSystems.First().Name);
