@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -26,7 +25,6 @@ namespace RatTracker.Firebird
           var systems = new BlockingCollection<EddbSystem>(new ConcurrentQueue<EddbSystem>());
           var inserterTask = Task.Run(() => starSystemDatabase.Insert(systems));
 
-          var stopwatch = Stopwatch.StartNew();
           var url = orthanc + file;
           using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
           {
