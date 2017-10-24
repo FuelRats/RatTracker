@@ -8,7 +8,7 @@ using RatTracker.Api;
 using RatTracker.Firebird;
 using RatTracker.Infrastructure.Extensions;
 using RatTracker.Models.Api.Rescues;
-using RatTracker.Models.App;
+using RatTracker.Models.App.Rescues;
 
 namespace RatTracker.ViewModels
 {

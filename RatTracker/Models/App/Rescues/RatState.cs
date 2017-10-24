@@ -1,6 +1,6 @@
 using RatTracker.Models.Api.Rescues;
 
-namespace RatTracker.Models.App
+namespace RatTracker.Models.App.Rescues
 {
   public class RatState : PropertyChangedBase
   {

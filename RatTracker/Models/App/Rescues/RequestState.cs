@@ -1,4 +1,4 @@
-namespace RatTracker.Models.App
+namespace RatTracker.Models.App.Rescues
 {
   public enum RequestState
   {

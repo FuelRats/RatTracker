@@ -5,7 +5,7 @@ using System.Linq;
 using RatTracker.Infrastructure.Extensions;
 using RatTracker.Models.Api;
 using RatTracker.Models.Api.Rescues;
-using RatTracker.Models.App;
+using RatTracker.Models.App.Rescues;
 
 namespace RatTracker.Api
 {

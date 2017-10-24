@@ -63,6 +63,9 @@
     <Reference Include="Caliburn.Micro.Platform.Core, Version=3.2.0.0, Culture=neutral, PublicKeyToken=8e5891231f2ed21f, processorArchitecture=MSIL">
       <HintPath>..\packages\Caliburn.Micro.3.2.0\lib\net45\Caliburn.Micro.Platform.Core.dll</HintPath>
     </Reference>
+    <Reference Include="CsvHelper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
+      <HintPath>..\packages\CsvHelper.4.0.2\lib\net45\CsvHelper.dll</HintPath>
+    </Reference>
     <Reference Include="FirebirdSql.Data.FirebirdClient, Version=5.11.0.0, Culture=neutral, PublicKeyToken=3750abcc3150b00c, processorArchitecture=MSIL">
       <HintPath>..\packages\FirebirdSql.Data.FirebirdClient.5.11.0\lib\net452\FirebirdSql.Data.FirebirdClient.dll</HintPath>
     </Reference>
@@ -148,6 +151,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Firebird\StarSystemDatabase.cs" />
+    <Compile Include="Firebird\Updater.cs" />
     <Compile Include="Infrastructure\Controls\RatStateButton.cs" />
     <Compile Include="Infrastructure\Converter\NullToVisibilityConverter.cs" />
     <Compile Include="Infrastructure\Converter\ClientConverter.cs" />
@@ -169,10 +173,13 @@
     <Compile Include="Models\Api\Rescues\RescueState.cs" />
     <Compile Include="Models\Api\TPA\TPAMessage.cs" />
     <Compile Include="Models\Api\User.cs" />
-    <Compile Include="Models\App\PlayerInfo.cs" />
-    <Compile Include="Models\App\RatState.cs" />
-    <Compile Include="Models\App\RequestState.cs" />
-    <Compile Include="Models\App\RescueModel.cs" />
+    <Compile Include="Models\App\Rescues\PlayerInfo.cs" />
+    <Compile Include="Models\App\Rescues\RatState.cs" />
+    <Compile Include="Models\App\Rescues\RequestState.cs" />
+    <Compile Include="Models\App\Rescues\RescueModel.cs" />
+    <Compile Include="Models\App\StarSystems\EddbSystem.cs" />
+    <Compile Include="Models\App\StarSystems\EddbStation.cs" />
+    <Compile Include="Infrastructure\Json\LandingPadSizeConverter.cs" />
     <Compile Include="Models\PropertyChangedBase.cs" />
     <Compile Include="ViewModels\AssignedRescueViewModel.cs" />
     <Compile Include="ViewModels\OAuthStartupDialogViewModel.cs" />

@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using RatTracker.Models.App;
+using RatTracker.Models.App.Rescues;
 using RatTracker.ViewModels;
 
 namespace RatTracker.Infrastructure.Controls

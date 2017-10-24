@@ -6,7 +6,7 @@ using Caliburn.Micro;
 using RatTracker.Api;
 using RatTracker.Infrastructure.Extensions;
 using RatTracker.Models.Api.Rescues;
-using RatTracker.Models.App;
+using RatTracker.Models.App.Rescues;
 using ILog = log4net.ILog;
 
 namespace RatTracker.ViewModels
