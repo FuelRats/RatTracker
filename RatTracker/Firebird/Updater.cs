@@ -12,10 +12,27 @@ namespace RatTracker.Firebird
 {
   public class Updater
   {
-    private readonly string orthanc = "http://orthanc.localecho.net/json/";
+    private const string Orthanc = "http://orthanc.localecho.net/json/";
+    private readonly StarSystemDatabase starSystemDatabase;
     private readonly string[] systemFiles = {"xaa", "xab", "xac", "xad", "xae", "xaf", "xag", "xah", "xai", "xaj", "xak", "xal", "xam", "xan", "xao"};
 
-    public async Task DownloadSystems(StarSystemDatabase starSystemDatabase)
+    public Updater(StarSystemDatabase starSystemDatabase)
+    {
+      this.starSystemDatabase = starSystemDatabase;
+    }
+
+    public async Task EnsureDatabase()
+    {
+      var exists = File.Exists(starSystemDatabase.DatabaseFullPath);
+      await starSystemDatabase.Initialize();
+
+      if (exists) { return; }
+
+      await DownloadSystems();
+      await DownloadStations();
+    }
+
+    private async Task DownloadSystems()
     {
       var first = true;
       using (var client = new HttpClient())
@@ -25,7 +42,7 @@ namespace RatTracker.Firebird
           var systems = new BlockingCollection<EddbSystem>(new ConcurrentQueue<EddbSystem>());
           var inserterTask = Task.Run(() => starSystemDatabase.Insert(systems));
 
-          var url = orthanc + file;
+          var url = Orthanc + file;
           using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
           {
             using (var stream = await response.Content.ReadAsStreamAsync())
@@ -65,8 +82,11 @@ namespace RatTracker.Firebird
       }
     }
 
-    public async Task DownloadStations(BlockingCollection<EddbStation> stations)
+    private async Task DownloadStations()
     {
+      var stations = new BlockingCollection<EddbStation>(new ConcurrentQueue<EddbStation>());
+      var inserterTask = Task.Run(() => starSystemDatabase.Insert(stations));
+
       var file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "RatTracker", "EDDB", "stations.json");
       using (var fileStream = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read))
       {
@@ -84,10 +104,11 @@ namespace RatTracker.Firebird
                 stations.Add(station);
               }
             }
-            stations.CompleteAdding();
           }
         }
       }
+      stations.CompleteAdding();
+      await inserterTask;
     }
   }
 }

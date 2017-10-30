@@ -160,6 +160,7 @@
     <Compile Include="Infrastructure\Controls\RatStateControl.cs" />
     <Compile Include="Infrastructure\DialogHelper.cs" />
     <Compile Include="Infrastructure\Extensions\EnumerableExtensions.cs" />
+    <Compile Include="Infrastructure\Json\PlatformConverter.cs" />
     <Compile Include="Infrastructure\Monitor.cs" />
     <Compile Include="Infrastructure\RelayCommand.cs" />
     <Compile Include="Models\Api\Rescues\Data.cs" />

@@ -57,7 +57,9 @@ namespace RatTracker.Firebird
       logger = log;
     }
 
-    public void Initialize()
+    public string DatabaseFullPath => databaseFullPath;
+
+    public async Task Initialize()
     {
       logger.Debug("Starting FbConnection");
       if (!File.Exists(databaseFullPath))
@@ -71,7 +73,7 @@ namespace RatTracker.Firebird
         if (DataBaseVersion != version)
         {
           File.Delete(databaseFullPath);
-          Initialize();
+          await Initialize();
           return;
         }
 
@@ -90,6 +92,11 @@ namespace RatTracker.Firebird
     {
       // not implemented yet
       await Task.CompletedTask;
+    }
+
+    public void CloseConnection()
+    {
+      systemDatabaseConnection?.Close();
     }
 
     public void Insert(BlockingCollection<EddbSystem> systems)
@@ -155,11 +162,6 @@ namespace RatTracker.Firebird
           logger.Debug("Exception in InjectSystemsToSql: " + ex.Message + "@" + ex.Source);
         }
       }
-    }
-
-    public void CloseConnection()
-    {
-      systemDatabaseConnection?.Close();
     }
 
     public void Insert(BlockingCollection<EddbStation> stations)

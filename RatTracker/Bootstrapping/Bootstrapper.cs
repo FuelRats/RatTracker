@@ -65,22 +65,9 @@ namespace RatTracker.Bootstrapping
         kernel.Get<EventBus>();
         kernel.Get<Cache>();
         var websocketHandler = kernel.Get<WebsocketHandler>();
-        var starSystemDatabase = kernel.Get<StarSystemDatabase>();
-        var websocketTask = Task.Run(() => { websocketHandler.Initialize(true); });
-        var systemsDataBaseTask = Task.Run(() => { starSystemDatabase.Initialize(); });
-
-        //var updater = kernel.Get<Updater>();
-
-        //systemsDataBaseTask = systemsDataBaseTask.ContinueWith(async task =>
-        //{
-        //  var downloaderTask = Task.Run(async () => await updater.DownloadSystems(starSystemDatabase));
-        //  await Task.WhenAll(downloaderTask);
-
-        //  var stations = new BlockingCollection<EddbStation>(new ConcurrentQueue<EddbStation>());
-        //  var downloaderTask2 = Task.Run(() => updater.DownloadStations(stations));
-        //  var inserterTask2 = Task.Run(() => starSystemDatabase.Insert(stations));
-        //  await Task.WhenAll(downloaderTask2, inserterTask2);
-        //});
+        var updater = kernel.Get<Updater>();
+        var websocketTask = Task.Run(() => websocketHandler.Initialize(true));
+        var systemsDataBaseTask = Task.Run(async () => await updater.EnsureDatabase());
 
         await Task.WhenAll(websocketTask, systemsDataBaseTask);
       }

@@ -219,3 +219,4 @@ RatTracker-WPF/RatTracker-WPF/*.dll
 RatTracker-WPF/RatTracker-WPF/buildtimeconfig.config
 RatTracker-WPF/.idea/.idea.RatTracker-WPF/.idea/contentModel.xml
 RatTracker-WPF/.idea/
+*.pfx

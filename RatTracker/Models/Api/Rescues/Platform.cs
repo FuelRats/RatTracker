@@ -1,10 +1,12 @@
 ﻿using System.Runtime.Serialization;
+using Newtonsoft.Json;
+using RatTracker.Infrastructure.Json;
 
 namespace RatTracker.Models.Api.Rescues
 {
+  [JsonConverter(typeof(PlatformConverter))]
   public enum Platform
   {
-    [EnumMember(Value="unknown")]
     Unknown,
 
     [EnumMember(Value = "pc")]
