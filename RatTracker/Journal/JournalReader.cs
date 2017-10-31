@@ -15,10 +15,10 @@ namespace RatTracker.Journal
     private readonly JournalParser parser;
     private FileSystemWatcher fileSystemWatcher;
     private FileInfo journalFile;
-    private Timer timer;
+    private string journalPath;
 
     private long lastPosition;
-    private string journalPath;
+    private Timer timer;
 
     public JournalReader(EventBus eventBus, JournalParser parser)
     {
@@ -63,6 +63,7 @@ namespace RatTracker.Journal
       await Task.Run(() =>
       {
         journalFile = GetLastEditedJournalFile(journalPath, fileSystemWatcher.Filter);
+        if (journalFile == null) { return; }
         var fileLength = journalFile.Length;
         var readLength = (int) (fileLength - lastPosition);
         if (readLength < 0)
