@@ -1,6 +1,6 @@
 ﻿namespace RatTracker.Api
 {
-  public static class ApiEvents
+  public static class ApiEventNames
   {
     public const string Connection = "connection";
     public const string StreamSubscribe = "streamSubscribe";

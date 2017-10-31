@@ -1,0 +1,32 @@
+﻿<UserControl x:Class="RatTracker.Views.PlayerInformationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewModels="clr-namespace:RatTracker.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:PlayerInformationViewModel}"
+             d:DesignHeight="300" d:DesignWidth="300">
+  <GroupBox Header="CMDR Information">
+    <Grid>
+      <Grid.Resources>
+        <Style TargetType="TextBox" BasedOn="{StaticResource TextBoxStyle}">
+          <Setter Property="Margin" Value="0,1" />
+        </Style>
+        <Style TargetType="TextBlock" BasedOn="{StaticResource TextBlockStyle}">
+          <Setter Property="Margin" Value="0,1,5,1" />
+          <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+      </Grid.Resources>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+
+      <TextBlock Grid.Row="0" Grid.Column="0" Text="Current location:" />
+      <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding PlayerInfo.CurrentSystem.Name}" IsReadOnly="True" />
+    </Grid>
+  </GroupBox>
+</UserControl>

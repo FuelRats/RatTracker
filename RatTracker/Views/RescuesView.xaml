@@ -14,18 +14,17 @@
     </Grid.ColumnDefinitions>
 
     <GroupBox Header="Active Rescues" Grid.Column="0">
-      <GroupBox.Effect>
-        <DropShadowEffect />
-      </GroupBox.Effect>
       <DataGrid ItemsSource="{Binding Rescues}" IsReadOnly="True" RowHeaderWidth="0"
                 AutoGenerateColumns="False" SelectionMode="Single" SelectedItem="{Binding SelectedRescue}">
         <DataGrid.Columns>
           <DataGridTextColumn Binding="{Binding Rescue.Platform}" ClipboardContentBinding="{x:Null}" Header="Platform" />
           <DataGridTextColumn Binding="{Binding Rescue.Client, Converter={converter:ClientConverter}}"
                               ClipboardContentBinding="{x:Null}" Header="Client" />
-          <DataGridTextColumn Binding="{Binding Rescue.Rats, Converter={converter:RatNameConcatConverter}}" Header="Rats" />
+          <DataGridTextColumn Binding="{Binding Rescue.Rats, Converter={converter:RatNameConcatConverter}}"
+                              Header="Rats" />
           <DataGridTextColumn Binding="{Binding Rescue.System}" ClipboardContentBinding="{x:Null}" Header="System" />
-          <DataGridCheckBoxColumn Binding="{Binding Rescue.CodeRed}" ClipboardContentBinding="{x:Null}" Header="Code Red" />
+          <DataGridCheckBoxColumn Binding="{Binding Rescue.CodeRed}" ClipboardContentBinding="{x:Null}"
+                                  Header="Code Red" />
         </DataGrid.Columns>
       </DataGrid>
     </GroupBox>
@@ -87,8 +86,9 @@
               <Setter Property="Margin" Value="1,1,0,0" />
             </Style>
           </UniformGrid.Resources>
-          <Button x:Name="FindNearestStation" Content="Nearest station" Style="{StaticResource NearestStationButtonStyle}" />
-          <Button x:Name="CallJumps" Content="Call jumps" Style="{StaticResource CallJumpsButtonsStyle}"/>
+          <Button x:Name="FindNearestStation" Content="Nearest station"
+                  Style="{StaticResource NearestStationButtonStyle}" />
+          <Button x:Name="CallJumps" Content="Call jumps" Style="{StaticResource CallJumpsButtonsStyle}" />
         </UniformGrid>
       </Grid>
     </GroupBox>

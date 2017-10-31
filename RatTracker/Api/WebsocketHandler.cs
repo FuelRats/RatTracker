@@ -53,7 +53,7 @@ namespace RatTracker.Api
 
     private void SubscribeStream(string applicationId)
     {
-      var query = WebsocketMessage.Request("stream", "subscribe", ApiEvents.StreamSubscribe);
+      var query = WebsocketMessage.Request("stream", "subscribe", ApiEventNames.StreamSubscribe);
       query.AddData("id", applicationId);
       log.Debug("Subscribing to stream: " + applicationId);
       SendQuery(query);

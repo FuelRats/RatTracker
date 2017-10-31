@@ -160,5 +160,17 @@ namespace RatTracker.Properties {
                 this["JumpRange"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string JournalDirectory {
+            get {
+                return ((string)(this["JournalDirectory"]));
+            }
+            set {
+                this["JournalDirectory"] = value;
+            }
+        }
     }
 }

@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using FirebirdSql.Data.FirebirdClient;
 using log4net;
+using RatTracker.Infrastructure.Events;
 using RatTracker.Models.App.StarSystems;
 
 namespace RatTracker.Firebird
@@ -52,9 +53,10 @@ namespace RatTracker.Firebird
     private readonly ILog logger;
     private FbConnection systemDatabaseConnection;
 
-    public StarSystemDatabase(ILog log)
+    public StarSystemDatabase(ILog log, EventBus eventBus)
     {
       logger = log;
+      eventBus.ApplicationExit += EventBusOnApplicationExit;
     }
 
     public string DatabaseFullPath => databaseFullPath;
@@ -92,11 +94,6 @@ namespace RatTracker.Firebird
     {
       // not implemented yet
       await Task.CompletedTask;
-    }
-
-    public void CloseConnection()
-    {
-      systemDatabaseConnection?.Close();
     }
 
     public void Insert(BlockingCollection<EddbSystem> systems)
@@ -242,6 +239,11 @@ namespace RatTracker.Firebird
           logger.Debug("Exception in InjectSystemsToSql: " + ex.Message + "@" + ex.Source);
         }
       }
+    }
+
+    private void EventBusOnApplicationExit(object sender, EventArgs eventArgs)
+    {
+      systemDatabaseConnection?.Close();
     }
 
     private static int GetVersionFromDatabase()

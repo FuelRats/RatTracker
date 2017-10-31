@@ -139,9 +139,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Api\ApiEvents.cs" />
+    <Compile Include="Api\ApiEventNames.cs" />
     <Compile Include="Api\Cache.cs" />
-    <Compile Include="Api\EventBus.cs" />
+    <Compile Include="Infrastructure\Events\EventBus.cs" />
+    <Compile Include="Infrastructure\Events\JournalEvents.cs" />
     <Compile Include="Api\JsonApi.cs" />
     <Compile Include="Api\OAuthHandler.cs" />
     <Compile Include="Api\WebsocketMessage.cs" />
@@ -163,6 +164,12 @@
     <Compile Include="Infrastructure\Json\PlatformConverter.cs" />
     <Compile Include="Infrastructure\Monitor.cs" />
     <Compile Include="Infrastructure\RelayCommand.cs" />
+    <Compile Include="Journal\JournalEntryToSubTypeConverter.cs" />
+    <Compile Include="Models\App\Rescues\SystemInfo.cs" />
+    <Compile Include="Models\Journal\FSDJump.cs" />
+    <Compile Include="Models\Journal\JournalEntryBase.cs" />
+    <Compile Include="Journal\JournalParser.cs" />
+    <Compile Include="Journal\JournalReader.cs" />
     <Compile Include="Models\Api\Rescues\Data.cs" />
     <Compile Include="Models\Api\ModelBase.cs" />
     <Compile Include="Models\Api\OAuth\Auth.cs" />
@@ -181,9 +188,11 @@
     <Compile Include="Models\App\StarSystems\EddbSystem.cs" />
     <Compile Include="Models\App\StarSystems\EddbStation.cs" />
     <Compile Include="Infrastructure\Json\LandingPadSizeConverter.cs" />
+    <Compile Include="Models\Journal\Location.cs" />
     <Compile Include="Models\PropertyChangedBase.cs" />
     <Compile Include="ViewModels\AssignedRescueViewModel.cs" />
     <Compile Include="ViewModels\OAuthStartupDialogViewModel.cs" />
+    <Compile Include="ViewModels\PlayerInformationViewModel.cs" />
     <Compile Include="ViewModels\RatTrackerViewModel.cs" />
     <Compile Include="ViewModels\RescuesViewModel.cs" />
     <Compile Include="ViewModels\SettingsViewModel.cs" />
@@ -192,6 +201,9 @@
     </Compile>
     <Compile Include="Views\OAuthStartupDialogView.xaml.cs">
       <DependentUpon>OAuthStartupDialogView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\PlayerInformationView.xaml.cs">
+      <DependentUpon>PlayerInformationView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\RatTrackerView.xaml.cs">
       <DependentUpon>RatTrackerView.xaml</DependentUpon>
@@ -291,6 +303,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\OAuthStartupDialogView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\PlayerInformationView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

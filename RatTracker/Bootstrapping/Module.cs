@@ -3,6 +3,7 @@ using log4net;
 using Ninject.Modules;
 using RatTracker.Api;
 using RatTracker.Firebird;
+using RatTracker.Infrastructure.Events;
 
 namespace RatTracker.Bootstrapping
 {

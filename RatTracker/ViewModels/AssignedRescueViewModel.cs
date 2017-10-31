@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Caliburn.Micro;
 using RatTracker.Api;
+using RatTracker.Infrastructure.Events;
 using RatTracker.Infrastructure.Extensions;
 using RatTracker.Models.Api.Rescues;
 using RatTracker.Models.App.Rescues;

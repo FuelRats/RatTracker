@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
+using RatTracker.Infrastructure.Events;
 using RatTracker.Infrastructure.Extensions;
 using RatTracker.Models.Api;
 using RatTracker.Models.Api.Rescues;
@@ -13,7 +13,6 @@ namespace RatTracker.Api
   {
     private readonly EventBus eventBus;
     private readonly ConcurrentDictionary<Guid, Rescue> rescues = new ConcurrentDictionary<Guid, Rescue>();
-    private readonly PlayerInfo playerInfo = new PlayerInfo();
 
     public Cache(EventBus eventBus)
     {
@@ -26,30 +25,27 @@ namespace RatTracker.Api
       eventBus.RescuesReloaded += EventBusOnRescuesReloaded;
     }
 
-    public IEnumerable<Rescue> GetRescues()
-    {
-      return rescues.Values.ToList().OrderBy(x => x.Data.BoardIndex);
-    }
+    public PlayerInfo PlayerInfo { get; } = new PlayerInfo();
 
     public Rat GetDisplayRatForUser()
     {
-      return playerInfo?.GetDisplayRat();
+      return PlayerInfo?.GetDisplayRat();
     }
 
     private void EventBusOnConnectionEstablished(object sender, Version version)
     {
       // Validate version
-      var profileRequest = WebsocketMessage.Request("users", "profile", ApiEvents.UserProfile);
+      var profileRequest = WebsocketMessage.Request("users", "profile", ApiEventNames.UserProfile);
       eventBus.PostWebsocketMessage(profileRequest);
 
-      var rescuesRequest = WebsocketMessage.Request("rescues", "read", ApiEvents.RescueRead);
+      var rescuesRequest = WebsocketMessage.Request("rescues", "read", ApiEventNames.RescueRead);
       rescuesRequest.AddData(nameof(Rescue.Status).ToApiName(), WebsocketMessage.Data("$not", RescueState.Closed.ToApiName()));
       eventBus.PostWebsocketMessage(rescuesRequest);
     }
 
     private void EventBusOnProfileLoaded(object sender, User receivedUser)
     {
-      playerInfo.User = receivedUser;
+      PlayerInfo.User = receivedUser;
     }
 
     private void EventBusOnRescuesReloaded(object sender, IEnumerable<Rescue> receivedRescues)

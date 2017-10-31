@@ -7,7 +7,7 @@ namespace RatTracker.Models.App.Rescues
 {
   public class PlayerInfo : PropertyChangedBase
   {
-    private string currentSystem;
+    private SystemInfo currentSystem;
     private float jumpRange;
     private bool onDuty;
     private bool superCruise;
@@ -23,7 +23,7 @@ namespace RatTracker.Models.App.Rescues
       }
     }
 
-    public string CurrentSystem
+    public SystemInfo CurrentSystem
     {
       get => currentSystem;
       set

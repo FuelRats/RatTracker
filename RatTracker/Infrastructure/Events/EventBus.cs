@@ -3,24 +3,30 @@ using System.Collections.Generic;
 using Caliburn.Micro;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using RatTracker.Api;
 using RatTracker.Models.Api;
 using RatTracker.Models.Api.Rescues;
 using ILog = log4net.ILog;
 
-namespace RatTracker.Api
+namespace RatTracker.Infrastructure.Events
 {
   public class EventBus
   {
     private readonly ILog log;
     private readonly WebsocketHandler websocketHandler;
 
-    public EventBus(ILog log, WebsocketHandler websocketHandler)
+    public EventBus(ILog log, WebsocketHandler websocketHandler, JournalEvents journalEvents)
     {
       this.log = log;
       this.websocketHandler = websocketHandler;
+      Journal = journalEvents;
       websocketHandler.MessageReceived += WebsocketHandlerOnMessageReceived;
     }
 
+    public JournalEvents Journal { get; }
+
+    public event EventHandler ApplicationExit;
+    public event EventHandler SettingsChanged;
     public event EventHandler<Version> ConnectionEstablished;
     public event EventHandler<User> ProfileLoaded;
     public event EventHandler<IEnumerable<Rescue>> RescuesReloaded;
@@ -31,6 +37,16 @@ namespace RatTracker.Api
     public void PostWebsocketMessage(WebsocketMessage websocketMessage)
     {
       websocketHandler.SendQuery(websocketMessage);
+    }
+
+    public void PostApplicationExit(object sender = null)
+    {
+      ApplicationExit?.Invoke(sender ?? this, EventArgs.Empty);
+    }
+
+    public void PostSettingsChanged(object sender = null)
+    {
+      SettingsChanged?.Invoke(sender ?? this, EventArgs.Empty);
     }
 
     private void WebsocketHandlerOnMessageReceived(object sender, string message)
@@ -51,7 +67,7 @@ namespace RatTracker.Api
           log.Debug($"Received ws message with event '{eventName}'");
           switch (eventName)
           {
-            case ApiEvents.Connection:
+            case ApiEventNames.Connection:
               if (data.result?.attributes is JObject welcome && welcome.TryGetValue("version", out var versionString))
               {
                 Version.TryParse(versionString.Value<string>(), out var version);
@@ -59,13 +75,13 @@ namespace RatTracker.Api
               }
 
               break;
-            case ApiEvents.StreamSubscribe:
+            case ApiEventNames.StreamSubscribe:
               break;
-            case ApiEvents.UserProfile:
+            case ApiEventNames.UserProfile:
               var user = JsonApi.Deserialize<User>(message);
               ProfileLoaded?.Invoke(this, user);
               break;
-            case ApiEvents.RescueCreated:
+            case ApiEventNames.RescueCreated:
               var rescues = JsonApi.Deserialize<Rescue[]>(message);
               foreach (var rescue in rescues)
               {
@@ -73,7 +89,7 @@ namespace RatTracker.Api
               }
 
               break;
-            case ApiEvents.RescueUpdated:
+            case ApiEventNames.RescueUpdated:
               rescues = JsonApi.Deserialize<Rescue[]>(message);
               foreach (var rescue in rescues)
               {
@@ -87,7 +103,7 @@ namespace RatTracker.Api
               }
 
               break;
-            case ApiEvents.RescueRead:
+            case ApiEventNames.RescueRead:
               rescues = JsonApi.Deserialize<Rescue[]>(message);
               Invoke(RescuesReloaded, rescues);
               break;

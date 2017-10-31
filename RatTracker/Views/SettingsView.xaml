@@ -7,7 +7,7 @@
         xmlns:p="clr-namespace:RatTracker.Properties"
         Style="{StaticResource WindowStyle}" WindowStartupLocation="CenterOwner"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:SettingsViewModel}"
-        Height="170" Width="500">
+        Height="180" Width="500">
   <Grid Margin="5">
     <Grid.Resources>
       <Style TargetType="ComboBox" BasedOn="{StaticResource ComboBoxStyle}">
@@ -40,19 +40,25 @@
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
-    <TextBlock Grid.Row="0" Grid.Column="0" Text="E:D directory" />
+    <TextBlock Grid.Row="0" Grid.Column="0" Text="E:D directory:" />
     <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding LauncherDirectory, Source={x:Static p:Settings.Default}}" />
     <Button Grid.Row="0" Grid.Column="2" x:Name="SelectLauncherDirectory" Content="..." />
 
-    <TextBlock Grid.Row="1" Grid.Column="0" Text="E:D logs directory" />
+    <TextBlock Grid.Row="1" Grid.Column="0" Text="E:D logs directory:" />
     <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LogDirectory, Source={x:Static p:Settings.Default}}" />
     <Button Grid.Row="1" Grid.Column="2" x:Name="SelectLogDirectory" Content="..." />
 
-    <TextBlock Grid.Row="2" Grid.Column="0" Text="E:D logs directory" />
-    <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+    <TextBlock Grid.Row="2" Grid.Column="0" Text="E:D journal directory:" />
+    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding JournalDirectory, Source={x:Static p:Settings.Default}}" />
+    <Button Grid.Row="2" Grid.Column="2" x:Name="SelectJournalDirectory" Content="..." />
+
+    <TextBlock Grid.Row="3" Grid.Column="0" Text="Jump range:" />
+    <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
              Text="{Binding JumpRange, Source={x:Static p:Settings.Default}}" />
 
-    <TextBlock Grid.Row="3" Grid.Column="0" Text="Overlay screen" />
+    <TextBlock Grid.Row="4" Grid.Column="0" Text="Overlay screen:" />
+    <ComboBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" ItemsSource="{Binding AllMonitors}"
+              SelectedItem="{Binding OverlayMonitor, Source={x:Static p:Settings.Default}}" />
 
 
     <UniformGrid Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3" Columns="3">

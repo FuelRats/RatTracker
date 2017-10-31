@@ -8,14 +8,21 @@ namespace RatTracker.ViewModels
     private readonly SettingsViewModel settingsViewModel;
     private AssignedRescueViewModel assignedRescue;
     private RescuesViewModel rescues;
+    private PlayerInformationViewModel playerInformation;
 
-    public RatTrackerViewModel(IWindowManager windowManager, AssignedRescueViewModel assignedRescueViewModel, RescuesViewModel rescuesViewModel, SettingsViewModel settingsViewModel)
+    public RatTrackerViewModel(
+      IWindowManager windowManager,
+      AssignedRescueViewModel assignedRescueViewModel,
+      RescuesViewModel rescuesViewModel,
+      PlayerInformationViewModel playerInformation,
+      SettingsViewModel settingsViewModel)
     {
       this.windowManager = windowManager;
       this.settingsViewModel = settingsViewModel;
       DisplayName = "RatTracker";
       AssignedRescue = assignedRescueViewModel;
       Rescues = rescuesViewModel;
+      PlayerInformation = playerInformation;
     }
 
     public AssignedRescueViewModel AssignedRescue
@@ -34,6 +41,16 @@ namespace RatTracker.ViewModels
       set
       {
         rescues = value;
+        NotifyOfPropertyChange();
+      }
+    }
+
+    public PlayerInformationViewModel PlayerInformation
+    {
+      get => playerInformation;
+      set
+      {
+        playerInformation = value;
         NotifyOfPropertyChange();
       }
     }

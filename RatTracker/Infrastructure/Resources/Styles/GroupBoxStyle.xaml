@@ -7,6 +7,11 @@
     <Setter Property="Background" Value="{StaticResource BrushTransparent}" />
     <Setter Property="Foreground" Value="{StaticResource BrushEliteOrange}" />
     <Setter Property="BorderBrush" Value="{StaticResource BrushEliteOrange}" />
+    <Setter Property="Effect">
+      <Setter.Value>
+        <DropShadowEffect />
+      </Setter.Value>
+    </Setter>
   </Style>
 
   <Style TargetType="GroupBox" BasedOn="{StaticResource GroupBoxStyle}" />

@@ -7,6 +7,8 @@ using Caliburn.Micro;
 using Ninject;
 using RatTracker.Api;
 using RatTracker.Firebird;
+using RatTracker.Infrastructure.Events;
+using RatTracker.Journal;
 using RatTracker.Properties;
 using RatTracker.ViewModels;
 
@@ -40,8 +42,7 @@ namespace RatTracker.Bootstrapping
 
     protected override void OnExit(object sender, EventArgs e)
     {
-      var starSystemDatabase = kernel.Get<StarSystemDatabase>();
-      starSystemDatabase.CloseConnection();
+      kernel.Get<EventBus>().PostApplicationExit(sender);
       base.OnExit(sender, e);
     }
 
@@ -64,12 +65,14 @@ namespace RatTracker.Bootstrapping
         DisplayRootViewFor<RatTrackerViewModel>();
         kernel.Get<EventBus>();
         kernel.Get<Cache>();
+        var journalReader = kernel.Get<JournalReader>();
         var websocketHandler = kernel.Get<WebsocketHandler>();
         var updater = kernel.Get<Updater>();
         var websocketTask = Task.Run(() => websocketHandler.Initialize(true));
+        var journalTask = Task.Run(() => journalReader.Initialize());
         var systemsDataBaseTask = Task.Run(async () => await updater.EnsureDatabase());
 
-        await Task.WhenAll(websocketTask, systemsDataBaseTask);
+        await Task.WhenAll(websocketTask, journalTask, systemsDataBaseTask);
       }
     }
   }
