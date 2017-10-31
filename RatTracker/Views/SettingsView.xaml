@@ -56,9 +56,9 @@
     <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
              Text="{Binding JumpRange, Source={x:Static p:Settings.Default}}" />
 
-    <TextBlock Grid.Row="4" Grid.Column="0" Text="Overlay screen:" />
+    <!--<TextBlock Grid.Row="4" Grid.Column="0" Text="Overlay screen:" />
     <ComboBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" ItemsSource="{Binding AllMonitors}"
-              SelectedItem="{Binding OverlayMonitor, Source={x:Static p:Settings.Default}}" />
+              SelectedItem="{Binding OverlayMonitor, Source={x:Static p:Settings.Default}}" />-->
 
 
     <UniformGrid Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3" Columns="3">
