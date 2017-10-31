@@ -7,7 +7,7 @@ namespace RatTracker.Models.Journal
     [JsonProperty("StarPos")]
     public double[] Coordinates { get; set; }
 
-    [JsonProperty("SystemName")]
+    [JsonProperty("StarSystem")]
     public string SystemName { get; set; }
 
     [JsonProperty("Population")]

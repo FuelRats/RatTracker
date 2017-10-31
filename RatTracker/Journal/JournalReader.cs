@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using RatTracker.Infrastructure;
 using RatTracker.Infrastructure.Events;
 using RatTracker.Properties;
@@ -14,8 +15,10 @@ namespace RatTracker.Journal
     private readonly JournalParser parser;
     private FileSystemWatcher fileSystemWatcher;
     private FileInfo journalFile;
-    private FileStream fileStream;
-    private StreamReader streamReader;
+    private Timer timer;
+
+    private long lastPosition;
+    private string journalPath;
 
     public JournalReader(EventBus eventBus, JournalParser parser)
     {
@@ -26,7 +29,7 @@ namespace RatTracker.Journal
 
     public void Initialize()
     {
-      var journalPath = Settings.Default.JournalDirectory;
+      journalPath = Settings.Default.JournalDirectory;
       if (string.IsNullOrWhiteSpace(journalPath) || !Directory.Exists(journalPath))
       {
         DialogHelper.ShowWarning("Please set the journal directory in the settings dialog.");
@@ -35,7 +38,6 @@ namespace RatTracker.Journal
 
       if (fileSystemWatcher != null)
       {
-        fileSystemWatcher.Changed -= FileSystemWatcherOnChanged;
         fileSystemWatcher.Created -= FileSystemWatcherOnCreated;
       }
 
@@ -46,19 +48,57 @@ namespace RatTracker.Journal
         Filter = "Journal.*.log"
       };
 
-      fileSystemWatcher.Changed += FileSystemWatcherOnChanged;
       fileSystemWatcher.Created += FileSystemWatcherOnCreated;
+
+      timer = new Timer(1000);
+      timer.Elapsed += TimerOnElapsed;
+      timer.Start();
       fileSystemWatcher.EnableRaisingEvents = true;
-      var lastJournalFile = GetLastEditedJournalFile(journalPath, fileSystemWatcher.Filter);
-      if (lastJournalFile != null)
-      {
-        FileSystemWatcherOnChanged(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, journalPath, lastJournalFile));
-      }
     }
 
-    private string GetLastEditedJournalFile(string filePath, string filter)
+    private async void TimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
     {
-      return new DirectoryInfo(filePath).GetFiles(filter).OrderByDescending(f => f.LastWriteTime).Select(f => f.Name).FirstOrDefault();
+      timer.Stop();
+
+      await Task.Run(() =>
+      {
+        journalFile = GetLastEditedJournalFile(journalPath, fileSystemWatcher.Filter);
+        var fileLength = journalFile.Length;
+        var readLength = (int) (fileLength - lastPosition);
+        if (readLength < 0)
+        {
+          readLength = 0;
+        }
+
+        using (var fileStream = journalFile.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        {
+          fileStream.Seek(lastPosition, SeekOrigin.Begin);
+          var bytes = new byte[readLength];
+          var haveRead = 0;
+          while (haveRead < readLength)
+          {
+            haveRead += fileStream.Read(bytes, haveRead, readLength - haveRead);
+            fileStream.Seek(lastPosition + haveRead, SeekOrigin.Begin);
+          }
+
+          // Convert bytes to string
+          var s = Encoding.UTF8.GetString(bytes);
+          var lines = s.Split(new[] {Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries);
+          foreach (var line in lines)
+          {
+            parser.Parse(line);
+          }
+        }
+
+        lastPosition = fileLength;
+      });
+
+      timer.Start();
+    }
+
+    private FileInfo GetLastEditedJournalFile(string filePath, string filter)
+    {
+      return new DirectoryInfo(filePath).GetFiles(filter).OrderByDescending(f => f.LastWriteTime).FirstOrDefault();
     }
 
     private void EventBusOnSettingsChanged(object sender, EventArgs eventArgs)
@@ -69,42 +109,12 @@ namespace RatTracker.Journal
     private void EventBusOnApplicationExit(object sender, EventArgs eventArgs)
     {
       fileSystemWatcher.EnableRaisingEvents = false;
-      streamReader?.Close();
-      fileStream?.Close();
+      timer.Dispose();
     }
 
-    private async void FileSystemWatcherOnCreated(object sender, FileSystemEventArgs args)
+    private void FileSystemWatcherOnCreated(object sender, FileSystemEventArgs args)
     {
-      await ChangeFile(args.FullPath);
-    }
-
-    private async void FileSystemWatcherOnChanged(object sender, FileSystemEventArgs args)
-    {
-      if (journalFile?.FullName != args.FullPath)
-      {
-        await ChangeFile(args.FullPath);
-      }
-      else
-      {
-        await Read();
-      }
-    }
-
-    private async Task Read()
-    {
-      while (!streamReader.EndOfStream)
-      {
-        var line = await streamReader.ReadLineAsync();
-        parser.Parse(line);
-      }
-    }
-
-    private async Task ChangeFile(string path)
-    {
-      journalFile = new FileInfo(path);
-      fileStream = journalFile.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-      streamReader = new StreamReader(fileStream, Encoding.UTF8, false, 50_000);
-      await Read();
+      lastPosition = 0;
     }
   }
 }
