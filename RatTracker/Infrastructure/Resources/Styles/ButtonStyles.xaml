@@ -12,6 +12,19 @@
 
   <Style TargetType="{x:Type controls:RatStateButton}" BasedOn="{StaticResource ButtonStyle}"
          x:Key="RatStateButtonStyle">
+    <Setter Property="Foreground" Value="{StaticResource BrushBlack}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate>
+          <Border BorderThickness="1" BorderBrush="{StaticResource BrushEliteOrange}"
+                  Background="{TemplateBinding Background}">
+            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Foreground="{TemplateBinding Foreground}"
+                       Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
     <Style.Triggers>
       <Trigger Property="RequestState" Value="Accepted">
         <Setter Property="Background" Value="{StaticResource RequestStateAccepted}" />
@@ -27,19 +40,6 @@
       </Trigger>
       <Trigger Property="Status" Value="False">
         <Setter Property="Background" Value="{StaticResource RequestStateNotReceived}" />
-      </Trigger>
-      <Trigger Property="IsEnabled" Value="False">
-        <Setter Property="Template">
-          <Setter.Value>
-            <ControlTemplate>
-              <Border BorderThickness="1" BorderBrush="{StaticResource BrushEliteOrange}"
-                      Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}">
-                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" />
-              </Border>
-            </ControlTemplate>
-          </Setter.Value>
-        </Setter>
       </Trigger>
     </Style.Triggers>
   </Style>

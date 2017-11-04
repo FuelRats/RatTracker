@@ -10,7 +10,7 @@
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
              d:DataContext="{d:DesignInstance viewModels:AssignedRescueViewModel}">
-  <GroupBox Header="Assigned Rescue" Foreground="{DynamicResource BrushEliteOrange}" Grid.IsSharedSizeScope="True">
+  <GroupBox Header="Assigned Rescue" Grid.IsSharedSizeScope="True">
     <Grid Margin="1,0,0,0">
       <Grid.Resources>
         <Style TargetType="TextBlock" BasedOn="{StaticResource TextBlockStyle}">

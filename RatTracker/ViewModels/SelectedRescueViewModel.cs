@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Windows;
 using Caliburn.Micro;
 using RatTracker.Infrastructure;
@@ -27,7 +28,9 @@ namespace RatTracker.ViewModels
       get => rescueModel;
       set
       {
+        if (rescueModel != null) { rescueModel.PropertyChanged -= RescueModelOnPropertyChanged; }
         rescueModel = value;
+        if (rescueModel != null) { rescueModel.PropertyChanged += RescueModelOnPropertyChanged; }
         NotifyOfPropertyChange();
         RecalculateJumps();
       }
@@ -70,6 +73,14 @@ namespace RatTracker.ViewModels
       Clipboard.SetText(RescueModel.Rescue.System);
     }
 
+    private void RescueModelOnPropertyChanged(object sender, PropertyChangedEventArgs args)
+    {
+      if (args.PropertyName == nameof(RescueModel.System))
+      {
+        RecalculateJumps();
+      }
+    }
+
     private void JournalOnLocation(object sender, Location location)
     {
       currentLocation = new SystemInfo
@@ -79,11 +90,12 @@ namespace RatTracker.ViewModels
         Y = location.Coordinates[1],
         Z = location.Coordinates[2]
       };
+      RecalculateJumps();
     }
 
     private void RecalculateJumps()
     {
-      if(currentLocation == null) { return; }
+      if (currentLocation == null || RescueModel?.System == null) { return; }
       var system = RescueModel.System;
 
       var deltaX = currentLocation.X - system.X;

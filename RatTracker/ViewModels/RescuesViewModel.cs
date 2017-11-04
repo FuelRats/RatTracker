@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Caliburn.Micro;
+using RatTracker.Api;
 using RatTracker.Api.StarSystems;
 using RatTracker.Infrastructure.Events;
 using RatTracker.Infrastructure.Extensions;
@@ -15,14 +16,16 @@ namespace RatTracker.ViewModels
   {
     private readonly EventBus eventBus;
     private readonly SystemApi systemApi;
+    private readonly Cache cache;
     private readonly IList<RescueModel> allRescues;
     private RescueModel selectedRescue;
     private RescueFilter rescueFilter;
 
-    public RescuesViewModel(EventBus eventBus, SystemApi systemApi)
+    public RescuesViewModel(EventBus eventBus, SystemApi systemApi, Cache cache)
     {
       this.eventBus = eventBus;
       this.systemApi = systemApi;
+      this.cache = cache;
       allRescues = new List<RescueModel>();
       Rescues = new ObservableCollection<RescueModel>();
       eventBus.RescueCreated += EventBusOnRescueCreated;
@@ -57,6 +60,13 @@ namespace RatTracker.ViewModels
       var rescueModels = rescues.Select(x => new RescueModel(x)).ToList();
       allRescues.AddAll(rescueModels);
       FilterRescues();
+      var displayRatForUser = cache.GetDisplayRatForUser();
+      var model = Rescues.FirstOrDefault(x => x.Rescue.Rats.Contains(displayRatForUser));
+      if (model != null)
+      {
+        SelectedRescue = model;
+      }
+
       await FetchSystems(rescueModels);
     }
 

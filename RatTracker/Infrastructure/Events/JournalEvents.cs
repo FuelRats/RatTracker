@@ -14,6 +14,7 @@ namespace RatTracker.Infrastructure.Events
     }
 
     public event EventHandler<Location> Location;
+    public event EventHandler<Friends> Friends;
 
     public void PostJournalEvent(object sender, JournalEntryBase journalEntry)
     {
@@ -25,6 +26,9 @@ namespace RatTracker.Infrastructure.Events
           break;
         case Location location:
           Location?.Invoke(sender, location);
+          break;
+        case Friends friends:
+          Friends?.Invoke(sender, friends);
           break;
         case null:
           break;

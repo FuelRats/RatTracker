@@ -135,6 +135,7 @@
     </ApplicationDefinition>
     <Compile Include="Api\Fuelrats\ApiEventNames.cs" />
     <Compile Include="Api\Cache.cs" />
+    <Compile Include="Api\Fuelrats\TpaEventNames.cs" />
     <Compile Include="Api\StarSystems\SystemApi.cs" />
     <Compile Include="Infrastructure\Converter\StatusToBooleanConverter.cs" />
     <Compile Include="Infrastructure\Events\EventBus.cs" />
@@ -167,6 +168,7 @@
     <Compile Include="Models\Apis\Systems\StarSystem.cs" />
     <Compile Include="Models\Apis\Systems\Station.cs" />
     <Compile Include="Models\App\Rescues\SystemInfo.cs" />
+    <Compile Include="Models\Journal\Friends.cs" />
     <Compile Include="Models\Journal\FSDJump.cs" />
     <Compile Include="Models\Journal\JournalEntryBase.cs" />
     <Compile Include="Journal\JournalParser.cs" />

@@ -9,6 +9,7 @@ using RatTracker.Infrastructure.Events;
 using RatTracker.Infrastructure.Extensions;
 using RatTracker.Models.Apis.FuelRats.Rescues;
 using RatTracker.Models.App.Rescues;
+using RatTracker.Models.Journal;
 using ILog = log4net.ILog;
 
 namespace RatTracker.ViewModels
@@ -18,6 +19,7 @@ namespace RatTracker.ViewModels
     private readonly ILog log;
     private readonly EventBus eventBus;
     private readonly Cache cache;
+    private readonly IList<string> friendsList;
     private Rescue assignedRescue;
     private RatState self;
 
@@ -26,10 +28,12 @@ namespace RatTracker.ViewModels
       this.log = log;
       this.eventBus = eventBus;
       this.cache = cache;
+      friendsList = new List<string>();
       Rats = new ObservableCollection<RatState>();
       eventBus.RescueUpdated += EventBusOnRescueUpdated;
       eventBus.RescuesReloaded += EventBusOnRescuesReloaded;
       eventBus.RescueClosed += EventBusOnRescueUpdated;
+      eventBus.Journal.Friends += JournalOnFriends;
     }
 
     public ObservableCollection<RatState> Rats { get; }
@@ -78,60 +82,88 @@ namespace RatTracker.ViewModels
 
     public void ToggleFriendRequest(RatState ratState)
     {
+      RequestState friendRequest;
       switch (ratState.FriendRequest)
       {
         case RequestState.NotRecieved:
-          ratState.FriendRequest = RequestState.Recieved;
+          friendRequest = RequestState.Recieved;
           break;
         case RequestState.Recieved:
-          ratState.FriendRequest = RequestState.Accepted;
+          friendRequest = RequestState.Accepted;
           break;
         case RequestState.Accepted:
-          ratState.FriendRequest = RequestState.NotRecieved;
+          friendRequest = RequestState.NotRecieved;
           break;
         default:
           throw new ArgumentOutOfRangeException();
       }
 
-      SendTpaMessage("FriendRequest", ratState.FriendRequest == RequestState.Accepted);
+      SetFriendRequestState(ratState, friendRequest);
     }
 
     public void ToggleWingRequest(RatState ratState)
     {
+      RequestState wingRequest;
       switch (ratState.WingRequest)
       {
         case RequestState.NotRecieved:
-          ratState.WingRequest = RequestState.Recieved;
+          wingRequest = RequestState.Recieved;
           break;
         case RequestState.Recieved:
-          ratState.WingRequest = RequestState.Accepted;
+          wingRequest = RequestState.Accepted;
           break;
         case RequestState.Accepted:
-          ratState.WingRequest = RequestState.NotRecieved;
+          wingRequest = RequestState.NotRecieved;
           break;
         default:
           throw new ArgumentOutOfRangeException();
       }
 
-      SendTpaMessage("WingRequest", ratState.WingRequest == RequestState.Accepted);
+      SetWingRequestState(ratState, wingRequest);
     }
 
-    public void ToggleInSystem(RatState ratState)
+    public void ToggleInSystem(RatState ratState, bool? inSystem = null)
     {
-      ratState.InSystem = !ratState.InSystem;
-      SendTpaMessage("SysArrived", ratState.InSystem);
+      ratState.InSystem = inSystem ?? !ratState.InSystem;
+      SendTpaMessage(TpaEventNames.InSystem, ratState.InSystem);
     }
 
-    public void ToggleBeaconVisible(RatState ratState)
+    public void ToggleBeaconVisible(RatState ratState, bool? beaconVisible = null)
     {
-      ratState.Beacon = !ratState.Beacon;
-      SendTpaMessage("BeaconSpotted", ratState.Beacon);
+      ratState.Beacon = beaconVisible ?? !ratState.Beacon;
+      SendTpaMessage(TpaEventNames.BeaconVisible, ratState.Beacon);
     }
 
-    public void ToggleInInstance(RatState ratState)
+    public void ToggleInInstance(RatState ratState, bool? inInstance = null)
     {
-      ratState.InInstance = !ratState.InInstance;
-      SendTpaMessage("InstanceSuccessful", ratState.InInstance);
+      ratState.InInstance = inInstance ?? !ratState.InInstance;
+      SendTpaMessage(TpaEventNames.InInstance, ratState.InInstance);
+    }
+
+    private void SetFriendRequestState(RatState ratState, RequestState friendRequest)
+    {
+      ratState.FriendRequest = friendRequest;
+      SendTpaMessage(TpaEventNames.FriendRequest, friendRequest == RequestState.Accepted);
+    }
+
+    private void SetWingRequestState(RatState ratState, RequestState wingRequest)
+    {
+      ratState.WingRequest = wingRequest;
+      SendTpaMessage(TpaEventNames.WingRequest, wingRequest == RequestState.Accepted);
+    }
+
+    private void JournalOnFriends(object sender, Friends friends)
+    {
+      var isFriend = friends.Status == "Online" || friends.Status == "Added";
+      if (isFriend)
+      {
+        friendsList.Add(friends.Name);
+      }
+
+      if (friends.Name == AssignedRescue?.Client)
+      {
+        SetFriendRequestState(Self, isFriend ? RequestState.Accepted : RequestState.NotRecieved);
+      }
     }
 
     private void EventBusOnRescuesReloaded(object sender, IEnumerable<Rescue> rescues)
@@ -171,11 +203,15 @@ namespace RatTracker.ViewModels
         else
         {
           Rats.Clear();
-          Rats.AddAll(rescue.Rats.Select(rat => new RatState {Rat = rat}));
+          Rats.AddAll(rescue.Rats.Select(rat => new RatState { Rat = rat }));
         }
 
         Self = Rats.Single(x => x.Rat == displayRat);
         AssignedRescue = rescue;
+        if (friendsList.Contains(AssignedRescue.Client))
+        {
+          SetFriendRequestState(Self, RequestState.Accepted);
+        }
       }
       else
       {
@@ -191,8 +227,8 @@ namespace RatTracker.ViewModels
     private void SendTpaMessage(string eventName, bool value)
     {
       var tpaMessage = WebsocketMessage.CreateTpaMessage(eventName);
-      tpaMessage.AddData("RatID", Self?.Rat.Id);
-      tpaMessage.AddData("RescueID", assignedRescue?.Id);
+      tpaMessage.AddData("RatID", Self.Rat.Id);
+      tpaMessage.AddData("RescueID", assignedRescue.Id);
       tpaMessage.AddData(eventName, value.ToApiName());
       eventBus.PostWebsocketMessage(tpaMessage);
     }
