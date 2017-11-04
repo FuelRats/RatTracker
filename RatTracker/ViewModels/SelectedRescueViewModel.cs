@@ -1,22 +1,25 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.Windows;
 using Caliburn.Micro;
 using RatTracker.Infrastructure;
 using RatTracker.Infrastructure.Events;
 using RatTracker.Models.App.Rescues;
+using RatTracker.Models.Journal;
+using RatTracker.Properties;
 
 namespace RatTracker.ViewModels
 {
   public class SelectedRescueViewModel : Screen
   {
+    private SystemInfo currentLocation;
     private RescueModel rescueModel;
-    private double distance;
+    private string distance;
     private int jumps;
 
     public SelectedRescueViewModel(EventBus eventBus)
     {
       eventBus.Rescues.SelectedRescueChanged += RescuesOnSelectedRescueChanged;
+      eventBus.Journal.Location += JournalOnLocation;
     }
 
     public RescueModel RescueModel
@@ -26,11 +29,11 @@ namespace RatTracker.ViewModels
       {
         rescueModel = value;
         NotifyOfPropertyChange();
-        RecalculateJumps(value.Rescue.System);
+        RecalculateJumps();
       }
     }
 
-    public double Distance
+    public string Distance
     {
       get => distance;
       set
@@ -67,15 +70,28 @@ namespace RatTracker.ViewModels
       Clipboard.SetText(RescueModel.Rescue.System);
     }
 
-    private async void RecalculateJumps(string rescueSystem)
+    private void JournalOnLocation(object sender, Location location)
     {
-      // TODO implement jump calculation
-      var jumpCount = await Task.Run(() => !string.IsNullOrWhiteSpace(rescueSystem) ? new Random().Next(10) : 0);
-
-      if (RescueModel?.Rescue.System == rescueSystem)
+      currentLocation = new SystemInfo
       {
-        Jumps = jumpCount;
-      }
+        Name = location.SystemName,
+        X = location.Coordinates[0],
+        Y = location.Coordinates[1],
+        Z = location.Coordinates[2]
+      };
+    }
+
+    private void RecalculateJumps()
+    {
+      if(currentLocation == null) { return; }
+      var system = RescueModel.System;
+
+      var deltaX = currentLocation.X - system.X;
+      var deltaY = currentLocation.Y - system.Y;
+      var deltaZ = currentLocation.Z - system.Z;
+      var distanceToClient = Math.Sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+      Distance = $"{distanceToClient:N} ly";
+      Jumps = (int) Math.Ceiling(distanceToClient / Settings.Default.JumpRange);
     }
 
     private void RescuesOnSelectedRescueChanged(object sender, RescueModel rescue)

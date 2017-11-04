@@ -1,16 +1,6 @@
-﻿using Newtonsoft.Json;
-
-namespace RatTracker.Models.Journal
+﻿namespace RatTracker.Models.Journal
 {
-  public class FSDJump : JournalEntryBase
+  public class FSDJump : Location
   {
-    [JsonProperty("StarPos")]
-    public double[] Coordinates { get; set; }
-
-    [JsonProperty("StarSystem")]
-    public string SystemName { get; set; }
-
-    [JsonProperty("Population")]
-    public long Population { get; set; }
   }
 }

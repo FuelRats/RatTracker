@@ -14,18 +14,17 @@ namespace RatTracker.Infrastructure.Events
     }
 
     public event EventHandler<Location> Location;
-    public event EventHandler<FSDJump> Jump;
 
     public void PostJournalEvent(object sender, JournalEntryBase journalEntry)
     {
       sender = sender ?? this;
       switch (journalEntry)
       {
+        case FSDJump jump:
+          Location?.Invoke(sender, jump);
+          break;
         case Location location:
           Location?.Invoke(sender, location);
-          break;
-        case FSDJump jump:
-          Jump?.Invoke(sender, jump);
           break;
         case null:
           break;

@@ -14,7 +14,6 @@ namespace RatTracker.ViewModels
     {
       PlayerInfo = cache.PlayerInfo;
       eventBus.Journal.Location += JournalOnLocation;
-      eventBus.Journal.Jump += JournalOnJump;
     }
 
     public PlayerInfo PlayerInfo
@@ -29,12 +28,7 @@ namespace RatTracker.ViewModels
 
     private void JournalOnLocation(object sender, Location location)
     {
-      PlayerInfo.CurrentSystem = new SystemInfo {Name = location.SystemName, X = location.Coordinates[0], Y = location.Coordinates[1], Z = location.Coordinates[2]};
-    }
-
-    private void JournalOnJump(object sender, FSDJump jump)
-    {
-      PlayerInfo.CurrentSystem = new SystemInfo {Name = jump.SystemName, X = jump.Coordinates[0], Y = jump.Coordinates[1], Z = jump.Coordinates[2]};
+      PlayerInfo.CurrentSystem = new SystemInfo { Name = location.SystemName, X = location.Coordinates[0], Y = location.Coordinates[1], Z = location.Coordinates[2] };
     }
   }
 }
