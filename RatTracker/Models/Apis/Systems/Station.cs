@@ -1,15 +1,10 @@
 ﻿using Newtonsoft.Json;
 using RatTracker.Infrastructure.Json;
 
-namespace RatTracker.Models.App.StarSystems
+namespace RatTracker.Models.Apis.Systems
 {
-  public class EddbStation
+  public class Station
   {
-    public EddbStation(long id)
-    {
-      Id = id;
-    }
-
     [JsonProperty("id")]
     public long Id { get; }
 
@@ -19,12 +14,18 @@ namespace RatTracker.Models.App.StarSystems
     [JsonProperty("system_id")]
     public long SystemId { get; set; }
 
+    [JsonProperty("body_id")]
+    public long? BodyId { get; set; }
+
     [JsonProperty("max_landing_pad_size")]
     [JsonConverter(typeof(LandingPadSizeConverter))]
     public char MaxLandingPadSize { get; set; }
 
     [JsonProperty("distance_to_star")]
     public long? DistanceToStar { get; set; }
+
+    [JsonProperty("has_docking")]
+    public bool HasDocking { get; set; }
 
     [JsonProperty("has_refuel")]
     public bool HasRefuel { get; set; }
@@ -44,26 +45,12 @@ namespace RatTracker.Models.App.StarSystems
     [JsonProperty("is_planetary")]
     public bool IsPlanetary { get; set; }
 
-    [JsonProperty("")]
-    public long UpdatedAt { get; set; }
+    [JsonIgnore]
+    public string DistanceToStarText => $"{DistanceToStar} ls";
 
-    public string UpperCaseName => Name?.ToUpper() ?? string.Empty;
-
-    public override bool Equals(object obj)
+    public override string ToString()
     {
-      if (ReferenceEquals(null, obj)) { return false; }
-      if (ReferenceEquals(this, obj)) { return true; }
-      return obj.GetType() == GetType() && Equals((EddbStation) obj);
-    }
-
-    public override int GetHashCode()
-    {
-      return Id.GetHashCode();
-    }
-
-    private bool Equals(EddbStation other)
-    {
-      return Id == other.Id;
+      return DistanceToStar.HasValue ? $"{Name} ({DistanceToStarText})" : Name;
     }
   }
 }

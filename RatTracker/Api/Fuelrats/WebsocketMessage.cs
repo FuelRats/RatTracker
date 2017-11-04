@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RatTracker.Api
+namespace RatTracker.Api.Fuelrats
 {
   public class WebsocketMessage
   {

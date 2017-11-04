@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows.Data;
 using System.Windows.Markup;
-using RatTracker.Models.Api.Rescues;
+using RatTracker.Models.Apis.FuelRats.Rescues;
 
 namespace RatTracker.Infrastructure.Converter
 {

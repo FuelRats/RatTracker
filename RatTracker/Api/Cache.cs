@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using RatTracker.Api.Fuelrats;
 using RatTracker.Infrastructure.Events;
 using RatTracker.Infrastructure.Extensions;
-using RatTracker.Models.Api;
-using RatTracker.Models.Api.Rescues;
+using RatTracker.Models.Apis.FuelRats;
+using RatTracker.Models.Apis.FuelRats.Rescues;
 using RatTracker.Models.App.Rescues;
 
 namespace RatTracker.Api

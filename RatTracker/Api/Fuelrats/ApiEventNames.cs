@@ -1,4 +1,4 @@
-﻿namespace RatTracker.Api
+﻿namespace RatTracker.Api.Fuelrats
 {
   public static class ApiEventNames
   {

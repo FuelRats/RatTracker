@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace RatTracker.Models.Api.TPA
+namespace RatTracker.Models.Apis.FuelRats.TPA
 {
   public class TpaMessage
   {

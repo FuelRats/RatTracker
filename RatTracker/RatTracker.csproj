@@ -63,14 +63,8 @@
     <Reference Include="Caliburn.Micro.Platform.Core, Version=3.2.0.0, Culture=neutral, PublicKeyToken=8e5891231f2ed21f, processorArchitecture=MSIL">
       <HintPath>..\packages\Caliburn.Micro.3.2.0\lib\net45\Caliburn.Micro.Platform.Core.dll</HintPath>
     </Reference>
-    <Reference Include="CsvHelper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
-      <HintPath>..\packages\CsvHelper.4.0.2\lib\net45\CsvHelper.dll</HintPath>
-    </Reference>
-    <Reference Include="FirebirdSql.Data.FirebirdClient, Version=5.11.0.0, Culture=neutral, PublicKeyToken=3750abcc3150b00c, processorArchitecture=MSIL">
-      <HintPath>..\packages\FirebirdSql.Data.FirebirdClient.5.11.0\lib\net452\FirebirdSql.Data.FirebirdClient.dll</HintPath>
-    </Reference>
-    <Reference Include="JsonApiSerializer, Version=0.9.18.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\JsonApiSerializer.0.9.18\lib\net45\JsonApiSerializer.dll</HintPath>
+    <Reference Include="JsonApiSerializer, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\JsonApiSerializer.1.0.0\lib\net45\JsonApiSerializer.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
@@ -139,20 +133,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Api\ApiEventNames.cs" />
+    <Compile Include="Api\Fuelrats\ApiEventNames.cs" />
     <Compile Include="Api\Cache.cs" />
+    <Compile Include="Api\StarSystems\SystemApi.cs" />
     <Compile Include="Infrastructure\Events\EventBus.cs" />
     <Compile Include="Infrastructure\Events\JournalEvents.cs" />
     <Compile Include="Api\JsonApi.cs" />
-    <Compile Include="Api\OAuthHandler.cs" />
-    <Compile Include="Api\WebsocketMessage.cs" />
-    <Compile Include="Api\WebsocketHandler.cs" />
+    <Compile Include="Api\Fuelrats\OAuthHandler.cs" />
+    <Compile Include="Api\Fuelrats\WebsocketMessage.cs" />
+    <Compile Include="Api\Fuelrats\WebsocketHandler.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Firebird\StarSystemDatabase.cs" />
-    <Compile Include="Firebird\Updater.cs" />
     <Compile Include="Infrastructure\Controls\RatStateButton.cs" />
     <Compile Include="Infrastructure\Converter\NullToVisibilityConverter.cs" />
     <Compile Include="Infrastructure\Converter\ClientConverter.cs" />
@@ -165,28 +158,31 @@
     <Compile Include="Infrastructure\Monitor.cs" />
     <Compile Include="Infrastructure\RelayCommand.cs" />
     <Compile Include="Journal\JournalEntryToSubTypeConverter.cs" />
+    <Compile Include="Models\Apis\Systems\Body.cs" />
+    <Compile Include="Models\Apis\Systems\Candidate.cs" />
+    <Compile Include="Models\Apis\Systems\Response.cs" />
+    <Compile Include="Models\Apis\Systems\StarSystem.cs" />
+    <Compile Include="Models\Apis\Systems\Station.cs" />
     <Compile Include="Models\App\Rescues\SystemInfo.cs" />
     <Compile Include="Models\Journal\FSDJump.cs" />
     <Compile Include="Models\Journal\JournalEntryBase.cs" />
     <Compile Include="Journal\JournalParser.cs" />
     <Compile Include="Journal\JournalReader.cs" />
-    <Compile Include="Models\Api\Rescues\Data.cs" />
-    <Compile Include="Models\Api\ModelBase.cs" />
-    <Compile Include="Models\Api\OAuth\Auth.cs" />
-    <Compile Include="Models\Api\OAuth\TokenResponse.cs" />
-    <Compile Include="Models\Api\Rescues\Platform.cs" />
-    <Compile Include="Models\Api\Rescues\Quote.cs" />
-    <Compile Include="Models\Api\Rescues\Rat.cs" />
-    <Compile Include="Models\Api\Rescues\Rescue.cs" />
-    <Compile Include="Models\Api\Rescues\RescueState.cs" />
-    <Compile Include="Models\Api\TPA\TPAMessage.cs" />
-    <Compile Include="Models\Api\User.cs" />
+    <Compile Include="Models\Apis\FuelRats\Rescues\Data.cs" />
+    <Compile Include="Models\Apis\FuelRats\ModelBase.cs" />
+    <Compile Include="Models\Apis\FuelRats\OAuth\Auth.cs" />
+    <Compile Include="Models\Apis\FuelRats\OAuth\TokenResponse.cs" />
+    <Compile Include="Models\Apis\FuelRats\Rescues\Platform.cs" />
+    <Compile Include="Models\Apis\FuelRats\Rescues\Quote.cs" />
+    <Compile Include="Models\Apis\FuelRats\Rescues\Rat.cs" />
+    <Compile Include="Models\Apis\FuelRats\Rescues\Rescue.cs" />
+    <Compile Include="Models\Apis\FuelRats\Rescues\RescueState.cs" />
+    <Compile Include="Models\Apis\FuelRats\TPA\TPAMessage.cs" />
+    <Compile Include="Models\Apis\FuelRats\User.cs" />
     <Compile Include="Models\App\Rescues\PlayerInfo.cs" />
     <Compile Include="Models\App\Rescues\RatState.cs" />
     <Compile Include="Models\App\Rescues\RequestState.cs" />
     <Compile Include="Models\App\Rescues\RescueModel.cs" />
-    <Compile Include="Models\App\StarSystems\EddbSystem.cs" />
-    <Compile Include="Models\App\StarSystems\EddbStation.cs" />
     <Compile Include="Infrastructure\Json\LandingPadSizeConverter.cs" />
     <Compile Include="Models\Journal\Location.cs" />
     <Compile Include="Models\PropertyChangedBase.cs" />
@@ -325,11 +321,4 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\Firebird.Embedded.3.0.0.32485\build\Firebird.Embedded.targets" Condition="Exists('..\packages\Firebird.Embedded.3.0.0.32485\build\Firebird.Embedded.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>Dieses Projekt verweist auf mindestens ein NuGet-Paket, das auf diesem Computer fehlt. Verwenden Sie die Wiederherstellung von NuGet-Paketen, um die fehlenden Dateien herunterzuladen. Weitere Informationen finden Sie unter "http://go.microsoft.com/fwlink/?LinkID=322105". Die fehlende Datei ist "{0}".</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Firebird.Embedded.3.0.0.32485\build\Firebird.Embedded.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Firebird.Embedded.3.0.0.32485\build\Firebird.Embedded.targets'))" />
-  </Target>
 </Project>

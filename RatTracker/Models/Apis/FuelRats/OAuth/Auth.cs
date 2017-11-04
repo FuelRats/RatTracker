@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace RatTracker.Models.Api.OAuth
+namespace RatTracker.Models.Apis.FuelRats.OAuth
 {
   public class Auth
   {

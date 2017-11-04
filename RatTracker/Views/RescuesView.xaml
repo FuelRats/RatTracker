@@ -59,6 +59,9 @@
           <RowDefinition Height="22" />
           <RowDefinition Height="22" />
           <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
+          <RowDefinition Height="22" />
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Client:" />
@@ -77,19 +80,33 @@
         <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Distance}" Grid.ColumnSpan="2" />
         <TextBlock Grid.Row="7" Grid.Column="0" Text="Jumps:" />
         <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Jumps}" Grid.ColumnSpan="2" />
-        <UniformGrid Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3" Columns="2">
+        <ComboBox Grid.Row="8" Grid.Column="0" SelectedItem="{Binding MaxLandingPadSize}" Margin="0,1,5,1"
+                  ItemsSource="{Binding LandingPadSizes}" />
+        <UniformGrid Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2" Columns="2">
           <UniformGrid.Resources>
             <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}" x:Key="NearestStationButtonStyle">
-              <Setter Property="Margin" Value="0,1,1,0" />
+              <Setter Property="Margin" Value="0,1,1,1" />
             </Style>
             <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}" x:Key="CallJumpsButtonsStyle">
-              <Setter Property="Margin" Value="1,1,0,0" />
+              <Setter Property="Margin" Value="1,1,0,1" />
             </Style>
           </UniformGrid.Resources>
           <Button x:Name="FindNearestStation" Content="Nearest station"
                   Style="{StaticResource NearestStationButtonStyle}" />
           <Button x:Name="CallJumps" Content="Call jumps" Style="{StaticResource CallJumpsButtonsStyle}" />
         </UniformGrid>
+        <TextBlock Grid.Row="9" Grid.Column="0" Text="Nearby:" />
+        <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding SelectedRescue.NearestSystem.Name}" IsReadOnly="True" />
+        <Button Grid.Row="9" Grid.Column="2" x:Name="CopyNearestSystemName" Content="C" />
+        <TextBlock Grid.Row="10" Grid.Column="0" Text="Distance:" />
+        <TextBox Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2"
+                 Text="{Binding SelectedRescue.NearestSystem.DistanceText, Mode=OneWay}" IsReadOnly="True" />
+        <TextBlock Grid.Row="11" Grid.Column="0" Text="Station:" />
+        <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding SelectedRescue.NearestStation.Name}" IsReadOnly="True" />
+        <Button Grid.Row="11" Grid.Column="2" x:Name="CopyNearestStationName" Content="C" />
+        <TextBlock Grid.Row="12" Grid.Column="0" Text="Distance:" />
+        <TextBox Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
+                 Text="{Binding SelectedRescue.NearestStation.DistanceToStarText, Mode=OneWay}" IsReadOnly="True" />
       </Grid>
     </GroupBox>
   </Grid>

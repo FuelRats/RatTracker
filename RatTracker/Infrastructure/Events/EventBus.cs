@@ -4,8 +4,9 @@ using Caliburn.Micro;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RatTracker.Api;
-using RatTracker.Models.Api;
-using RatTracker.Models.Api.Rescues;
+using RatTracker.Api.Fuelrats;
+using RatTracker.Models.Apis.FuelRats;
+using RatTracker.Models.Apis.FuelRats.Rescues;
 using ILog = log4net.ILog;
 
 namespace RatTracker.Infrastructure.Events

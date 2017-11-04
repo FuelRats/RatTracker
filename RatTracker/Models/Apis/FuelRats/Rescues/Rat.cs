@@ -1,4 +1,4 @@
-﻿namespace RatTracker.Models.Api.Rescues
+﻿namespace RatTracker.Models.Apis.FuelRats.Rescues
 {
   public class Rat : ModelBase
   {

@@ -6,7 +6,7 @@ using System.Windows;
 using Caliburn.Micro;
 using Ninject;
 using RatTracker.Api;
-using RatTracker.Firebird;
+using RatTracker.Api.Fuelrats;
 using RatTracker.Infrastructure.Events;
 using RatTracker.Journal;
 using RatTracker.Properties;
@@ -67,12 +67,10 @@ namespace RatTracker.Bootstrapping
         kernel.Get<Cache>();
         var journalReader = kernel.Get<JournalReader>();
         var websocketHandler = kernel.Get<WebsocketHandler>();
-        var updater = kernel.Get<Updater>();
         var websocketTask = Task.Run(() => websocketHandler.Initialize(true));
         var journalTask = Task.Run(() => journalReader.Initialize());
-        var systemsDataBaseTask = Task.Run(async () => await updater.EnsureDatabase());
 
-        await Task.WhenAll(websocketTask, journalTask, systemsDataBaseTask);
+        await Task.WhenAll(websocketTask, journalTask);
       }
     }
   }

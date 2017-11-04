@@ -1,6 +1,6 @@
 ﻿using System;
 using Newtonsoft.Json;
-using RatTracker.Models.Api.Rescues;
+using RatTracker.Models.Apis.FuelRats.Rescues;
 
 namespace RatTracker.Infrastructure.Json
 {

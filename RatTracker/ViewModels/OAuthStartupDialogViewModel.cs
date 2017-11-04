@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 using Caliburn.Micro;
-using RatTracker.Api;
+using RatTracker.Api.Fuelrats;
 using RatTracker.Properties;
 
 namespace RatTracker.ViewModels
@@ -35,6 +35,7 @@ namespace RatTracker.ViewModels
         Settings.Default.Save();
       }
 
+      // TODO remove email
       oAuthHandler.RequestToken(Email);
     }
 

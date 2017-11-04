@@ -12,10 +12,10 @@ using System.Windows;
 using log4net;
 using Microsoft.Win32;
 using Newtonsoft.Json;
-using RatTracker.Models.Api.OAuth;
+using RatTracker.Models.Apis.FuelRats.OAuth;
 using RatTracker.Properties;
 
-namespace RatTracker.Api
+namespace RatTracker.Api.Fuelrats
 {
   public class OAuthHandler
   {

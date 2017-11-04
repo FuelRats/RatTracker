@@ -6,7 +6,7 @@ using RatTracker.Properties;
 using SuperSocket.ClientEngine;
 using WebSocket4Net;
 
-namespace RatTracker.Api
+namespace RatTracker.Api.Fuelrats
 {
   public class WebsocketHandler
   {

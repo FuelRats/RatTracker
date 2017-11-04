@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
-using RatTracker.Models.Api;
-using RatTracker.Models.Api.Rescues;
+using RatTracker.Models.Apis.FuelRats;
+using RatTracker.Models.Apis.FuelRats.Rescues;
 
 namespace RatTracker.Models.App.Rescues
 {

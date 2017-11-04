@@ -2,7 +2,7 @@
 using log4net;
 using Ninject.Modules;
 using RatTracker.Api;
-using RatTracker.Firebird;
+using RatTracker.Api.Fuelrats;
 using RatTracker.Infrastructure.Events;
 
 namespace RatTracker.Bootstrapping
@@ -16,7 +16,6 @@ namespace RatTracker.Bootstrapping
       Bind<WebsocketHandler>().ToSelf().InSingletonScope();
       Bind<Cache>().ToSelf().InSingletonScope();
       Bind<EventBus>().ToSelf().InSingletonScope();
-      Bind<StarSystemDatabase>().ToSelf().InSingletonScope();
     }
   }
 }
