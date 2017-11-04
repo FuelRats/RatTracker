@@ -29,11 +29,12 @@
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
 
-      <ContentControl Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" cal:View.Model="{Binding Rescues}" />
+      <ContentControl Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" cal:View.Model="{Binding Rescues}" />
+      <ContentControl Grid.Row="0" Grid.Column="2" cal:View.Model="{Binding SelectedRescue}" />
       <ContentControl Grid.Row="1" Grid.Column="0" cal:View.Model="{Binding AssignedRescue}" />
       <ContentControl Grid.Row="1" Grid.Column="1" cal:View.Model="{Binding PlayerInformation}" />
+      <ContentControl Grid.Row="1" Grid.Column="2" cal:View.Model="{Binding FilterInfoViewModel}" />
 
     </Grid>
-
   </DockPanel>
 </Window>

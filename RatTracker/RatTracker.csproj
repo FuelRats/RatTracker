@@ -136,7 +136,9 @@
     <Compile Include="Api\Fuelrats\ApiEventNames.cs" />
     <Compile Include="Api\Cache.cs" />
     <Compile Include="Api\StarSystems\SystemApi.cs" />
+    <Compile Include="Infrastructure\Converter\StatusToBooleanConverter.cs" />
     <Compile Include="Infrastructure\Events\EventBus.cs" />
+    <Compile Include="Infrastructure\Events\RescueFilter.cs" />
     <Compile Include="Infrastructure\Events\JournalEvents.cs" />
     <Compile Include="Api\JsonApi.cs" />
     <Compile Include="Api\Fuelrats\OAuthHandler.cs" />
@@ -150,6 +152,7 @@
     <Compile Include="Infrastructure\Converter\NullToVisibilityConverter.cs" />
     <Compile Include="Infrastructure\Converter\ClientConverter.cs" />
     <Compile Include="Infrastructure\Converter\RatNameConcatConverter.cs" />
+    <Compile Include="Infrastructure\Events\RescueEvents.cs" />
     <Compile Include="Infrastructure\Extensions\ApiExtensions.cs" />
     <Compile Include="Infrastructure\Controls\RatStateControl.cs" />
     <Compile Include="Infrastructure\DialogHelper.cs" />
@@ -187,13 +190,18 @@
     <Compile Include="Models\Journal\Location.cs" />
     <Compile Include="Models\PropertyChangedBase.cs" />
     <Compile Include="ViewModels\AssignedRescueViewModel.cs" />
+    <Compile Include="ViewModels\FilterInfoViewModel.cs" />
     <Compile Include="ViewModels\OAuthStartupDialogViewModel.cs" />
     <Compile Include="ViewModels\PlayerInformationViewModel.cs" />
     <Compile Include="ViewModels\RatTrackerViewModel.cs" />
     <Compile Include="ViewModels\RescuesViewModel.cs" />
+    <Compile Include="ViewModels\SelectedRescueViewModel.cs" />
     <Compile Include="ViewModels\SettingsViewModel.cs" />
     <Compile Include="Views\AssignedRescueView.xaml.cs">
       <DependentUpon>AssignedRescueView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\FilterInfoView.xaml.cs">
+      <DependentUpon>FilterInfoView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\OAuthStartupDialogView.xaml.cs">
       <DependentUpon>OAuthStartupDialogView.xaml</DependentUpon>
@@ -206,6 +214,9 @@
     </Compile>
     <Compile Include="Views\RescuesView.xaml.cs">
       <DependentUpon>RescuesView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\SelectedRescueView.xaml.cs">
+      <DependentUpon>SelectedRescueView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\SettingsView.xaml.cs">
       <DependentUpon>SettingsView.xaml</DependentUpon>
@@ -298,6 +309,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Views\FilterInfoView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\OAuthStartupDialogView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -313,6 +328,10 @@
     <Page Include="Views\RescuesView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\SelectedRescueView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\SettingsView.xaml">
       <SubType>Designer</SubType>

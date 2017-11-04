@@ -16,15 +16,18 @@ namespace RatTracker.Infrastructure.Events
     private readonly ILog log;
     private readonly WebsocketHandler websocketHandler;
 
-    public EventBus(ILog log, WebsocketHandler websocketHandler, JournalEvents journalEvents)
+    public EventBus(ILog log, WebsocketHandler websocketHandler, JournalEvents journalEvents, RescueEvents rescueEvents)
     {
       this.log = log;
       this.websocketHandler = websocketHandler;
       Journal = journalEvents;
+      Rescues = rescueEvents;
       websocketHandler.MessageReceived += WebsocketHandlerOnMessageReceived;
     }
 
     public JournalEvents Journal { get; }
+
+    public RescueEvents Rescues { get; }
 
     public event EventHandler ApplicationExit;
     public event EventHandler SettingsChanged;

@@ -36,7 +36,7 @@ namespace RatTracker.Models.Apis.Systems
     public double? Distance { get; set; }
 
     [JsonIgnore]
-    public string DistanceText => $"{Distance:N} ly";
+    public string DistanceText => $"{Distance ?? 0d:N} ly";
 
     public override string ToString()
     {

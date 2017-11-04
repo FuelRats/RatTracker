@@ -46,7 +46,7 @@ namespace RatTracker.Models.Apis.Systems
     public bool IsPlanetary { get; set; }
 
     [JsonIgnore]
-    public string DistanceToStarText => $"{DistanceToStar} ls";
+    public string DistanceToStarText => $"{DistanceToStar ?? 0} ls";
 
     public override string ToString()
     {

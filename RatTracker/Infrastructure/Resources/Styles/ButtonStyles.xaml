@@ -10,7 +10,8 @@
 
   <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}" />
 
-  <Style TargetType="{x:Type controls:RatStateButton}" BasedOn="{StaticResource ButtonStyle}" x:Key="RatStateButtonStyle">
+  <Style TargetType="{x:Type controls:RatStateButton}" BasedOn="{StaticResource ButtonStyle}"
+         x:Key="RatStateButtonStyle">
     <Style.Triggers>
       <Trigger Property="RequestState" Value="Accepted">
         <Setter Property="Background" Value="{StaticResource RequestStateAccepted}" />
@@ -31,8 +32,10 @@
         <Setter Property="Template">
           <Setter.Value>
             <ControlTemplate>
-              <Border BorderThickness="1" BorderBrush="{StaticResource BrushEliteOrange}" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}">
-                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" />
+              <Border BorderThickness="1" BorderBrush="{StaticResource BrushEliteOrange}"
+                      Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}">
+                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" />
               </Border>
             </ControlTemplate>
           </Setter.Value>
@@ -42,5 +45,30 @@
   </Style>
 
   <Style TargetType="{x:Type controls:RatStateButton}" BasedOn="{StaticResource RatStateButtonStyle}" />
-  
+
+  <Style TargetType="ToggleButton" x:Key="ToggleButtonStyle">
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToggleButton">
+          <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                  Background="{TemplateBinding Background}">
+            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{TemplateBinding Content}"
+                       Foreground="{TemplateBinding Foreground}" />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Setter Property="Background" Value="{StaticResource BrushTransparent}" />
+    <Setter Property="Foreground" Value="{StaticResource BrushEliteOrange}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BrushEliteOrange}" />
+    <Style.Triggers>
+      <Trigger Property="IsChecked" Value="True">
+        <Setter Property="Background" Value="{StaticResource BrushEliteOrange}" />
+        <Setter Property="Foreground" Value="{StaticResource BrushBlack}" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style TargetType="ToggleButton" BasedOn="{StaticResource ToggleButtonStyle}" />
+
 </ResourceDictionary>
