@@ -3,13 +3,13 @@
   <Profiles />
   <Settings>
     <Setting Name="ApiUrl" Type="System.String" Scope="User">
-      <Value Profile="(Default)">https://dev.api.fuelrats.com/</Value>
+      <Value Profile="(Default)">https://api.fuelrats.com/</Value>
     </Setting>
     <Setting Name="ApiPort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">443</Value>
     </Setting>
     <Setting Name="OAuthClientId" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">68dee8f2-d0e9-4377-a374-b98cd2d21b94</Value>
+      <Value Profile="(Default)">76ad04f7-c19c-44ef-afd6-4493e3064c39</Value>
     </Setting>
     <Setting Name="OAuthAppSecret" Type="System.String" Scope="Application">
       <Value Profile="(Default)">ed0ed4a3a03184d8cc0e47203ee43f3da350b79710a0174a</Value>
@@ -17,11 +17,8 @@
     <Setting Name="OAuthToken" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="ApiUserEmail" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
     <Setting Name="WebsiteUrl" Type="System.String" Scope="User">
-      <Value Profile="(Default)">https://beta.fuelrats.com/</Value>
+      <Value Profile="(Default)">https://fuelrats.com/</Value>
     </Setting>
     <Setting Name="WebSitePort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">443</Value>

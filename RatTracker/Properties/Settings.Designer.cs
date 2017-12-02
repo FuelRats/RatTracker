@@ -25,7 +25,7 @@ namespace RatTracker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("https://dev.api.fuelrats.com/")]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://api.fuelrats.com/")]
         public string ApiUrl {
             get {
                 return ((string)(this["ApiUrl"]));
@@ -49,7 +49,7 @@ namespace RatTracker.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("68dee8f2-d0e9-4377-a374-b98cd2d21b94")]
+        [global::System.Configuration.DefaultSettingValueAttribute("76ad04f7-c19c-44ef-afd6-4493e3064c39")]
         public string OAuthClientId {
             get {
                 return ((string)(this["OAuthClientId"]));
@@ -79,19 +79,7 @@ namespace RatTracker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string ApiUserEmail {
-            get {
-                return ((string)(this["ApiUserEmail"]));
-            }
-            set {
-                this["ApiUserEmail"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("https://beta.fuelrats.com/")]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://fuelrats.com/")]
         public string WebsiteUrl {
             get {
                 return ((string)(this["WebsiteUrl"]));

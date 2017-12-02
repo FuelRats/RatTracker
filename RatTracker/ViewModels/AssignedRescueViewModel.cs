@@ -230,7 +230,7 @@ namespace RatTracker.ViewModels
       tpaMessage.AddData("RatID", Self.Rat.Id);
       tpaMessage.AddData("RescueID", assignedRescue.Id);
       tpaMessage.AddData(eventName, value.ToApiName());
-      eventBus.PostWebsocketMessage(tpaMessage);
+      // TODO check Mecha interactions eventBus.PostWebsocketMessage(tpaMessage);
     }
   }
 }

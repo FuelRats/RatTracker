@@ -6,7 +6,7 @@
         xmlns:viewModels="clr-namespace:RatTracker.ViewModels"
         Style="{StaticResource WindowStyle}" WindowStartupLocation="CenterScreen"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:OAuthStartupDialogViewModel}"
-        Height="170" Width="300">
+        Height="145" Width="325">
   <Grid Margin="5">
     <Grid.Resources>
       <Style TargetType="TextBlock" BasedOn="{StaticResource TextBlockStyle}">
@@ -27,19 +27,16 @@
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
-      <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
     <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center"
                FontSize="24"
                Text="Welcome to RatTracker" />
     <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center"
                FontSize="14"
-               Text="Please enter your details below to begin." />
+               Text="Please authorize RatTracker to use your account." />
     <Separator Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5" />
-    <TextBlock Grid.Row="3" Grid.Column="0" Text="Email:" />
-    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Email}" />
-    <Separator Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5" />
-    <UniformGrid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Columns="2">
+    <Separator Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5" />
+    <UniformGrid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Columns="2">
       <UniformGrid.Resources>
         <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}" x:Key="SaveAndAuthorizeButtonStyle">
           <Setter Property="Margin" Value="0,1,1,0" />
@@ -48,7 +45,7 @@
           <Setter Property="Margin" Value="1,1,0,0" />
         </Style>
       </UniformGrid.Resources>
-      <Button x:Name="SaveAndAuthorize" Content="Save and authorize"
+      <Button x:Name="Authorize" Content="Authorize"
               Style="{StaticResource SaveAndAuthorizeButtonStyle}" />
       <Button x:Name="DiscardAndClose" Content="Close" Style="{StaticResource CloseButtonsStyle}" />
     </UniformGrid>

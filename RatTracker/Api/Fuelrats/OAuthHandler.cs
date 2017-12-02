@@ -19,6 +19,7 @@ namespace RatTracker.Api.Fuelrats
 {
   public class OAuthHandler
   {
+    private const string OAuthScope = "user.read.me rescue.read";
     private readonly ILog logger;
 
     public OAuthHandler(ILog log)
@@ -26,11 +27,11 @@ namespace RatTracker.Api.Fuelrats
       logger = log;
     }
 
-    public void RequestToken(string email)
+    public void RequestToken()
     {
       SetURIHandlerIfNecessary();
       var authcontent = new UriBuilder(
-        $"{Settings.Default.WebsiteUrl}authorize?client_id={Settings.Default.OAuthClientId}&scope=*&redirect_uri=rattracker://auth&state=preinit&response_type=code")
+        $"{Settings.Default.WebsiteUrl}authorize?client_id={Settings.Default.OAuthClientId}&scope={OAuthScope}&redirect_uri=rattracker://auth&state=preinit&response_type=code")
       {
         Port = Settings.Default.WebSitePort
       };
