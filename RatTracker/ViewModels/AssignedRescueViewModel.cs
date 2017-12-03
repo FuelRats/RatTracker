@@ -17,7 +17,7 @@ namespace RatTracker.ViewModels
   public class AssignedRescueViewModel : Screen
   {
     private readonly ILog log;
-    private readonly EventBus eventBus;
+    //private readonly EventBus eventBus;
     private readonly Cache cache;
     private readonly IList<string> friendsList;
     private Rescue assignedRescue;
@@ -26,7 +26,7 @@ namespace RatTracker.ViewModels
     public AssignedRescueViewModel(ILog log, EventBus eventBus, Cache cache)
     {
       this.log = log;
-      this.eventBus = eventBus;
+      //this.eventBus = eventBus;
       this.cache = cache;
       friendsList = new List<string>();
       Rats = new ObservableCollection<RatState>();
@@ -34,6 +34,10 @@ namespace RatTracker.ViewModels
       eventBus.RescuesReloaded += EventBusOnRescuesReloaded;
       eventBus.RescueClosed += EventBusOnRescueUpdated;
       eventBus.Journal.Friends += JournalOnFriends;
+      eventBus.Journal.WingInvite += JournalOnWingInvite;
+      eventBus.Journal.WingJoin += JournalOnWingJoin;
+      eventBus.Journal.WingAdd += JournalOnWingAdd;
+      eventBus.Journal.WingLeave += JournalOnWingLeave;
     }
 
     public ObservableCollection<RatState> Rats { get; }
@@ -166,6 +170,37 @@ namespace RatTracker.ViewModels
       }
     }
 
+    private void JournalOnWingInvite(object sender, WingInvite wingInvite)
+    {
+      if (wingInvite.Name == assignedRescue?.Client)
+      {
+        SetWingRequestState(self, RequestState.Recieved);
+      }
+    }
+
+    private void JournalOnWingJoin(object sender, WingJoin wingJoin)
+    {
+      // TODO do we want to actively track status of other rats (to display their state when they don't sue RT)?
+      if (wingJoin.Others.Contains(assignedRescue?.Client))
+      {
+        SetWingRequestState(self, RequestState.Accepted);
+      }
+    }
+
+    private void JournalOnWingAdd(object sender, WingAdd wingAdd)
+    {
+      // TODO do we want to actively track status of other rats (to display their state when they don't sue RT)?
+      if (wingAdd.Name == assignedRescue?.Client)
+      {
+        SetWingRequestState(self, RequestState.Accepted);
+      }
+    }
+
+    private void JournalOnWingLeave(object sender, WingLeave wingLeave)
+    {
+      SetWingRequestState(self, RequestState.NotRecieved);
+    }
+
     private void EventBusOnRescuesReloaded(object sender, IEnumerable<Rescue> rescues)
     {
       var displayRat = cache.GetDisplayRatForUser();
@@ -180,6 +215,7 @@ namespace RatTracker.ViewModels
     {
       var displayRat = cache.GetDisplayRatForUser();
       if (displayRat == null) { return; }
+
       if (rescue.Rats.Contains(displayRat))
       {
         if (assignedRescue != null && assignedRescue.Id != rescue.Id && assignedRescue.Status != RescueState.Closed)

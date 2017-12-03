@@ -15,6 +15,10 @@ namespace RatTracker.Infrastructure.Events
 
     public event EventHandler<Location> Location;
     public event EventHandler<Friends> Friends;
+    public event EventHandler<WingInvite> WingInvite;
+    public event EventHandler<WingJoin> WingJoin;
+    public event EventHandler<WingAdd> WingAdd;
+    public event EventHandler<WingLeave> WingLeave;
 
     public void PostJournalEvent(object sender, JournalEntryBase journalEntry)
     {
@@ -29,6 +33,18 @@ namespace RatTracker.Infrastructure.Events
           break;
         case Friends friends:
           Friends?.Invoke(sender, friends);
+          break;
+        case WingInvite wingInvite:
+          WingInvite?.Invoke(sender, wingInvite);
+          break;
+        case WingJoin wingJoin:
+          WingJoin?.Invoke(sender, wingJoin);
+          break;
+        case WingAdd wingAdd:
+          WingAdd?.Invoke(sender, wingAdd);
+          break;
+        case WingLeave wingLeave:
+          WingLeave?.Invoke(sender, wingLeave);
           break;
         case null:
           break;

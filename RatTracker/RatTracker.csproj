@@ -190,6 +190,10 @@
     <Compile Include="Models\App\Rescues\RescueModel.cs" />
     <Compile Include="Infrastructure\Json\LandingPadSizeConverter.cs" />
     <Compile Include="Models\Journal\Location.cs" />
+    <Compile Include="Models\Journal\WingAdd.cs" />
+    <Compile Include="Models\Journal\WingInvite.cs" />
+    <Compile Include="Models\Journal\WingJoin.cs" />
+    <Compile Include="Models\Journal\WingLeave.cs" />
     <Compile Include="Models\PropertyChangedBase.cs" />
     <Compile Include="ViewModels\AssignedRescueViewModel.cs" />
     <Compile Include="ViewModels\FilterInfoViewModel.cs" />
