@@ -17,6 +17,7 @@ namespace RatTracker.ViewModels
   public class AssignedRescueViewModel : Screen
   {
     private readonly ILog log;
+
     //private readonly EventBus eventBus;
     private readonly Cache cache;
     private readonly IList<string> friendsList;
@@ -198,6 +199,8 @@ namespace RatTracker.ViewModels
 
     private void JournalOnWingLeave(object sender, WingLeave wingLeave)
     {
+      if (AssignedRescue == null) { return; }
+
       SetWingRequestState(self, RequestState.NotRecieved);
     }
 

@@ -7,9 +7,9 @@ using System.Windows;
 using Caliburn.Micro;
 using Ookii.Dialogs.Wpf;
 using RatTracker.Api.Fuelrats;
-using RatTracker.Infrastructure;
 using RatTracker.Infrastructure.Events;
 using RatTracker.Infrastructure.Extensions;
+using RatTracker.Infrastructure.NativeInterop;
 using RatTracker.Properties;
 
 namespace RatTracker.ViewModels
