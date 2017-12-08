@@ -64,6 +64,7 @@ namespace RatTracker.Journal
       {
         journalFile = GetLastEditedJournalFile(journalPath, fileSystemWatcher.Filter);
         if (journalFile == null) { return; }
+
         var fileLength = journalFile.Length;
         var readLength = (int) (fileLength - lastPosition);
         if (readLength < 0)
@@ -84,7 +85,7 @@ namespace RatTracker.Journal
 
           // Convert bytes to string
           var s = Encoding.UTF8.GetString(bytes);
-          var lines = s.Split(new[] {Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries);
+          var lines = s.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
           foreach (var line in lines)
           {
             parser.Parse(line);
@@ -109,8 +110,12 @@ namespace RatTracker.Journal
 
     private void EventBusOnApplicationExit(object sender, EventArgs eventArgs)
     {
-      fileSystemWatcher.EnableRaisingEvents = false;
-      timer.Dispose();
+      if (fileSystemWatcher != null)
+      {
+        fileSystemWatcher.EnableRaisingEvents = false;
+      }
+
+      timer?.Dispose();
     }
 
     private void FileSystemWatcherOnCreated(object sender, FileSystemEventArgs args)

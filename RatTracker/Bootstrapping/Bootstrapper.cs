@@ -8,6 +8,7 @@ using Ninject;
 using RatTracker.Api;
 using RatTracker.Api.Fuelrats;
 using RatTracker.Infrastructure.Events;
+using RatTracker.Infrastructure.Resources.Styles;
 using RatTracker.Journal;
 using RatTracker.Properties;
 using RatTracker.ViewModels;
@@ -20,6 +21,7 @@ namespace RatTracker.Bootstrapping
 
     public Bootstrapper()
     {
+      Windows7StyleHack.Hack();
       Initialize();
     }
 

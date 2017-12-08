@@ -13,8 +13,8 @@
              PopupAnimation="{DynamicResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}"
              Placement="Bottom">
         <themes:SystemDropShadowChrome x:Name="shadow" Color="Transparent"
-                                       MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                                       MinWidth="{Binding ActualWidth, ElementName=templateRoot}">
+                                           MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                           MinWidth="{Binding ActualWidth, ElementName=templateRoot}">
           <Border x:Name="DropDownBorder" BorderBrush="{DynamicResource {x:Static SystemColors.WindowFrameBrushKey}}"
                   BorderThickness="1" Background="Black">
             <ScrollViewer x:Name="DropDownScrollViewer">
@@ -181,12 +181,10 @@
     </ControlTemplate.Triggers>
   </ControlTemplate>
 
-
   <Style TargetType="{x:Type ComboBox}" x:Key="ComboBoxStyle">
     <Setter Property="Template" Value="{StaticResource ComboBoxControlTemplate}" />
   </Style>
 
   <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource ComboBoxStyle}" />
-
 
 </ResourceDictionary>

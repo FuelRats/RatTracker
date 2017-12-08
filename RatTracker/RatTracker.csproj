@@ -78,6 +78,7 @@
     <Reference Include="Ookii.Dialogs.Wpf, Version=1.0.0.0, Culture=neutral, PublicKeyToken=0c15020868fd6249, processorArchitecture=MSIL">
       <HintPath>..\packages\Ookii.Dialogs.1.0\lib\net35\Ookii.Dialogs.Wpf.dll</HintPath>
     </Reference>
+    <Reference Include="PresentationFramework.Aero" />
     <Reference Include="PresentationFramework.Aero2" />
     <Reference Include="SuperSocket.ClientEngine, Version=0.8.0.14, Culture=neutral, PublicKeyToken=ee9af13f57f00acc, processorArchitecture=MSIL">
       <HintPath>..\packages\SuperSocket.ClientEngine.Core.0.8.0.14\lib\net45\SuperSocket.ClientEngine.dll</HintPath>
@@ -137,6 +138,7 @@
     <Compile Include="Api\Cache.cs" />
     <Compile Include="Api\Fuelrats\TpaEventNames.cs" />
     <Compile Include="Api\StarSystems\SystemApi.cs" />
+    <Compile Include="Infrastructure\Resources\Styles\Windows7StyleHack.cs" />
     <Compile Include="Infrastructure\Converter\StatusToBooleanConverter.cs" />
     <Compile Include="Infrastructure\Events\EventBus.cs" />
     <Compile Include="Infrastructure\Events\RescueFilter.cs" />
@@ -260,10 +262,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="Infrastructure\Resources\Styles\ComboBoxStyle.xaml">
+    <EmbeddedResource Include="Infrastructure\Resources\Styles\ComboBoxStyleWin7.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-    </Page>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Infrastructure\Resources\Styles\ComboBoxStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <Page Include="Infrastructure\Resources\Styles\SeparatorStyle.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
