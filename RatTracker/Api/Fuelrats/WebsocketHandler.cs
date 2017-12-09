@@ -61,6 +61,7 @@ namespace RatTracker.Api.Fuelrats
 
     private void WebsocketClientMessageReceieved(object sender, MessageReceivedEventArgs e)
     {
+      log.Debug("Received ws message: " + e.Message);
       MessageReceived?.Invoke(this, e.Message);
     }
 

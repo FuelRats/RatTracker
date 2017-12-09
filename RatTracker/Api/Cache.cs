@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using log4net;
 using RatTracker.Api.Fuelrats;
 using RatTracker.Infrastructure.Events;
 using RatTracker.Infrastructure.Extensions;
@@ -13,11 +14,13 @@ namespace RatTracker.Api
   public class Cache
   {
     private readonly EventBus eventBus;
+    private readonly ILog log;
     private readonly ConcurrentDictionary<Guid, Rescue> rescues = new ConcurrentDictionary<Guid, Rescue>();
 
-    public Cache(EventBus eventBus)
+    public Cache(EventBus eventBus, ILog log)
     {
       this.eventBus = eventBus;
+      this.log = log;
       eventBus.ConnectionEstablished += EventBusOnConnectionEstablished;
       eventBus.ProfileLoaded += EventBusOnProfileLoaded;
       eventBus.RescueCreated += EventBusOnRescueCreated;
@@ -35,7 +38,8 @@ namespace RatTracker.Api
 
     private void EventBusOnConnectionEstablished(object sender, Version version)
     {
-      // Validate version
+      log.Info($"Connected to FuelRats API version '{version}'");
+
       var profileRequest = WebsocketMessage.Request("users", "profile", ApiEventNames.UserProfile);
       eventBus.PostWebsocketMessage(profileRequest);
 

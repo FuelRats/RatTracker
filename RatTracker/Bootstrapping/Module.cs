@@ -1,9 +1,11 @@
 ﻿using System.Reflection;
-using log4net;
+using Caliburn.Micro;
 using Ninject.Modules;
 using RatTracker.Api;
 using RatTracker.Api.Fuelrats;
 using RatTracker.Infrastructure.Events;
+using ILog = log4net.ILog;
+using LogManager = log4net.LogManager;
 
 namespace RatTracker.Bootstrapping
 {
@@ -11,8 +13,14 @@ namespace RatTracker.Bootstrapping
   {
     public override void Load()
     {
-      Bind<ILog>().ToConstant(LogManager.GetLogger(Assembly.GetCallingAssembly().GetName().Name));
+      // log4Net
+      Bind<ILog>().ToConstant(LogManager.GetLogger(Assembly.GetEntryAssembly().GetName().Name));
 
+      // Caliburn.Micro
+      Bind<IWindowManager>().To<WindowManager>().InSingletonScope();
+      Bind<IEventAggregator>().To<EventAggregator>().InSingletonScope();
+
+      // RatTracker
       Bind<WebsocketHandler>().ToSelf().InSingletonScope();
       Bind<Cache>().ToSelf().InSingletonScope();
       Bind<EventBus>().ToSelf().InSingletonScope();

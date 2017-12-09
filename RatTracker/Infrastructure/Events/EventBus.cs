@@ -57,7 +57,6 @@ namespace RatTracker.Infrastructure.Events
     {
       try
       {
-        //logger.Debug("Raw JSON from WS: " + e.Message);
         dynamic data = JsonConvert.DeserializeObject(message);
         if (data.code >= 400)
         {
@@ -68,7 +67,7 @@ namespace RatTracker.Infrastructure.Events
         if (data.meta is JObject meta && meta.TryGetValue("event", out var metaEvent))
         {
           var eventName = metaEvent.Value<string>();
-          log.Debug($"Received ws message with event '{eventName}'");
+          log.Debug($"Received ws message with event '{eventName}', posting to eventbus");
           switch (eventName)
           {
             case ApiEventNames.Connection:

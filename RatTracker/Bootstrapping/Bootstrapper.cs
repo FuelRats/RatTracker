@@ -12,24 +12,25 @@ using RatTracker.Infrastructure.Resources.Styles;
 using RatTracker.Journal;
 using RatTracker.Properties;
 using RatTracker.ViewModels;
+using ILog = log4net.ILog;
 
 namespace RatTracker.Bootstrapping
 {
   public class Bootstrapper : BootstrapperBase
   {
     private StandardKernel kernel;
+    private ILog logger;
 
     public Bootstrapper()
     {
-      Windows7StyleHack.Hack();
       Initialize();
+      kernel.Get<Windows7StyleHack>().Hack();
     }
 
     protected override void Configure()
     {
       kernel = new StandardKernel(new Module());
-      kernel.Bind<IWindowManager>().To<WindowManager>().InSingletonScope();
-      kernel.Bind<IEventAggregator>().To<EventAggregator>().InSingletonScope();
+      logger = kernel.Get<ILog>();
     }
 
     protected override object GetInstance(Type service, string key)
@@ -54,16 +55,19 @@ namespace RatTracker.Bootstrapping
       var oauthArg = commandLineArgs.FirstOrDefault(x => x.StartsWith("rattracker"));
       if (oauthArg != null)
       {
+        logger.Debug("Starting RT with OAuth header");
         var oAuthHandler = kernel.Get<OAuthHandler>();
         await oAuthHandler.ExchangeToken(oauthArg);
       }
 
       if (string.IsNullOrWhiteSpace(Settings.Default.OAuthToken))
       {
+        logger.Debug("Starting RT without OAuth token");
         DisplayRootViewFor<OAuthStartupDialogViewModel>();
       }
       else
       {
+        logger.Debug("Starting RT with OAuth token (normal startup)");
         DisplayRootViewFor<RatTrackerViewModel>();
         kernel.Get<EventBus>();
         kernel.Get<Cache>();
