@@ -19,6 +19,7 @@
           <Setter Property="Margin" Value="0,1,5,1" />
           <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+        <!-- ReSharper disable once Xaml.StaticResourceNotResolved (this is due to Windows 7 hackery) -->
         <Style TargetType="ComboBox" BasedOn="{StaticResource ComboBoxStyle}">
           <Setter Property="Margin" Value="5,1,0,1" />
         </Style>

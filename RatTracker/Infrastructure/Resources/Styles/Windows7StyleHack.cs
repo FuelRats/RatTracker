@@ -15,6 +15,7 @@ namespace RatTracker.Infrastructure.Resources.Styles
       var assembly = Assembly.GetExecutingAssembly();
       using (var stream = assembly.GetManifestResourceStream($"RatTracker.Infrastructure.Resources.Styles.{fileName}"))
       {
+        if (stream == null) { return; }
         var reader = new XamlReader();
         var myResourceDictionary = (ResourceDictionary) reader.LoadAsync(stream);
         Application.Current.Resources.MergedDictionaries.Add(myResourceDictionary);

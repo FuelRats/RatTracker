@@ -10,6 +10,7 @@
         Height="180" Width="500">
   <Grid Margin="5">
     <Grid.Resources>
+      <!-- ReSharper disable once Xaml.StaticResourceNotResolved (this id ue to Windows 7 hackery) -->
       <Style TargetType="ComboBox" BasedOn="{StaticResource ComboBoxStyle}">
         <Setter Property="Margin" Value="0,1" />
       </Style>
