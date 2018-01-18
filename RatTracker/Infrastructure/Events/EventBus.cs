@@ -37,6 +37,7 @@ namespace RatTracker.Infrastructure.Events
     public event EventHandler<Rescue> RescueCreated;
     public event EventHandler<Rescue> RescueUpdated;
     public event EventHandler<Rescue> RescueClosed;
+    public event EventHandler<dynamic> ApiError;
 
     public void PostWebsocketMessage(WebsocketMessage websocketMessage)
     {
@@ -60,7 +61,7 @@ namespace RatTracker.Infrastructure.Events
         dynamic data = JsonConvert.DeserializeObject(message);
         if (data.code >= 400)
         {
-          log.Fatal($"Error on websocket: {data.code} - {data.title} - {data.status} - {data.detail}");
+          Invoke(ApiError, data);
           return;
         }
 

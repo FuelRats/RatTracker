@@ -7,6 +7,7 @@ using Caliburn.Micro;
 using Ninject;
 using RatTracker.Api;
 using RatTracker.Api.Fuelrats;
+using RatTracker.Infrastructure;
 using RatTracker.Infrastructure.Events;
 using RatTracker.Infrastructure.Resources.Styles;
 using RatTracker.Journal;
@@ -51,6 +52,7 @@ namespace RatTracker.Bootstrapping
 
     protected override async void OnStartup(object sender, StartupEventArgs e)
     {
+      kernel.Get<ExceptionHandler>();
       var commandLineArgs = Environment.GetCommandLineArgs();
       var oauthArg = commandLineArgs.FirstOrDefault(x => x.StartsWith("rattracker"));
       if (oauthArg != null)
@@ -69,7 +71,8 @@ namespace RatTracker.Bootstrapping
       {
         logger.Debug("Starting RT with OAuth token (normal startup)");
         DisplayRootViewFor<RatTrackerViewModel>();
-        kernel.Get<EventBus>();
+        var eventBus = kernel.Get<EventBus>();
+        eventBus.ApiError += EventBusOnApiError;
         kernel.Get<Cache>();
         var journalReader = kernel.Get<JournalReader>();
         var websocketHandler = kernel.Get<WebsocketHandler>();
@@ -77,6 +80,20 @@ namespace RatTracker.Bootstrapping
         var journalTask = Task.Run(() => journalReader.Initialize());
 
         await Task.WhenAll(websocketTask, journalTask);
+      }
+    }
+
+    private void EventBusOnApiError(object sender, dynamic data)
+    {
+      logger.Fatal($"Error on websocket: {data.code} - {data.title} - {data.status} - {data.detail}");
+
+      if (data.code == 401)
+      {
+        DialogHelper.ShowWarning("Invalid login token. Resetting token and restarting RatTracker.");
+        Settings.Default.OAuthToken = null;
+        Settings.Default.Save();
+        var oAuthHandler = kernel.Get<OAuthHandler>();
+        oAuthHandler.RestartRatTracker();
       }
     }
   }

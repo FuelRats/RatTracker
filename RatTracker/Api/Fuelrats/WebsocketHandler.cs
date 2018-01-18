@@ -26,7 +26,7 @@ namespace RatTracker.Api.Fuelrats
       {
         var wsurl = GetApiWssUrl(includeToken);
         log.Info("Connecting to WS at " + wsurl);
-        webSocket = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455) {Security = {AllowUnstrustedCertificate = true}};
+        webSocket = new WebSocket(wsurl, "", WebSocketVersion.Rfc6455) { Security = { AllowUnstrustedCertificate = true } };
         webSocket.Opened += WebSocketOnOpened;
         webSocket.Error += WebsocketClientError;
         webSocket.MessageReceived += WebsocketClientMessageReceieved;
