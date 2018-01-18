@@ -147,6 +147,7 @@
     <Compile Include="Api\Cache.cs" />
     <Compile Include="Api\Fuelrats\TpaEventNames.cs" />
     <Compile Include="Api\StarSystems\SystemApi.cs" />
+    <Compile Include="Infrastructure\ExceptionHandler.cs" />
     <Compile Include="Infrastructure\Resources\Styles\Windows7StyleHack.cs" />
     <Compile Include="Infrastructure\Converter\StatusToBooleanConverter.cs" />
     <Compile Include="Infrastructure\Events\EventBus.cs" />
