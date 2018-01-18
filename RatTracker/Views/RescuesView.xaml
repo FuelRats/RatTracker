@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="RatTracker.Views.RescuesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converter="clr-namespace:RatTracker.Infrastructure.Converter"
+             xmlns:viewModels="clr-namespace:RatTracker.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:RescuesViewModel}"
+             d:DesignHeight="300" d:DesignWidth="600">
+  <GroupBox Header="Active Rescues">
+    <DataGrid ItemsSource="{Binding Rescues}" IsReadOnly="True" RowHeaderWidth="0"
+              AutoGenerateColumns="False" SelectionMode="Single" SelectedItem="{Binding SelectedRescue}">
+      <DataGrid.Columns>
+        <DataGridTextColumn Binding="{Binding Rescue.Platform}" ClipboardContentBinding="{x:Null}" Header="" />
+        <DataGridTextColumn Binding="{Binding Rescue.Client, Converter={converter:ClientConverter}}"
+                            ClipboardContentBinding="{x:Null}" Header="Client" />
+        <DataGridTextColumn Binding="{Binding Rescue.Rats, Converter={converter:RatNameConcatConverter}}"
+                            Header="Rats" />
+        <DataGridTextColumn Binding="{Binding Rescue.System}" ClipboardContentBinding="{x:Null}" Header="System" />
+        <DataGridCheckBoxColumn Binding="{Binding Rescue.CodeRed}" ClipboardContentBinding="{x:Null}"
+                                Header="Code Red" />
+        <DataGridCheckBoxColumn Binding="{Binding Rescue.Status, Converter={converter:StatusToBooleanConverter}}"
+                                ClipboardContentBinding="{x:Null}" Header="Active" />
+      </DataGrid.Columns>
+    </DataGrid>
+  </GroupBox>
+</UserControl>

@@ -1,0 +1,53 @@
+﻿<Window x:Class="RatTracker.Views.OAuthStartupDialogView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:viewModels="clr-namespace:RatTracker.ViewModels"
+        Style="{StaticResource WindowStyle}" WindowStartupLocation="CenterScreen"
+        mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:OAuthStartupDialogViewModel}"
+        Height="145" Width="325">
+  <Grid Margin="5">
+    <Grid.Resources>
+      <Style TargetType="TextBlock" BasedOn="{StaticResource TextBlockStyle}">
+        <Setter Property="Margin" Value="0,1,5,1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+      </Style>
+      <Style TargetType="TextBox" BasedOn="{StaticResource TextBoxStyle}">
+        <Setter Property="Margin" Value="0,1,0,1" />
+      </Style>
+    </Grid.Resources>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="Auto" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center"
+               FontSize="24"
+               Text="Welcome to RatTracker" />
+    <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center"
+               FontSize="14"
+               Text="Please authorize RatTracker to use your account." />
+    <Separator Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5" />
+    <Separator Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,5,0,5" />
+    <UniformGrid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Columns="2">
+      <UniformGrid.Resources>
+        <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}" x:Key="SaveAndAuthorizeButtonStyle">
+          <Setter Property="Margin" Value="0,1,1,0" />
+        </Style>
+        <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}" x:Key="CloseButtonsStyle">
+          <Setter Property="Margin" Value="1,1,0,0" />
+        </Style>
+      </UniformGrid.Resources>
+      <Button x:Name="Authorize" Content="Authorize"
+              Style="{StaticResource SaveAndAuthorizeButtonStyle}" />
+      <Button x:Name="DiscardAndClose" Content="Close" Style="{StaticResource CloseButtonsStyle}" />
+    </UniformGrid>
+  </Grid>
+</Window>

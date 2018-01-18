@@ -1,0 +1,9 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Style TargetType="Separator" x:Key="SeparatorStyle">
+    <Setter Property="Background" Value="{StaticResource BrushEliteOrange}" />
+  </Style>
+
+  <Style TargetType="Separator" BasedOn="{StaticResource SeparatorStyle}" />
+</ResourceDictionary>

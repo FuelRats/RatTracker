@@ -1,0 +1,76 @@
+﻿# Notes:
+#   - https://www.appveyor.com/docs/appveyor-yml/
+#   - Minimal appveyor.yml file is an empty file. All sections are optional.
+#   - Indent each level of configuration with 2 spaces. Do not use tabs!
+#   - All section names are case-sensitive.
+#   - Section names should be unique on each level.
+
+#---------------------------------#
+#      general configuration      #
+#---------------------------------#
+
+version: 1.0.0.{build}
+skip_tags: true
+max_jobs: 2
+
+#---------------------------------#
+#    environment configuration    #
+#---------------------------------#
+image: Visual Studio 2017
+
+init:
+  - git config --global core.autocrlf input
+
+clone_folder: c:\projects\RatTracker
+
+environment:
+  certpw:
+    secure: nH33PZAMcd7c1CX5sMYJog==
+
+#---------------------------------#
+#       build configuration       #
+#---------------------------------#
+
+platform: Any CPU
+configuration: Release
+
+build:
+  parallel: true
+  project: RatTracker.sln
+  verbosity: minimal
+
+before_build:
+  - nuget restore
+  - ps: "if (!$env:APPVEYOR_PULL_REQUEST_NUMBER) { $env:ApplicationVersion=$env:APPVEYOR_BUILD_VERSION;$env:UpdateUrl='http://orthanc.localecho.net/RatTracker/';$env:PublishUrl='http://orthanc.localecho.net/RatTracker/';$env:IsWebBootstrapper=true;$env:SignManifests=true;$mypwd = ConvertTo-SecureString -String \"$env:certpw\" -Force –AsPlainText\nImport-PfxCertificate –FilePath C:\\projects\\RatTracker\\RatTracker\\RatTracker_1_TemporaryKey.pfx cert:\\currentuser\\my -Password $mypwd }"
+
+after_build:
+  - ps: if (!$env:APPVEYOR_PULL_REQUEST_NUMBER) {
+       msbuild RatTracker.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" /t:publish;
+       $root = Resolve-Path .\RatTracker\bin\Release\app.publish;
+       [IO.Directory]::GetFiles($root.Path, '*.*', 'AllDirectories') | % { Push-AppveyorArtifact $_ -FileName $_.Substring($root.Path.Length + 1) -DeploymentName RatTracker; }
+     }
+
+#---------------------------------#
+#         notifications           #
+#---------------------------------#
+notifications:
+  - provider: GitHubPullRequest
+    auth_token:
+      secure: kBl9BlxvRMr9liHmnBs14A==
+    template: "{{#passed}}:white_check_mark:{{/passed}}{{#failed}}:x:{{/failed}} [Build {{&projectName}} {{buildVersion}} {{status}}]({{buildUrl}}) (commit {{commitUrl}} by @{{&commitAuthorUsername}})"
+    
+#---------------------------------#
+#          deployment             #
+#---------------------------------#
+deploy:
+  provider: FTP
+  protocol: sftp
+  host: orthanc.localecho.net
+  username: 
+    secure: LESxVKAZLjm/+Na1gJS7ag==
+  password:
+    secure: 9R0QslxNdGW/HXA80rZu8jgav7M1qhxo7V9VrF3SUNw=
+  folder: RatTracker_Upload/
+  artifact: RatTracker
+  on:
+    branch: master

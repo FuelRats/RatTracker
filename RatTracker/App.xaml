@@ -1,0 +1,27 @@
+﻿<Application x:Class="RatTracker.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:bootstrapping="clr-namespace:RatTracker.Bootstrapping">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary>
+          <bootstrapping:Bootstrapper x:Key="Bootstrapper" />
+        </ResourceDictionary>
+
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/Colours.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/SeparatorStyle.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/GroupBoxStyle.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/TextBlockStyle.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/TextBoxStyle.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/WindowStyle.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/UserControlStyle.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/ButtonStyles.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/GridStyles.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/MenuStyle.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/ListViewStyle.xaml" />
+        <ResourceDictionary Source="Infrastructure/Resources/Styles/RatStateControlStyle.xaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>
