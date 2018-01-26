@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="ApiUrl" Type="System.String" Scope="User">
-      <Value Profile="(Default)">https://api.fuelrats.com/</Value>
+      <Value Profile="(Default)">https://dev.api.fuelrats.com/</Value>
     </Setting>
     <Setting Name="ApiPort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">443</Value>
@@ -18,7 +18,7 @@
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="WebsiteUrl" Type="System.String" Scope="User">
-      <Value Profile="(Default)">https://fuelrats.com/</Value>
+      <Value Profile="(Default)">https://dev.fuelrats.com/</Value>
     </Setting>
     <Setting Name="WebSitePort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">443</Value>
