@@ -59,7 +59,7 @@ namespace RatTracker.Infrastructure.Events
       try
       {
         dynamic data = JsonConvert.DeserializeObject(message);
-        if (data.code >= 400)
+        if (data.status >= 400)
         {
           Invoke(ApiError, data);
           return;

@@ -40,7 +40,7 @@ namespace RatTracker.Api
     {
       log.Info($"Connected to FuelRats API version '{version}'");
 
-      var profileRequest = WebsocketMessage.Request("users", "profile", ApiEventNames.UserProfile);
+      var profileRequest = WebsocketMessage.Request("profiles", "read", ApiEventNames.UserProfile);
       eventBus.PostWebsocketMessage(profileRequest);
     }
 
