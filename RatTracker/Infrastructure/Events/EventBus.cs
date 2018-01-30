@@ -77,6 +77,12 @@ namespace RatTracker.Infrastructure.Events
                 Version.TryParse(versionString.Value<string>(), out var version);
                 Invoke(ConnectionEstablished, version);
               }
+              else
+              {
+                // TODO remove this else branch as soon as API is updated with correct WS welcome
+                var version = Version.Parse("2.1");
+                Invoke(ConnectionEstablished, version);
+              }
 
               break;
             case ApiEventNames.StreamSubscribe:

@@ -48,7 +48,7 @@ namespace RatTracker.Api
     {
       PlayerInfo.User = receivedUser;
 
-      var rescuesRequest = WebsocketMessage.Request("rescues", "read", ApiEventNames.RescueRead);
+      var rescuesRequest = WebsocketMessage.Request("rescues", "search", ApiEventNames.RescueRead);
       rescuesRequest.AddData(nameof(Rescue.Status).ToApiName(), WebsocketMessage.Data("$not", RescueState.Closed.ToApiName()));
       eventBus.PostWebsocketMessage(rescuesRequest);
     }
