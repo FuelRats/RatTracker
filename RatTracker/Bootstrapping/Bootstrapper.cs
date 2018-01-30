@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using Caliburn.Micro;
+using Newtonsoft.Json.Linq;
 using Ninject;
 using RatTracker.Api;
 using RatTracker.Api.Fuelrats;
@@ -20,6 +21,7 @@ namespace RatTracker.Bootstrapping
   public class Bootstrapper : BootstrapperBase
   {
     private StandardKernel kernel;
+    private EventBus eventBus;
     private ILog logger;
 
     public Bootstrapper()
@@ -71,7 +73,7 @@ namespace RatTracker.Bootstrapping
       {
         logger.Debug("Starting RT with OAuth token (normal startup)");
         DisplayRootViewFor<RatTrackerViewModel>();
-        var eventBus = kernel.Get<EventBus>();
+        eventBus = kernel.Get<EventBus>();
         eventBus.ApiError += EventBusOnApiError;
         kernel.Get<Cache>();
         var journalReader = kernel.Get<JournalReader>();
@@ -94,6 +96,23 @@ namespace RatTracker.Bootstrapping
         Settings.Default.Save();
         var oAuthHandler = kernel.Get<OAuthHandler>();
         oAuthHandler.RestartRatTracker();
+      }
+
+      if (data.meta is JObject meta && meta.TryGetValue("event", out var metaEvent))
+      {
+        var eventName = metaEvent.Value<string>();
+        switch (eventName)
+        {
+          case ApiEventNames.Connection:
+            DialogHelper.ShowWarning("Error connecting to API: connection event missing version info. RatTracker cannot run and will be closed.");
+            eventBus.PostApplicationExit(this);
+            break;
+          default:
+#if DEBUG
+            DialogHelper.ShowWarning($"Yo, you forgot to add error handling for this '{eventName}'!");
+#endif
+            break;
+        }
       }
     }
   }
