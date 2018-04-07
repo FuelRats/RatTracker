@@ -68,7 +68,7 @@
                       Style="{StaticResource ShowOnlyPCCasesStyle}" />
         <ToggleButton Content="Show only Active" IsChecked="{Binding ShowOnlyActiveCases}"
                       Style="{StaticResource ShowOnlyActiveCasesStyle}" />
-        </UniformGrid>
+      </UniformGrid>
       <Button Grid.Row="6" Grid.Column="1" x:Name="RefreshCases" Content="Refresh Cases" Margin="0,1" />
     </Grid>
   </GroupBox>
