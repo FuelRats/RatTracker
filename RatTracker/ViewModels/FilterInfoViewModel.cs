@@ -2,8 +2,11 @@
 using System.Linq;
 using System.Windows;
 using Caliburn.Micro;
+using RatTracker.Api.Fuelrats;
 using RatTracker.Api.StarSystems;
+using RatTracker.Infrastructure.Extensions;
 using RatTracker.Infrastructure.Events;
+using RatTracker.Models.Apis.FuelRats.Rescues;
 using RatTracker.Models.App.Rescues;
 
 namespace RatTracker.ViewModels
@@ -89,6 +92,13 @@ namespace RatTracker.ViewModels
                      select station;
 
       rescue.NearestStation = stations.FirstOrDefault();
+    }
+
+    public void RefreshCases()
+    {
+      var rescuesRequest = WebsocketMessage.Request("rescues", "read", ApiEventNames.RescueRead);
+      rescuesRequest.AddData(nameof(Rescue.Status).ToApiName(), WebsocketMessage.Data("$not", RescueState.Closed.ToApiName()));
+      eventBus.PostWebsocketMessage(rescuesRequest);
     }
 
     public void CopyNearestSystemName()

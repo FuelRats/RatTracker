@@ -42,15 +42,15 @@ namespace RatTracker.Api
 
       var profileRequest = WebsocketMessage.Request("users", "profile", ApiEventNames.UserProfile);
       eventBus.PostWebsocketMessage(profileRequest);
-
-      var rescuesRequest = WebsocketMessage.Request("rescues", "read", ApiEventNames.RescueRead);
-      rescuesRequest.AddData(nameof(Rescue.Status).ToApiName(), WebsocketMessage.Data("$not", RescueState.Closed.ToApiName()));
-      eventBus.PostWebsocketMessage(rescuesRequest);
     }
 
     private void EventBusOnProfileLoaded(object sender, User receivedUser)
     {
       PlayerInfo.User = receivedUser;
+
+      var rescuesRequest = WebsocketMessage.Request("rescues", "read", ApiEventNames.RescueRead);
+      rescuesRequest.AddData(nameof(Rescue.Status).ToApiName(), WebsocketMessage.Data("$not", RescueState.Closed.ToApiName()));
+      eventBus.PostWebsocketMessage(rescuesRequest);
     }
 
     private void EventBusOnRescuesReloaded(object sender, IEnumerable<Rescue> receivedRescues)
